@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="qurayshe — building thoughtful software." />
+  <meta name="theme-color" content="#0d0814" />
+  <title>qurayshe</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="nav">
+    <a class="brand" href="#top">◆ qurayshe</a>
+    <nav class="nav-links">
+      <a href="#about">about</a>
+      <a href="#work">work</a>
+      <a href="#contact">contact</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-stage" aria-hidden="true">
+        <div id="ascii-hero" class="ascii-hero"></div>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">// portfolio &middot; 2026</p>
+        <h1 class="title">Building<br />thoughtful<br />software.</h1>
+        <p class="lede">
+          Engineer and tinkerer. I design clean systems and ship small,
+          sharp things on the web.
+        </p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#work">See the work</a>
+          <a class="btn" href="#contact">Get in touch</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="block">
+      <h2 class="block-title"><span class="num">01</span> About</h2>
+      <div class="prose">
+        <p>
+          I care about the details that make software feel fast and honest —
+          fewer dependencies, clear interfaces, and interfaces that get out of
+          the way. This page is deliberately tiny: hand-written HTML, a little
+          CSS, and one WebGL hero built from a cube and a few orbiting spheres.
+        </p>
+      </div>
+    </section>
+
+    <section id="work" class="block">
+      <h2 class="block-title"><span class="num">02</span> Selected work</h2>
+      <div class="cards">
+        <article class="card">
+          <h3>Project Alpha</h3>
+          <p>A minimal static-site toolchain. Zero config, instant deploys.</p>
+          <span class="tag">web &middot; tooling</span>
+        </article>
+        <article class="card">
+          <h3>Project Beta</h3>
+          <p>Real-time data viz with a focus on legibility over flash.</p>
+          <span class="tag">d3 &middot; data</span>
+        </article>
+        <article class="card">
+          <h3>Project Gamma</h3>
+          <p>An experiment in lightweight 3D motion and pointer-driven depth.</p>
+          <span class="tag">webgl &middot; three.js</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="contact" class="block">
+      <h2 class="block-title"><span class="num">03</span> Contact</h2>
+      <div class="prose">
+        <p>
+          Find me on
+          <a href="https://github.com/qurayshe">GitHub</a>, or say hello over
+          <a href="mailto:kourosh@khoie.com">email</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year">2026</span> qurayshe / ktk</span>
+    <span>Built static · hosted on GitHub Pages</span>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
