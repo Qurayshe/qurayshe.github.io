@@ -1,31 +1,115 @@
-# qurayshe.github.io
+<div align="center">
 
-A small, static personal site hosted on **GitHub Pages**.
+# qurayshe.github.io!!!
 
-- Hand-written `index.html` + `styles.css` — no framework, no build step.
-- A 3D hero (`main.js`) rendered through an **ASCII filter** using
-  [Three.js](https://threejs.org/) `AsciiEffect`, loaded from a CDN via an
-  ES-module import map. Inspired by the [cline.bot](https://cline.bot) homepage.
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Deploy-222222.svg?logo=githubpages&logoColor=white)](https://qurayshe.github.io)[![Three.js](https://img.shields.io/badge/Three.js-r128-000000.svg?logo=three.js&logoColor=white)](https://threejs.org/)
+[![Anime.js](https://img.shields.io/badge/Anime.js-3.2.1-FF4B4B.svg?logo=javascript&logoColor=white)](https://animejs.com/)[![Marked](https://img.shields.io/badge/Marked.js-v12+-FF8800.svg?logo=markdown&logoColor=white)](https://marked.js.org/)[![Prism.js](https://img.shields.io/badge/Prism.js-1.29.0-2D7DD2.svg?logo=javascript&logoColor=white)](https://prismjs.com/)[![JavaScript](https://img.shields.io/badge/JavaScript-ES2022+-F7DF1E.svg?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)[![Rust](https://img.shields.io/badge/Rust-1.75+-DEA584.svg?logo=rust&logoColor=black)](https://www.rust-lang.org/)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)](https://go.dev/)[![C++](https://img.shields.io/badge/C++-C++20-00599C.svg?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Local preview
+<br/></div>
 
-It's fully static, but the ES modules need to be served over HTTP (not opened
-as a `file://`). Any static server works:
+---
+
+## overview!!!
+
+static site on github pages containing code examples and interactive demos
+
+- **cprog1**: 32x systems c99->c11->cpp20 (basicish sys arch)
+- **rustserver**: 6x rust+golang servers (backend stuff)
+- **ailab**: 16x machine learning & ai fundamentals (math -> perceptrons -> transformers -> sota)
+- **qutest2**: 11x threejs animations (frontendslop)
+
+runs in browser w/o build
+
+---
+
+## projects!!!
+
+### 1. c+systems. c99+c11+cpp20 (`cprog1`)
+
+| focus | key topics | source files |
+| :--- | :--- | :--- |
+| **1. c foundations** | compilation pipeline pointers stack struct alignment arena allocators vtables binary io | `01_types_and_bits.c`<br/>`02_pointer_basics.c`<br/>`04_struct_alignment.c`<br/>`05_simple_arena.c` |
+| **2. advanced systems** | atomics memory barriers cache locality simd avx2 syscalls pool allocators mmap bytecode vm | `09_atomics_and_spinlocks.c`<br/>`10b_avx2_vectorization.c`<br/>`12_pool_allocator.c`<br/>`16_stack_vm.c` |
+| **3. modern c++** | raii rule of 5 smart pointers move semantics constexpr pmr lock free ring buffer | `17_raii_demo.cpp`<br/>`18_smart_pointers.cpp`<br/>`19_move_semantics.cpp`<br/>`24_spsc_ring_buffer.cpp` |
+| **4. runtime internals** | garbage collection nan boxing event loop epoll b-tree wal http parser jit codegen | `25_mark_and_sweep_gc.c`<br/>`26b_nan_boxing_engine.c`<br/>`27b_epoll_reactor_pattern.c`<br/>`31_mini_jit_compiler.c` |
+
+### 2. server architecture!!! (`rustserver`)
+
+| topic | rust | go |
+| :--- | :--- | :--- |
+| **1. raw tcp & http** | `std::net::TcpListener` manual read write | `net/http` standard library |
+| **2. concurrency** | threadpool `Arc<Mutex<Receiver>>` `mpsc` | goroutines channels `sync.WaitGroup` |
+| **3. async & routing** | tokio runtime `async`/`await` | go 1.22+ `http.NewServeMux` middleware |
+| **4. json api** | axum router state extractors `serde_json` | `encoding/json` struct tags |
+| **5. persistence** | async sqlite with sqlx | sqlite with `database/sql` pool |
+| **6. telemetry** | `tracing-subscriber` signal handlers | `log/slog` `signal.NotifyContext` |
+
+### 3. 3d lab!!! (`qutest2`)
+
+| module | tech | concepts |
+| :--- | :--- | :--- |
+| **1.1 procedural geometries** | three.js | vertex displacement sine wave ripples |
+| **1.2 lighting & pbr** | three.js | pbr materials pointlights soft shadows |
+| **1.3 particle galaxy** | three.js | 100k points spiral buffer geometry |
+| **2.1 kinetic typography** | anime.js | svg path dashoffset draw text reveals |
+| **2.2 timeline choreography** | anime.js | keyframe timelines playback scrubber |
+| **2.3 matrix stagger** | anime.js | grid stagger radial ripple physics |
+| **3.1 camera director** | hybrid | camera stations dolly zoom fov transitions |
+| **3.2 exploding mesh** | hybrid | 125 part voxel explosion spring return |
+| **3.3 glitch shader** | hybrid | glsl shader fresnel scanlines uniforms |
+| **3.4 3d card deck** | hybrid | raycaster mouse tracking card tilt |
+| **3.5 audio equalizer** | hybrid | 64 band soundwave reactive bars |
+
+### 4. machine learning & ai fundamentals (`ailab`)
+
+| phase | key topics | implementation files |
+| :--- | :--- | :--- |
+| **1. math foundations** | vector spaces, SVD low-rank compression, multivariable autodiff, Shannon entropy, MLE | `01_vector_matrix_svd.py`<br/>`02_scalar_autodiff_engine.py`<br/>`03_mle_and_entropy.py` |
+| **2. classical ml & perceptron** | 1958 Rosenblatt perceptron, XOR catastrophe, logistic regression, Adam optimizer, RBF SVM | `04_perceptron_from_scratch.py`<br/>`05_logistic_regression_adam.py`<br/>`06_svm_kernel_smo.py` |
+| **3. deep neural nets** | universal approximation, GELU activations, matrix backprop, LayerNorm, inverted dropout | `07_modular_mlp_framework.py`<br/>`08_layernorm_dropout_schedule.py` |
+| **4. vision & sequence models** | 2D convolutions, ResNet gradient highways, unrolled LSTM gating & memory cells | `09_conv2d_and_resnet_block.py`<br/>`10_lstm_character_lm.py` |
+| **5. transformers & llms** | scaled dot-product attention, multi-head projections, RoPE embeddings, KV-caching decoder | `11_multihead_attention_rope.py`<br/>`12_minigpt_and_kv_cache.py` |
+| **6. sota frontier** | LoRA weight merging, Direct Preference Optimization (DPO), DDPM diffusion, MCTS & speculative decoding | `13_lora_linear_layer.py`<br/>`14_dpo_loss_engine.py`<br/>`15_ddpm_diffusion_sampler.py`<br/>`16_mcts_reasoning_speculative.py` |
+
+---
+
+## shortcuts!!!
+
+| key | action |
+| :--- | :--- |
+| `ctrl+k` / `cmd+k` | open search |
+| `/` | quick search |
+| `up` / `down` | navigate results |
+| `enter` | select item |
+| `esc` | close modal |
+
+---
+
+## local run!!!
+
+serve directory over http (for cors reasons)
 
 ```bash
 python -m http.server 8000
-# then open http://localhost:8000
 ```
 
-## Deploy
+open `http://localhost:8000`
 
-Pushed to the `qurayshe/qurayshe.github.io` repository. Because the repo is named
-`<user>.github.io`, GitHub Pages serves it from the default branch root
-automatically — live at https://qurayshe.github.io.
+---
 
-The `.nojekyll` file tells Pages to skip Jekyll and serve the files as-is.
+## deploy!!!
 
-## Customize
+```bash
+git add .
+git commit -m "update"
+git push origin main
+```
 
-Edit the copy in `index.html`, the palette in `:root` of `styles.css`, and the
-geometry / character ramp in `main.js`.
+live at `https://qurayshe.github.io`
+
+---
+
+## license
+
+mit

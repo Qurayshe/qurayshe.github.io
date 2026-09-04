@@ -3,104 +3,329 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="qurayshe — building thoughtful software." />
-  <meta name="theme-color" content="#0d0814" />
-  <title>qurayshe</title>
-  <link rel="preconnect" href="https://unpkg.com" />
+  <meta name="description" content="qurayshe — Low-level Systems Programming, Server Architecture in Rust & Go, and Interactive 3D WebGL Motion." />
+  <meta name="theme-color" content="#07060b" />
+  <title>qurayshe — Systems, Servers & 3D Motion</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Prism.js Dark Theme CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <!-- KaTeX Math Rendering CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+
+  <!-- Master Stylesheet -->
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>" />
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
 </head>
 <body>
-  <div class="grain" aria-hidden="true"></div>
+  <div class="grain-overlay" aria-hidden="true"></div>
 
-  <header class="nav">
-    <a class="brand" href="#top">◆ qurayshe</a>
-    <nav class="nav-links">
-      <a href="#about">about</a>
-      <a href="#work">work</a>
-      <a href="#contact">contact</a>
-    </nav>
-  </header>
+  <!-- Global Sticky Navbar -->
+  <header class="global-navbar">
+    <a class="brand-wrap" href="#home">
+      <span class="brand-diamond">◆</span>
+      <span>qurayshe</span>
+    </a>
 
-  <main id="top">
-    <section class="hero">
-      <div class="hero-stage" aria-hidden="true">
-        <div id="ascii-hero" class="ascii-hero"></div>
-      </div>
-      <div class="hero-copy">
-        <p class="eyebrow">// portfolio &middot; 2026</p>
-        <h1 class="title">Building<br />thoughtful<br />software.</h1>
-        <p class="lede">
-          Engineer and tinkerer. I design clean systems and ship small,
-          sharp things on the web.
-        </p>
-        <div class="cta">
-          <a class="btn btn-primary" href="#work">See the work</a>
-          <a class="btn" href="#contact">Get in touch</a>
+    <nav class="nav-links-wrap" id="nav-links-wrap">
+      <a class="nav-link active" href="#home">Home</a>
+
+      <!-- Labs & Curriculum Dropdown Menu -->
+      <div class="nav-dropdown" id="nav-labs-dropdown">
+        <button class="nav-link nav-dropdown-btn" id="btn-labs-dropdown" type="button" aria-expanded="false" aria-haspopup="true">
+          <span>Labs &amp; Curriculum</span>
+          <svg class="dropdown-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="nav-dropdown-menu" id="nav-labs-menu" role="menu">
+          <a class="dropdown-item" href="#systems" role="menuitem">
+            <span class="dropdown-item-badge badge-c">C / C++</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">Systems Programming</div>
+              <div class="dropdown-item-desc">Memory layout, pointers, allocators, ELF &amp; ASM</div>
+            </div>
+          </a>
+          <a class="dropdown-item" href="#servers" role="menuitem">
+            <span class="dropdown-item-badge badge-server">Rust &amp; Go</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">Distributed Servers</div>
+              <div class="dropdown-item-desc">Tokio async, goroutines, Axum REST &amp; SQLite</div>
+            </div>
+          </a>
+          <a class="dropdown-item" href="#ai" role="menuitem">
+            <span class="dropdown-item-badge badge-ai">AI / ML</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">AI &amp; ML Fundamentals</div>
+              <div class="dropdown-item-desc">Math prerequisites, backprop, transformers &amp; SOTA</div>
+            </div>
+          </a>
+          <a class="dropdown-item" href="#motion" role="menuitem">
+            <span class="dropdown-item-badge badge-motion">WebGL</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">3D Motion Lab</div>
+              <div class="dropdown-item-desc">Three.js shaders, Anime.js &amp; audio visualizer</div>
+            </div>
+          </a>
         </div>
       </div>
-    </section>
 
-    <section id="about" class="block">
-      <h2 class="block-title"><span class="num">01</span> About</h2>
-      <div class="prose">
-        <p>
-          I care about the details that make software feel fast and honest —
-          fewer dependencies, clear interfaces, and interfaces that get out of
-          the way. This page is deliberately tiny: hand-written HTML, a little
-          CSS, and one WebGL hero built from a cube and a few orbiting spheres.
-        </p>
+      <a class="nav-link" href="#resume">Resume</a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- Command Palette Search Trigger Button -->
+      <button class="btn-search-trigger" id="btn-nav-search" title="Search all topics (Ctrl+K)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+        <kbd class="search-kbd">⌘K</kbd>
+      </button>
+
+      <!-- GitHub Profile Link -->
+      <a class="btn-nav-github" href="https://github.com/qurayshe" target="_blank" rel="noopener" title="GitHub: @qurayshe">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>GitHub</span>
+      </a>
+
+      <!-- Fullscreen Toggle Button -->
+      <button class="nav-icon-btn" id="btn-nav-fullscreen" title="Toggle Fullscreen">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+
+      <!-- Mobile Menu Hamburger Button -->
+      <button class="nav-mobile-toggle" id="btn-nav-mobile" aria-label="Toggle Navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Router Container -->
+  <main class="app-main">
+    <!-- ====================================================================
+         SECTION 1: HOME (Interactive 3D Hero + Hub Cards + Roadmap)
+         ==================================================================== -->
+    <section id="section-home" class="app-section active">
+      <div class="home-container">
+        <!-- Hero Grid -->
+        <div class="hero-grid">
+          <div class="hero-copy-col">
+            <h1 class="hero-title-main">
+              Building software from <span class="gradient-text">silicon to 3D</span>.
+            </h1>
+
+            <p class="hero-lead-text">
+              Notes, code examples, and interactive labs exploring low-level memory mechanics in C, concurrent server architecture in Rust &amp; Go, and real-time graphics with Three.js.
+            </p>
+
+            <!-- Hero 3D Mode Controller -->
+            <div class="hero-mode-bar">
+              <span class="hero-mode-label">Scene:</span>
+              <button class="hero-mode-btn active" data-mode="vortex">Vortex</button>
+              <button class="hero-mode-btn" data-mode="geometry">Polyhedron</button>
+              <button class="hero-mode-btn" data-mode="matrix">Matrix Grid</button>
+              <button class="hero-mode-btn" data-mode="wave">Wave</button>
+            </div>
+          </div>
+
+          <!-- 3D Interactive Hero Canvas -->
+          <div class="hero-3d-col">
+            <div id="hero-3d-viewport" class="hero-3d-viewport"></div>
+          </div>
+        </div>
+
+        <!-- Featured Projects Hub Section -->
+        <div class="portal-hub-section">
+          <div class="section-eyebrow">// Projects &amp; Curriculums</div>
+          <h2 class="section-header-title">Laboratories</h2>
+          <p class="section-header-desc">
+            Come learn some stuff! 
+            i have a job already so my resume isnt doing anything better rn
+          </p>
+
+          <div class="portal-grid">
+            <!-- Card 1: Systems & C Lab -->
+            <article class="portal-card portal-card-systems">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-cyan);">Part 1–4</span>
+                  <span class="card-stat-pill">32 Modules</span>
+                </div>
+                <h3 class="portal-card-title">C &amp; Systems Programming</h3>
+                <p class="portal-card-desc">
+                  From two's complement and hardware alignment to x86-64 calling conventions, SIMD vectorization, lock-free queues, and JIT dynamic codegen.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Pointers &amp; Stack</span>
+                  <span class="portal-tag">Arena Allocators</span>
+                  <span class="portal-tag">SIMD AVX2</span>
+                  <span class="portal-tag">Lock-Free</span>
+                  <span class="portal-tag">JIT Codegen</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#systems">
+                <span>Open Systems Lab</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+
+            <!-- Card 2: Server Architecture Lab -->
+            <article class="portal-card portal-card-servers">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-amber);">Rust &times; Go</span>
+                  <span class="card-stat-pill">6 Stages</span>
+                </div>
+                <h3 class="portal-card-title">Server Architecture</h3>
+                <p class="portal-card-desc">
+                  Step-by-step comparison of HTTP servers in Rust and Go: raw TCP sockets, worker threadpools vs goroutines, Tokio async, Axum, SQLx persistence, and signal handling.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Raw Sockets</span>
+                  <span class="portal-tag">ThreadPool vs Goroutines</span>
+                  <span class="portal-tag">Tokio Async</span>
+                  <span class="portal-tag">Axum</span>
+                  <span class="portal-tag">SQLx SQLite</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#servers">
+                <span>Compare Implementations</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+
+            <!-- Card 3: 3D Motion Lab -->
+            <article class="portal-card portal-card-motion">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-purple);">Three.js &times; Anime.js</span>
+                  <span class="card-stat-pill">11 Demos</span>
+                </div>
+                <h3 class="portal-card-title">3D Motion &amp; WebGL</h3>
+                <p class="portal-card-desc">
+                  Interactive experiments with Three.js graphics, custom GLSL shaders, 100k point particle galaxies, raycast card tilt, exploding meshes, and timeline animations.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Particle Galaxy</span>
+                  <span class="portal-tag">GLSL Shaders</span>
+                  <span class="portal-tag">Raycasting</span>
+                  <span class="portal-tag">Camera Director</span>
+                  <span class="portal-tag">Audio Equalizer</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#motion">
+                <span>Launch Motion Lab</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+
+            <!-- Card 4: Machine Learning & AI Fundamentals Lab -->
+            <article class="portal-card portal-card-ai">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-rose);">Math to SOTA</span>
+                  <span class="card-stat-pill">19 Modules</span>
+                </div>
+                <h3 class="portal-card-title">AI &amp; Machine Learning Lab</h3>
+                <p class="portal-card-desc">
+                  From vector spaces, matrix calculus, and the 1958 Rosenblatt perceptron to modern Transformers, RoPE, KV-caching, LoRA, DPO alignment, and SOTA reasoning models.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Perceptrons &amp; XOR</span>
+                  <span class="portal-tag">Reverse Autodiff</span>
+                  <span class="portal-tag">RoPE Attention</span>
+                  <span class="portal-tag">LoRA / QLoRA</span>
+                  <span class="portal-tag">Diffusion &amp; SOTA</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#ai">
+                <span>Explore AI Lab</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+          </div>
+        </div>
+
+       
       </div>
     </section>
 
-    <section id="work" class="block">
-      <h2 class="block-title"><span class="num">02</span> Selected work</h2>
-      <div class="cards">
-        <article class="card">
-          <h3>Project Alpha</h3>
-          <p>A minimal static-site toolchain. Zero config, instant deploys.</p>
-          <span class="tag">web &middot; tooling</span>
-        </article>
-        <article class="card">
-          <h3>Project Beta</h3>
-          <p>Real-time data viz with a focus on legibility over flash.</p>
-          <span class="tag">d3 &middot; data</span>
-        </article>
-        <article class="card">
-          <h3>Project Gamma</h3>
-          <p>An experiment in lightweight 3D motion and pointer-driven depth.</p>
-          <span class="tag">webgl &middot; three.js</span>
-        </article>
-      </div>
+    <!-- ====================================================================
+         SECTION 2: SYSTEMS & C LAB (cprog1)
+         ==================================================================== -->
+    <section id="section-systems" class="app-section">
+      <div id="systems-container"></div>
     </section>
 
-    <section id="contact" class="block">
-      <h2 class="block-title"><span class="num">03</span> Contact</h2>
-      <div class="prose">
-        <p>
-          Find me on
-          <a href="https://github.com/qurayshe">GitHub</a>, or say hello over
-          <a href="mailto:kourosh@khoie.com">email</a>.
-        </p>
-      </div>
+    <!-- ====================================================================
+         SECTION 3: SERVER LAB (rustserver & golang)
+         ==================================================================== -->
+    <section id="section-servers" class="app-section">
+      <div id="server-container"></div>
     </section>
+
+    <!-- ====================================================================
+         SECTION: AI & ML LAB (ailab)
+         ==================================================================== -->
+    <section id="section-ai" class="app-section">
+      <div id="ai-container"></div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: 3D MOTION LAB (qutest2)
+         ==================================================================== -->
+    <section id="section-motion" class="app-section">
+      <div id="motion-container"></div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5: INTERACTIVE RESUME
+         ==================================================================== -->
+    <section id="section-resume" class="app-section">
+      <div id="resume-container"></div>
+    </section>
+
   </main>
 
-  <footer class="footer">
-    <span>© <span id="year">2026</span> qurayshe / ktk</span>
-    <span>Built static · hosted on GitHub Pages</span>
+  <!-- Global Footer -->
+  <footer class="global-footer">
+    <div class="footer-left">
+      <span>&copy; <span id="current-year">2026</span> <strong>qurayshe</strong> / ktk</span>
+      <span class="footer-dot">&bull;</span>
+      <a class="footer-github-link" href="https://github.com/qurayshe" target="_blank" rel="noopener" title="GitHub: @qurayshe">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>@qurayshe</span>
+      </a>
+    </div>
+    <div class="footer-right">
+      <span>Systems &middot; Servers &middot; AI Lab &middot; 3D Motion</span>
+    </div>
   </footer>
 
-  <script type="module" src="./main.js"></script>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <!-- CDN Dependencies: Three.js r128, OrbitControls, Anime.js, Marked.js, Prism.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-toml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+  <!-- KaTeX Math Engine and Auto-render Extension -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Main ES Module Entry Point -->
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
