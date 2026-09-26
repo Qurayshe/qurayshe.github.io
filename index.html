@@ -74,6 +74,23 @@
       </div>
 
       <a class="nav-link" href="#resume">Resume</a>
+
+      <!-- Misc Tools Dropdown Menu -->
+      <div class="nav-dropdown" id="nav-misc-dropdown">
+        <button class="nav-link nav-dropdown-btn" id="btn-misc-dropdown" type="button" aria-expanded="false" aria-haspopup="true">
+          <span>Misc</span>
+          <svg class="dropdown-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="nav-dropdown-menu" id="nav-misc-menu" role="menu">
+          <a class="dropdown-item" href="#misc/blorbo" role="menuitem">
+            <span class="dropdown-item-badge badge-misc">🎨 Fun</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">Blorbo Stats Maker</div>
+              <div class="dropdown-item-desc">Silly character stat card editor with doodle canvas &amp; radar chart</div>
+            </div>
+          </a>
+        </div>
+      </div>
     </nav>
 
     <div class="nav-actions">
@@ -287,6 +304,19 @@
          ==================================================================== -->
     <section id="section-resume" class="app-section">
       <div id="resume-container"></div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 6: MISC TOOLS (misc/blorbo & future single-page tools)
+         ==================================================================== -->
+    <section id="section-misc" class="app-section">
+      <iframe
+        id="misc-embed-frame"
+        class="misc-embed-frame"
+        src="./misc/blorbo/index.html"
+        title="Misc Tool"
+        loading="lazy"
+      ></iframe>
     </section>
 
   </main>

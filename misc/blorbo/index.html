@@ -1,0 +1,3123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>silly blorbo stats maker ✨</title>
+  <!-- Cutesy, bubbly, hand-drawn fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-c: #a349a1;  /* purple - chuckability */
+      --color-e: #b5e51d;  /* lime green - engaging */
+      --color-s1: #00a3e8; /* sky blue - squishiness */
+      --color-s2: #ed1b24; /* bright red - splorpability */
+      --color-b: #f0e2b1;  /* bone cream - bones */
+      --color-m: #b97b56;  /* warm brown - media literacy */
+      --ink: #111111;
+      --paper: #fefefb;
+      --card-bg: #ffffff;
+      --line-grey: #a0a0a0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #f5f0e8;
+      background-image: 
+        radial-gradient(#ded5bf 1.5px, transparent 1.5px),
+        radial-gradient(#ded5bf 1.5px, #f5f0e8 1.5px);
+      background-size: 26px 26px;
+      background-position: 0 0, 13px 13px;
+      font-family: 'Patrick Hand', 'Gaegu', 'Comic Sans MS', cursive, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 30px;
+    }
+
+    /* Springy Animations with Smooth Damped Return to Idle */
+    @keyframes jelly-wobble {
+      0% {
+        transform: rotate(var(--base-rot, 0deg)) scale(1, 1);
+      }
+      18% {
+        transform: rotate(calc(var(--base-rot, 0deg) - 4deg)) scale(1.22, 0.82);
+      }
+      38% {
+        transform: rotate(calc(var(--base-rot, 0deg) + 2.8deg)) scale(0.86, 1.15);
+      }
+      56% {
+        transform: rotate(calc(var(--base-rot, 0deg) - 1.4deg)) scale(1.08, 0.94);
+      }
+      72% {
+        transform: rotate(calc(var(--base-rot, 0deg) + 0.6deg)) scale(0.985, 1.018);
+      }
+      86% {
+        transform: rotate(calc(var(--base-rot, 0deg) - 0.2deg)) scale(1.004, 0.996);
+      }
+      100% {
+        transform: rotate(var(--base-rot, 0deg)) scale(1, 1);
+      }
+    }
+
+    .is-wobbling {
+      animation: jelly-wobble 0.75s ease-in-out !important;
+    }
+
+    @keyframes spring-pop {
+      0% { transform: scale(0.5); }
+      40% { transform: scale(1.38) rotate(8deg); }
+      65% { transform: scale(0.88) rotate(-5deg); }
+      85% { transform: scale(1.08) rotate(2deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes card-squish {
+      0% { transform: scale(0.96); }
+      40% { transform: scale(1.025) rotate(0.4deg); }
+      70% { transform: scale(0.99) rotate(-0.3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* Streamlined Header Bar */
+    .header-bar {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .title-badge {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: 'DynaPuff', 'Shantell Sans', 'Comic Sans MS', cursive;
+      background: #ffe66d;
+      padding: 6px 18px;
+      border: 3px solid var(--ink);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      --base-rot: -1.5deg;
+      transform: rotate(var(--base-rot)) scale(1, 1);
+      transform-origin: center;
+      transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: pointer;
+    }
+
+    .title-badge:hover {
+      animation: jelly-wobble 0.75s ease-in-out;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .sketchy-btn {
+      font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 6px 14px;
+      background: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, background 0.15s;
+    }
+
+    .sketchy-btn:hover {
+      transform: translateY(-2px) scale(1.03) rotate(-1deg);
+      box-shadow: 4px 5px 0 var(--ink);
+      background: #fffbe6;
+    }
+
+    .sketchy-btn:active {
+      transform: translateY(2px) scale(0.95);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .sketchy-btn.primary {
+      background: #ff6b6b;
+      color: #fff;
+    }
+    .sketchy-btn.primary:hover {
+      background: #ff5252;
+    }
+
+    .sketchy-btn.purple {
+      background: #a349a1;
+      color: #fff;
+    }
+    .sketchy-btn.purple:hover {
+      background: #8e378c;
+    }
+
+    /* Main Card Container */
+    .card-container {
+      width: 100%;
+      max-width: 860px;
+      background: #ffffff;
+      border: 4px solid var(--ink);
+      border-radius: 24px 28px 20px 26px / 26px 20px 28px 24px;
+      box-shadow: 7px 9px 0px rgba(0, 0, 0, 0.92);
+      padding: 22px 24px 20px;
+      position: relative;
+    }
+
+    /* Top Fields: name & skill */
+    .fields-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .field-item {
+      flex: 1;
+      min-width: 250px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      position: relative;
+    }
+
+    .field-label {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      color: var(--ink);
+      font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+    }
+
+    .field-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .field-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: 'Patrick Hand', 'Gaegu', 'Comic Sans MS', cursive;
+      font-size: 24px;
+      color: #111;
+      padding: 2px 6px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .squiggly-underline {
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      pointer-events: none;
+    }
+
+    /* Center Blank / Drawing Stage (Windows 95 Retro Window with Balanced Pixel Styling) */
+    .canvas-stage-wrapper.win95-window {
+      position: relative;
+      margin-bottom: 14px;
+      background: #c0c0c0;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 
+        inset 1.5px 1.5px 0px #ffffff,
+        inset -1.5px -1.5px 0px #808080,
+        5px 6px 0px var(--ink);
+      padding: 3px;
+      filter: url(#pixelate-retro);
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    /* Clean overlay with NO moire gridlines */
+    .canvas-stage-wrapper.win95-window::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 9px;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .win95-titlebar {
+      background: linear-gradient(90deg, #000080, #1084d0);
+      color: #ffffff;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 8px 8px 0 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'MS Sans Serif', 'Silkscreen', 'Fixedsys', monospace, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .win95-title-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .win95-app-icon {
+      font-size: 19px;
+      line-height: 1;
+      image-rendering: pixelated;
+    }
+
+    .win95-title-text {
+      color: #ffffff;
+      text-shadow: 1px 1px 0px rgba(0,0,0,0.9);
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      font-family: 'MS Sans Serif', 'Silkscreen', 'Fixedsys', monospace, sans-serif;
+      font-weight: 700;
+      text-transform: lowercase;
+      -webkit-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .win95-title-controls {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .win95-btn {
+      width: 26px;
+      height: 24px;
+      background: #c0c0c0;
+      border: 1.5px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #000000;
+      line-height: 1;
+      padding: 0;
+      box-shadow: 1px 1px 0 #000000;
+      transition: background 0.1s;
+      -webkit-font-smoothing: none;
+    }
+
+    .win95-btn svg {
+      display: block;
+      shape-rendering: crispEdges;
+    }
+
+    .win95-btn:hover {
+      background: #dfdfdf;
+    }
+
+    .win95-btn:active {
+      border-color: #808080 #ffffff #ffffff #808080;
+      transform: translate(1px, 1px);
+      box-shadow: none;
+    }
+
+    .win95-btn.close {
+      font-size: 10px;
+    }
+
+    /* Sunken drawing viewport with retro pixel bevel */
+    .canvas-frame {
+      width: 100%;
+      height: 350px;
+      background: #ffffff;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      border-radius: 0 0 8px 8px;
+      box-shadow: inset 1.5px 1.5px 0 #000000;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      margin-top: 3px;
+    }
+
+    /* Retro Win95 cursors for canvas tools */
+    .canvas-frame.cursor-pencil,
+    .canvas-frame.cursor-pencil #drawingCanvas {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M0,22 L4,22 L4,21 L7,21 L7,18 L17,8 L14,5 L4,15 L4,18 L1,18 L1,21 L0,21 Z' fill='%23000000'/%3E%3Cpath d='M1,21 L3,21 L3,19 L6,19 L6,16 L15,7 L14,6 L5,15 L5,18 L2,18 L2,20 L1,20 Z' fill='%23ffe600'/%3E%3Cpolygon points='0,22 1,21 1,22' fill='%23000000'/%3E%3Cpolygon points='14,5 17,8 19,6 16,3' fill='%23ed1b24'/%3E%3Cpolygon points='16,3 19,6 20,5 17,2' fill='%23000000'/%3E%3C/svg%3E") 0 22, crosshair;
+    }
+
+    .canvas-frame.cursor-eraser,
+    .canvas-frame.cursor-eraser #drawingCanvas {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Crect x='1' y='1' width='18' height='18' fill='%23ffffff' stroke='%23000000' stroke-width='2'/%3E%3Crect x='4' y='4' width='12' height='12' fill='%23dfdfdf' stroke='%23808080' stroke-width='1'/%3E%3C/svg%3E") 10 10, crosshair;
+    }
+
+    .canvas-frame.cursor-fill,
+    .canvas-frame.cursor-fill #drawingCanvas {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M8,3 L2,9 L10,17 L16,11 Z' fill='%23ffffff' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M11,12 L5,18 L8,21 L14,15 Z' fill='%2300a3e8' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M0,19 C0,19 -0.5,22 1.5,23 C2.8,23.5 3.5,22 3.5,21 C3.5,20 1.5,18 0,19 Z' fill='%2300a3e8' stroke='%23000000' stroke-width='1'/%3E%3Cline x1='10' y1='5' x2='14' y2='9' stroke='%23000000' stroke-width='1.5'/%3E%3C/svg%3E") 1 21, crosshair;
+    }
+
+    .canvas-frame.cursor-stamp,
+    .canvas-frame.cursor-stamp #drawingCanvas {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='%23000000' stroke-width='1.5' stroke-dasharray='2,2'/%3E%3Cline x1='12' y1='1' x2='12' y2='6' stroke='%23000000' stroke-width='2'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='%23000000' stroke-width='2'/%3E%3Cline x1='1' y1='12' x2='6' y2='12' stroke='%23000000' stroke-width='2'/%3E%3Cline x1='18' y1='12' x2='23' y2='12' stroke='%23000000' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23000000'/%3E%3C/svg%3E") 12 12, crosshair;
+    }
+
+    /* Reset cursor for toolbars inside the canvas frame */
+    .canvas-tools,
+    .stickers-drawer,
+    .canvas-tools *,
+    .stickers-drawer * {
+      cursor: default;
+    }
+
+    .tool-btn,
+    .brush-size-btn,
+    .color-swatch,
+    .sticker-stamp,
+    .menu-collapse-btn {
+      cursor: pointer !important;
+    }
+
+    #drawingCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .canvas-placeholder-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 25px;
+      font-weight: bold;
+      color: #b0a89c;
+      font-family: 'Patrick Hand', cursive;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+
+    /* Floating Canvas Toolbar (Windows 95 Retro with Modern Rounding - Enlarged for Clear Pixels) */
+    .canvas-tools {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 8px;
+      box-shadow: 
+        inset 1px 1px 0 #dfdfdf,
+        inset -1px -1px 0 #404040,
+        2px 2px 0 rgba(0,0,0,0.5);
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .canvas-tools-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Hover & Active animations for minimized drawing menus */
+    .canvas-tools.is-minimized,
+    .stickers-drawer.is-minimized {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 8px;
+      padding: 5px 12px;
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s, box-shadow 0.15s;
+    }
+
+    .canvas-tools.is-minimized:hover,
+    .stickers-drawer.is-minimized:hover {
+      transform: translateY(-2px) scale(1.05);
+      background: #dfdfdf;
+      box-shadow: 3px 4px 0 var(--ink);
+    }
+
+    .canvas-tools.is-minimized:active,
+    .stickers-drawer.is-minimized:active {
+      transform: translateY(1px) scale(0.97);
+      border-color: #808080 #ffffff #ffffff #808080;
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .canvas-tools.is-minimized .canvas-tools-content,
+    .stickers-drawer.is-minimized .stickers-content {
+      display: none;
+    }
+
+    /* Simple black text with no border for - and + toggle */
+    .menu-collapse-btn {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 4px;
+      color: #000000;
+      font-size: 18px;
+      font-weight: 800;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1;
+      transition: transform 0.15s ease, opacity 0.15s;
+    }
+
+    .menu-collapse-btn:hover {
+      transform: scale(1.2);
+      background: transparent;
+    }
+
+    .collapse-icon {
+      color: #000000;
+      font-size: 18px;
+      font-weight: 900;
+      font-family: monospace, sans-serif;
+      line-height: 1;
+    }
+
+    .collapsed-label {
+      display: none;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'MS Sans Serif', 'Silkscreen', 'Fixedsys', monospace, sans-serif;
+      color: #111111;
+      letter-spacing: 0.4px;
+      -webkit-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .canvas-tools.is-minimized .collapsed-label,
+    .stickers-drawer.is-minimized .collapsed-label {
+      display: inline;
+    }
+
+    /* Remove separate hover/transform effect from text inside minimized menus */
+    .canvas-tools.is-minimized .menu-collapse-btn,
+    .stickers-drawer.is-minimized .menu-collapse-btn,
+    .canvas-tools.is-minimized .menu-collapse-btn:hover,
+    .stickers-drawer.is-minimized .menu-collapse-btn:hover,
+    .canvas-tools.is-minimized .collapse-icon,
+    .stickers-drawer.is-minimized .collapse-icon,
+    .canvas-tools.is-minimized .collapsed-label,
+    .stickers-drawer.is-minimized .collapsed-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0;
+      font-size: 16px;
+      transform: none !important;
+      transition: none !important;
+      pointer-events: none;
+    }
+
+    .tool-btn {
+      width: 35px;
+      height: 33px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      box-shadow: 1px 1px 0 #000000;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s;
+    }
+
+    .tool-btn:hover {
+      background: #dfdfdf;
+      transform: translateY(-1px);
+    }
+
+    .tool-btn.active {
+      background: #d6d2c8;
+      border-color: #808080 #ffffff #ffffff #808080;
+      box-shadow: inset 1.5px 1.5px 0 #000000;
+      transform: translate(1px, 1px);
+    }
+
+    .palette-swatches {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    /* Color circles with NO black border, NO shadows, and NO white dots */
+    .color-swatch {
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      border: none;
+      box-shadow: none;
+      cursor: pointer;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .color-swatch[data-color="#ffffff"] {
+      border: 1px solid #bfbfbf;
+      box-shadow: none;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.25);
+    }
+
+    .color-swatch.active {
+      transform: scale(1.4);
+      box-shadow: none;
+    }
+
+    .brush-size-btn {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'MS Sans Serif', 'Silkscreen', 'Fixedsys', monospace, sans-serif;
+      padding: 2px 8px;
+      height: 28px;
+      min-width: 28px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 3px;
+      cursor: pointer;
+      color: #111;
+      box-shadow: 1px 1px 0 #000000;
+      transition: transform 0.15s;
+      -webkit-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .brush-size-btn:hover {
+      background: #dfdfdf;
+    }
+
+    .brush-size-btn.active {
+      background: #111;
+      color: #fff;
+      border-color: #000000 #ffffff #ffffff #000000;
+      transform: translate(1px, 1px);
+      box-shadow: none;
+    }
+
+    /* Stamps Drawer (Windows 95 Retro with Modern Rounding - Enlarged for Clear Pixels) */
+    .stickers-drawer {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 8px;
+      box-shadow: 
+        inset 1px 1px 0 #dfdfdf,
+        inset -1px -1px 0 #404040,
+        2px 2px 0 rgba(0,0,0,0.5);
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .stickers-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drawer-label {
+      font-size: 17px;
+      font-weight: 700;
+      font-family: 'MS Sans Serif', 'Silkscreen', 'Fixedsys', monospace, sans-serif;
+      color: #111111;
+      letter-spacing: 0.5px;
+      -webkit-font-smoothing: none;
+      font-smooth: never;
+    }
+
+    .sticker-stamp {
+      width: 34px;
+      height: 34px;
+      background: #c0c0c0;
+      border: 1.5px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 4px;
+      font-size: 20px;
+      font-weight: 900;
+      color: #111111;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 1px 1px 0 #000000;
+      transition: transform 0.15s ease, background 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI Symbol', 'Apple Symbols', monospace, sans-serif;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .sticker-stamp:hover {
+      background: #dfdfdf;
+      transform: translateY(-1px);
+    }
+
+    .sticker-stamp:active,
+    .sticker-stamp.active {
+      background: #d6d2c8;
+      border-color: #808080 #ffffff #ffffff #808080;
+      box-shadow: inset 1.5px 1.5px 0 #000000;
+      transform: translate(1px, 1px);
+      color: #000080;
+    }
+
+    /* Bottom Section: Stats List & Spider Chart */
+    .bottom-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 760px) {
+      .bottom-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stats List */
+    .stats-table {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 8px;
+      transition: background 0.15s, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .stat-row:hover {
+      background: rgba(0, 0, 0, 0.025);
+      transform: translateX(3px);
+    }
+
+    /* Freestanding Puffy Cartoon Bubble Letters (No square container!) */
+    .bubble-letter {
+      width: 32px;
+      height: 34px;
+      font-size: 32px;
+      font-weight: 900;
+      font-family: 'DynaPuff', 'Shantell Sans', 'Comic Sans MS', cursive, sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+      text-transform: lowercase;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      -webkit-text-stroke: 2px #111;
+      paint-order: stroke fill;
+      filter: drop-shadow(2.5px 2.5px 0px #111);
+      cursor: pointer;
+      --base-rot: 0deg;
+      transform: rotate(var(--base-rot)) scale(1, 1);
+      transform-origin: center;
+      transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .stat-row:hover .bubble-letter,
+    .bubble-letter:hover {
+      animation: jelly-wobble 0.75s ease-in-out;
+    }
+
+    .bubble-c  { color: var(--color-c);  --base-rot: -3deg; }
+    .bubble-e  { color: var(--color-e);  --base-rot: 2deg; }
+    .bubble-s1 { color: var(--color-s1); --base-rot: -2deg; }
+    .bubble-s2 { color: var(--color-s2); --base-rot: 4deg; }
+    .bubble-b  { color: var(--color-b);  --base-rot: -1deg; }
+    .bubble-m  { color: var(--color-m);  --base-rot: 3deg; }
+
+    /* Hand-Drawn Connecting Dashed Lines */
+    .stat-connector {
+      flex: 1;
+      min-width: 12px;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, #a8a8a8, #a8a8a8 4px, transparent 4px, transparent 7px);
+      margin: 0 4px;
+    }
+
+    .stat-name {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      color: var(--ink);
+      font-family: 'Patrick Hand', 'Gaegu', 'Comic Sans MS', cursive;
+      text-transform: lowercase;
+    }
+
+    /* Stars / Skulls Rating Group */
+    .rating-icons {
+      display: flex;
+      gap: 5px;
+      margin-left: 4px;
+    }
+
+    .rate-icon {
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .rate-icon:hover {
+      transform: scale(1.4) rotate(9deg);
+    }
+
+    .rate-icon.active {
+      animation: spring-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Spider Chart Container */
+    .spider-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .spider-svg {
+      width: 100%;
+      max-width: 330px;
+      height: 320px;
+      overflow: visible;
+      filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.12));
+    }
+
+    /* Spider Chart Labels using same jelly-wobble animation as left side */
+    .spider-label-item {
+      cursor: pointer;
+    }
+
+    .spider-label-hitbox {
+      fill: transparent;
+      pointer-events: all;
+    }
+
+    .spider-label {
+      font-size: 28px;
+      font-weight: 900;
+      font-family: 'DynaPuff', 'Shantell Sans', 'Comic Sans MS', cursive, sans-serif;
+      paint-order: stroke fill;
+      stroke: #111;
+      stroke-width: 4.5px;
+      stroke-linejoin: round;
+      text-transform: lowercase;
+      filter: drop-shadow(2.5px 2.5px 0px #111);
+      pointer-events: none;
+      --base-rot: 0deg;
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: rotate(var(--base-rot)) scale(1, 1);
+      transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .spider-label-item:hover .spider-label {
+      animation: jelly-wobble 0.75s ease-in-out;
+    }
+
+    /* Spider polygon with springy bouncy transition */
+    .spider-polygon {
+      fill: var(--spider-fill, rgba(255, 80, 80, 0.44));
+      stroke: var(--spider-stroke, #ee2222);
+      stroke-width: 3.5px;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 6px var(--spider-shadow, rgba(238, 34, 34, 0.25)));
+      transition: fill 0.2s ease, stroke 0.2s ease;
+    }
+
+    /* Spider Chart Recolor Menu */
+    .spider-color-menu {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+      background: #c0c0c0;
+      border: 1.5px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      border-radius: 6px;
+      padding: 3px 8px;
+      box-shadow: 1px 1px 0 #000000;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .spider-color-label {
+      font-size: 15px;
+      font-family: 'Patrick Hand', cursive;
+      font-weight: 700;
+      color: #111111;
+      white-space: nowrap;
+    }
+
+    .spider-color-swatches {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .spider-swatch {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      box-shadow: none;
+      cursor: pointer;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      padding: 0;
+    }
+
+    .spider-swatch[data-color="#ffffff"] {
+      border: 1px solid #bfbfbf;
+      box-shadow: none;
+    }
+
+    .spider-swatch:hover {
+      transform: scale(1.25);
+    }
+
+    .spider-swatch.active {
+      transform: scale(1.2);
+      box-shadow: none;
+      outline: none;
+    }
+
+    .spider-swatch-custom {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      position: relative;
+      font-size: 14px;
+      line-height: 1;
+      border: none;
+      box-shadow: none;
+      outline: none;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .spider-swatch-custom:hover {
+      transform: scale(1.25);
+    }
+
+    .spider-swatch-custom.active {
+      transform: scale(1.4);
+      outline: none;
+    }
+
+    .spider-swatch-custom input[type="color"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      inset: 0;
+    }
+
+    .spider-node {
+      fill: #ffffff;
+      stroke: #111111;
+      stroke-width: 2.6px;
+      r: 6.5;
+      cursor: grab;
+      transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.15s;
+    }
+
+    .spider-node:hover {
+      r: 10;
+      fill: #ffe66d;
+    }
+
+    .spider-node:active {
+      cursor: grabbing;
+      r: 12;
+      fill: #ff6b6b;
+    }
+
+    .spider-node.overdrive {
+      fill: #ff1a1a !important;
+      stroke: #ffe600 !important;
+      stroke-width: 3.2px !important;
+      filter: drop-shadow(0 0 6px #ff2222) !important;
+      /* animation: spring-pop 0.25s infinite alternate ease-in-out; */
+    }
+
+    /* Broken extra rating icons in stats list */
+    .rate-icon.broken-extra {
+      transform: rotate(14deg);
+      filter: drop-shadow(1px 2px 0px rgba(0,0,0,0.22));
+      animation: spring-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .rate-icon.broken-extra:hover {
+      transform: scale(1.35) rotate(-12deg);
+    }
+
+    /* Physically broken off stars & skulls container */
+    .broken-stars-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 12;
+      overflow: hidden;
+      border-radius: inherit;
+    }
+
+    .broken-item {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      pointer-events: auto;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      transform-origin: center center;
+      transition: filter 0.15s ease;
+      filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.3));
+    }
+
+    .broken-item:hover {
+      cursor: pointer;
+      filter: drop-shadow(3px 5px 0px rgba(0,0,0,0.5)) brightness(1.15);
+    }
+
+    .broken-item:active {
+      cursor: grabbing;
+    }
+
+    /* Comic crack / snap popup */
+    .comic-crack-pop {
+      position: absolute;
+      font-family: 'DynaPuff', 'Patrick Hand', cursive, sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffe600;
+      -webkit-text-stroke: 1.5px #111;
+      text-shadow: 2px 2px 0 #111;
+      pointer-events: none;
+      z-index: 15;
+      white-space: nowrap;
+      animation: comic-float-fade 0.75s ease-out forwards;
+      transform-origin: center;
+    }
+
+    @keyframes comic-float-fade {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.6) rotate(-8deg);
+      }
+      35% {
+        transform: translate(-50%, -70%) scale(1.25) rotate(5deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -115%) scale(1) rotate(-3deg);
+      }
+    }
+
+    /* Hidden file input */
+    #imageLoader {
+      display: none;
+    }
+
+    /* Floating feedback toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      background: #111;
+      color: #fff;
+      padding: 9px 20px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-family: 'Patrick Hand', cursive;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Small credit text at the bottom */
+    .bottom-credit {
+      margin-top: 18px;
+      font-size: 16px;
+      color: #7a7265;
+      font-family: 'Patrick Hand', 'Gaegu', 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      letter-spacing: 0.5px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .bottom-credit a {
+      color: #4b443b;
+      text-decoration: underline;
+      text-decoration-style: dashed;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
+    }
+
+    .bottom-credit a:hover {
+      color: #111111;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden Reusable SVG Icons -->
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <!-- Reusable Star Icon -->
+      <g id="star-empty">
+        <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z" 
+              fill="#ffffff" stroke="#111111" stroke-width="2.3" stroke-linejoin="round" />
+      </g>
+      <g id="star-filled">
+        <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z" 
+              fill="#ffe600" stroke="#111111" stroke-width="2.3" stroke-linejoin="round" />
+      </g>
+      <!-- Reusable Broken Star Icon -->
+      <g id="star-broken">
+        <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z" 
+              fill="#ffe600" stroke="#111111" stroke-width="2.3" stroke-linejoin="round" />
+        <path d="M11 2 L13.5 8 L9.5 13 L14 17 L12 21" 
+              fill="none" stroke="#111111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <!-- Reusable Skull Icon for Bones -->
+      <g id="skull-empty">
+        <path d="M6 13 C6 7 9 4 14 4 C19 4 22 7 22 13 C22 17 19.5 19 18 19 L18 23 L10 23 L10 19 C8.5 19 6 17 6 13 Z" 
+              fill="#ffffff" stroke="#111111" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle cx="10.5" cy="12" r="2" fill="#111"/>
+        <circle cx="17.5" cy="12" r="2" fill="#111"/>
+        <path d="M12.8 20 L12.8 23 M15.2 20 L15.2 23" stroke="#111" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+      <g id="skull-filled">
+        <path d="M6 13 C6 7 9 4 14 4 C19 4 22 7 22 13 C22 17 19.5 19 18 19 L18 23 L10 23 L10 19 C8.5 19 6 17 6 13 Z" 
+              fill="#f5e8be" stroke="#111111" stroke-width="2.2" stroke-linejoin="round"/>
+        <ellipse cx="10.5" cy="12" rx="2.4" ry="2.8" fill="#111"/>
+        <ellipse cx="17.5" cy="12" rx="2.4" ry="2.8" fill="#111"/>
+        <circle cx="9.5" cy="11" r="0.7" fill="#fff"/>
+        <circle cx="16.5" cy="11" r="0.7" fill="#fff"/>
+        <path d="M12.8 20 L12.8 23 M15.2 20 L15.2 23" stroke="#111" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+      <!-- Reusable Broken Skull Icon -->
+      <g id="skull-broken">
+        <path d="M6 13 C6 7 9 4 14 4 C19 4 22 7 22 13 C22 17 19.5 19 18 19 L18 23 L10 23 L10 19 C8.5 19 6 17 6 13 Z" 
+              fill="#f5e8be" stroke="#111111" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M8.5 10.5 L12.5 13.5 M12.5 10.5 L8.5 13.5" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+        <path d="M15.5 10.5 L19.5 13.5 M19.5 10.5 L15.5 13.5" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 4 L14 8 L10 12 L15 16 L12.5 21" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12.8 20 L12.8 23 M15.2 20 L15.2 23" stroke="#111" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+      <!-- 2px Gaussian Blur + 3px Pixellization Combo -->
+      <filter id="pixelate-retro" x="0%" y="0%" width="100%" height="100%">
+        <!-- 2px Gaussian Blur -->
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blurred"/>
+        
+        <!-- 3px Tiling Grid -->
+        <feFlood x="1" y="1" width="1" height="1"/>
+        <feComposite width="3" height="3"/>
+        <feTile result="tiled"/>
+        
+        <!-- Sample blurred graphic at 3px intervals -->
+        <feComposite in="blurred" in2="tiled" operator="in" result="sampled"/>
+        
+        <!-- Dilate by 1px to expand each sample into a solid 3x3 block -->
+        <feMorphology in="sampled" operator="dilate" radius="1" result="pixelated"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Clean, Streamlined Header Bar -->
+  <div class="header-bar">
+    <div class="title-badge" id="titleBadge">
+      <span>🎨</span> silly blorbo stats maker
+    </div>
+    <div class="btn-group">
+      <button class="sketchy-btn" id="btnRandom" title="roll completely random silly blorbo">
+        🎲 randomize!
+      </button>
+      <button class="sketchy-btn purple" id="btnCopyClip" title="copy card image to clipboard">
+        📋 copy card
+      </button>
+      <button class="sketchy-btn primary" id="btnExport" title="download finished png image">
+        💾 save png
+      </button>
+      <button class="sketchy-btn" id="btnClear" title="reset everything to blank template">
+        🧹 reset
+      </button>
+    </div>
+  </div>
+
+  <input type="file" id="imageLoader" accept="image/*">
+
+  <!-- The Blorbo Card -->
+  <div class="card-container" id="statCard">
+
+    <!-- Top Fields: name & skill -->
+    <div class="fields-row">
+      <div class="field-item">
+        <div class="field-label">name:</div>
+        <div class="field-input-wrap">
+          <input type="text" id="inputName" class="field-input" placeholder="e.g. scrunkly" value="scrunkly">
+          <svg class="squiggly-underline" viewBox="0 0 300 8" preserveAspectRatio="none">
+            <path d="M0,4 Q30,1 60,4 T120,4 T180,4 T240,4 T300,4" fill="none" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="field-item">
+        <div class="field-label">skill:</div>
+        <div class="field-input-wrap">
+          <input type="text" id="inputSkill" class="field-input" placeholder="e.g. can fit inside teacup" value="can fit inside teacup">
+          <svg class="squiggly-underline" viewBox="0 0 300 8" preserveAspectRatio="none">
+            <path d="M0,4 Q30,6 60,4 T120,4 T180,4 T240,4 T300,4" fill="none" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Drawing / Photo Portrait Area -->
+    <!-- Center Drawing / Photo Portrait Area (Windows 95 style) -->
+    <div class="canvas-stage-wrapper win95-window" id="win95DrawingWindow">
+      <div class="win95-titlebar">
+        <div class="win95-title-left">
+          <span class="win95-app-icon">🎨</span>
+          <span class="win95-title-text">untitled - paint.exe</span>
+        </div>
+        <div class="win95-title-controls">
+          <button type="button" class="win95-btn" id="winMinimizeBtn" title="minimize menus">
+            <svg width="10" height="10" viewBox="0 0 10 10"><rect x="0" y="6" width="10" height="3" fill="#000000"/></svg>
+          </button>
+          <button type="button" class="win95-btn" id="winMaximizeBtn" title="maximize">
+            <svg width="11" height="11" viewBox="0 0 11 11"><path d="M0,0 H11 V11 H0 Z M2,3 H9 V9 H2 Z" fill="#000000"/></svg>
+          </button>
+          <button type="button" class="win95-btn close" id="winCloseBtn" title="clear canvas">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5,1.5 L8.5,8.5 M8.5,1.5 L1.5,8.5" stroke="#000000" stroke-width="2.6" stroke-linecap="square"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="canvas-frame cursor-pencil" id="canvasFrame">
+        <canvas id="drawingCanvas"></canvas>
+
+        <div class="canvas-placeholder-hint" id="canvasHint">
+          <span>✏️ doodle your blorbo or upload a pic!</span>
+        </div>
+
+        <!-- Integrated Canvas Toolbar -->
+        <div class="canvas-tools" id="canvasTools">
+          <div class="canvas-tools-content" id="toolsContent">
+            <button class="tool-btn active" id="toolPencil" title="pen">✏️</button>
+            <button class="tool-btn" id="toolFill" title="fill bucket">🪣</button>
+            <button class="tool-btn" id="toolEraser" title="eraser">🧽</button>
+            <button class="tool-btn" id="btnUploadTrigger" title="upload image / photo">🖼️</button>
+            <button class="tool-btn" id="toolUndo" title="undo">↩️</button>
+            <button class="tool-btn" id="toolClearCanvas" title="clear canvas">🗑️</button>
+            
+            <div style="width: 2px; height: 24px; border-left: 1px solid #808080; border-right: 1px solid #ffffff; margin: 0 4px;"></div>
+
+            <div class="brush-sizes" style="display: flex; gap: 4px;">
+              <button class="brush-size-btn" data-size="3" title="fine (3px)">s</button>
+              <button class="brush-size-btn active" data-size="7" title="medium (7px)">m</button>
+              <button class="brush-size-btn" data-size="16" title="chonky (16px)">l</button>
+            </div>
+
+            <div style="width: 2px; height: 24px; border-left: 1px solid #808080; border-right: 1px solid #ffffff; margin: 0 4px;"></div>
+
+            <!-- Color Swatches -->
+            <div class="palette-swatches">
+              <div class="color-swatch active" data-color="#000000" style="background:#000000;" title="black"></div>
+              <div class="color-swatch" data-color="#ed1b24" style="background:#ed1b24;" title="red"></div>
+              <div class="color-swatch" data-color="#ff7f27" style="background:#ff7f27;" title="orange"></div>
+              <div class="color-swatch" data-color="#ffe600" style="background:#ffe600;" title="yellow"></div>
+              <div class="color-swatch" data-color="#b5e51d" style="background:#b5e51d;" title="lime green"></div>
+              <div class="color-swatch" data-color="#00a3e8" style="background:#00a3e8;" title="sky blue"></div>
+              <div class="color-swatch" data-color="#a349a1" style="background:#a349a1;" title="purple"></div>
+              <div class="color-swatch" data-color="#ffaec9" style="background:#ffaec9;" title="pastel pink"></div>
+              <div class="color-swatch" data-color="#b97b56" style="background:#b97b56;" title="brown"></div>
+              <div class="color-swatch" data-color="#ffffff" style="background:#ffffff;" title="white"></div>
+            </div>
+          </div>
+
+          <button class="menu-collapse-btn" id="btnToggleTools" title="minimize / expand toolbar">
+            <span class="collapse-icon">-</span>
+            <span class="collapsed-label">🎨 tools</span>
+          </button>
+        </div>
+
+        <!-- Retro Unicode Stamps Drawer -->
+        <div class="stickers-drawer" id="stickersDrawer">
+          <div class="stickers-content" id="stickersContent">
+            <span class="drawer-label">stamps:</span>
+            <span class="sticker-stamp" data-stamp="halo" title="angel halo">⚬</span>
+            <span class="sticker-stamp" data-stamp="horns" title="devil horns">Ψ</span>
+            <span class="sticker-stamp" data-stamp="moustache" title="moustache">〰</span>
+            <span class="sticker-stamp" data-stamp="star" title="star">★</span>
+            <span class="sticker-stamp" data-stamp="heart" title="heart">♥</span>
+            <span class="sticker-stamp" data-stamp="sparkle" title="sparkle">✦</span>
+            <span class="sticker-stamp" data-stamp="skull" title="skull">☠</span>
+            <span class="sticker-stamp" data-stamp="note" title="music note">♪</span>
+          </div>
+
+          <button class="menu-collapse-btn" id="btnToggleStamps" title="minimize / expand stamps">
+            <span class="collapse-icon">-</span>
+            <span class="collapsed-label">★ stamps</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section: Stats List + Spider Chart -->
+    <div class="bottom-layout">
+      
+      <!-- Left: The 6 Stats List -->
+      <div class="stats-table" id="statsList">
+        
+        <div class="stat-row" data-stat="c">
+          <div class="bubble-letter bubble-c">c</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">chuckability:</div>
+          <div class="rating-icons" data-stat="c"></div>
+        </div>
+
+        <div class="stat-row" data-stat="e">
+          <div class="bubble-letter bubble-e">e</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">engaging:</div>
+          <div class="rating-icons" data-stat="e"></div>
+        </div>
+
+        <div class="stat-row" data-stat="s1">
+          <div class="bubble-letter bubble-s1">s</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">squishiness:</div>
+          <div class="rating-icons" data-stat="s1"></div>
+        </div>
+
+        <div class="stat-row" data-stat="s2">
+          <div class="bubble-letter bubble-s2">s</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">splorpability:</div>
+          <div class="rating-icons" data-stat="s2"></div>
+        </div>
+
+        <div class="stat-row" data-stat="b">
+          <div class="bubble-letter bubble-b">b</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">bones:</div>
+          <div class="rating-icons" data-stat="b"></div>
+        </div>
+
+        <div class="stat-row" data-stat="m">
+          <div class="bubble-letter bubble-m">m</div>
+          <div class="stat-connector"></div>
+          <div class="stat-name">media literacy:</div>
+          <div class="rating-icons" data-stat="m"></div>
+        </div>
+      </div>
+
+      <!-- Right: Spider Chart -->
+      <div class="spider-container">
+        <svg class="spider-svg" id="spiderSvg" viewBox="0 0 320 320">
+          <g id="spiderBase"></g>
+          <g id="spiderOverdrive"></g>
+          <polygon id="spiderPolygon" class="spider-polygon" points=""></polygon>
+          <g id="spiderNodes"></g>
+          <g id="spiderLabels"></g>
+          <g id="spiderCracks"></g>
+        </svg>
+
+        <!-- Spider Chart Recolor Menu -->
+        <div class="spider-color-menu" id="spiderColorMenu">
+          <span class="spider-color-label">web color:</span>
+          <div class="spider-color-swatches">
+            <button type="button" class="spider-swatch active" data-color="#ee2222" style="background:#ee2222;" title="red"></button>
+            <button type="button" class="spider-swatch" data-color="#ff3385" style="background:#ff3385;" title="pink"></button>
+            <button type="button" class="spider-swatch" data-color="#ff7f27" style="background:#ff7f27;" title="orange"></button>
+            <button type="button" class="spider-swatch" data-color="#ffe600" style="background:#ffe600;" title="yellow"></button>
+            <button type="button" class="spider-swatch" data-color="#2ecc40" style="background:#2ecc40;" title="lime"></button>
+            <button type="button" class="spider-swatch" data-color="#00a3e8" style="background:#00a3e8;" title="sky blue"></button>
+            <button type="button" class="spider-swatch" data-color="#a349a1" style="background:#a349a1;" title="purple"></button>
+            <button type="button" class="spider-swatch" data-color="#111111" style="background:#111111;" title="black"></button>
+            <label class="spider-swatch-custom" title="custom color picker">
+              <span>🌈</span>
+              <input type="color" id="spiderCustomColor" value="#ee2222">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Container for physically broken off stars & skulls -->
+    <div id="brokenStarsContainer" class="broken-stars-container"></div>
+  </div>
+
+  <div class="bottom-credit">original by <a href="https://littleguysdaily.tumblr.com" target="_blank" rel="noopener">@littleguysdaily</a> on tumblr!!!</div>
+
+  <div class="toast" id="toastMessage">card exported! ✨</div>
+
+  <script>
+    const stats = {
+      c: 2,
+      e: 3,
+      s1: 3,
+      s2: 1,
+      b: 0,
+      m: 2
+    };
+
+    const animStats = {
+      c: { val: 2, vel: 0 },
+      e: { val: 3, vel: 0 },
+      s1: { val: 3, vel: 0 },
+      s2: { val: 1, vel: 0 },
+      b: { val: 0, vel: 0 },
+      m: { val: 2, vel: 0 }
+    };
+
+    const colors = {
+      c: '#a349a1',
+      e: '#b5e51d',
+      s1: '#00a3e8',
+      s2: '#ed1b24',
+      b: '#f0e2b1',
+      m: '#b97b56'
+    };
+
+    let spiderChartColor = '#ee2222';
+
+    function hexToRgba(hex, alpha = 0.44) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      const num = parseInt(hex, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function setSpiderColor(color) {
+      spiderChartColor = color;
+      const svg = document.getElementById('spiderSvg');
+      if (svg) {
+        svg.style.setProperty('--spider-stroke', color);
+        svg.style.setProperty('--spider-fill', hexToRgba(color, 0.44));
+        svg.style.setProperty('--spider-shadow', hexToRgba(color, 0.3));
+      }
+      const overdriveLines = document.querySelectorAll('#spiderOverdrive line');
+      overdriveLines.forEach(l => l.setAttribute('stroke', color));
+
+      let matchedPreset = false;
+      document.querySelectorAll('.spider-swatch').forEach(sw => {
+        const isMatch = sw.dataset.color.toLowerCase() === color.toLowerCase();
+        sw.classList.toggle('active', isMatch);
+        if (isMatch) matchedPreset = true;
+      });
+
+      const customLabel = document.querySelector('.spider-swatch-custom');
+      if (customLabel) {
+        customLabel.classList.toggle('active', !matchedPreset);
+      }
+
+      const customInput = document.getElementById('spiderCustomColor');
+      if (customInput && customInput.value !== color) {
+        customInput.value = color;
+      }
+    }
+
+    function renderRatingIcons() {
+      ['c', 'e', 's1', 's2', 'b', 'm'].forEach(key => {
+        const container = document.querySelector(`.rating-icons[data-stat="${key}"]`);
+        if (!container) return;
+        const currentVal = stats[key];
+        const isBones = (key === 'b');
+
+        container.innerHTML = '';
+        for (let i = 1; i <= 3; i++) {
+          const iconSpan = document.createElement('span');
+          iconSpan.className = 'rate-icon' + (i <= currentVal ? ' active' : '');
+          iconSpan.dataset.val = i;
+
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('viewBox', '0 0 24 24');
+          svg.setAttribute('width', '28');
+          svg.setAttribute('height', '28');
+
+          const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+          if (isBones) {
+            use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', i <= currentVal ? '#skull-filled' : '#skull-empty');
+          } else {
+            use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', i <= currentVal ? '#star-filled' : '#star-empty');
+          }
+          svg.appendChild(use);
+          iconSpan.appendChild(svg);
+
+          iconSpan.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (stats[key] === i) {
+              stats[key] = 0;
+            } else {
+              stats[key] = i;
+            }
+            updateAll();
+          });
+
+          container.appendChild(iconSpan);
+        }
+
+        // Extra stars / skulls that broke off the chart (> 3)
+        if (currentVal > 3) {
+          for (let i = 4; i <= currentVal; i++) {
+            const extraSpan = document.createElement('span');
+            extraSpan.className = 'rate-icon broken-extra active';
+            extraSpan.dataset.val = i;
+            extraSpan.title = isBones ? `${i} skulls (broke off the chart!)` : `${i} stars (broke off the chart!)`;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('width', '28');
+            svg.setAttribute('height', '28');
+
+            const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', isBones ? '#skull-broken' : '#star-broken');
+            svg.appendChild(use);
+            extraSpan.appendChild(svg);
+
+            extraSpan.addEventListener('click', (e) => {
+              e.stopPropagation();
+              stats[key] = 3;
+              updateAll();
+            });
+
+            container.appendChild(extraSpan);
+          }
+        }
+      });
+    }
+
+    const spiderAxes = [
+      { key: 'c', label: 'c', color: colors.c, angleDeg: -90 },
+      { key: 'e', label: 'e', color: colors.e, angleDeg: -30 },
+      { key: 's1', label: 's', color: colors.s1, angleDeg: 30 },
+      { key: 's2', label: 's', color: colors.s2, angleDeg: 90 },
+      { key: 'b', label: 'b', color: colors.b, angleDeg: 150 },
+      { key: 'm', label: 'm', color: colors.m, angleDeg: 210 }
+    ];
+
+    const cx = 160;
+    const cy = 160;
+    const rOuter = 105;
+    const rCenterHex = 22;
+    const maxVal = 3;
+
+    function getAxisPos(angleDeg, radius) {
+      const rad = (angleDeg * Math.PI) / 180;
+      return {
+        x: cx + radius * Math.cos(rad),
+        y: cy + radius * Math.sin(rad)
+      };
+    }
+
+    function initSpiderBase() {
+      const baseGroup = document.getElementById('spiderBase');
+      const labelsGroup = document.getElementById('spiderLabels');
+      baseGroup.innerHTML = '';
+      labelsGroup.innerHTML = '';
+
+      // Outer boundary hexagon
+      let outerPts = spiderAxes.map(axis => {
+        const pt = getAxisPos(axis.angleDeg, rOuter);
+        return `${pt.x},${pt.y}`;
+      }).join(' ');
+
+      const outerHex = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      outerHex.setAttribute('points', outerPts);
+      outerHex.setAttribute('fill', 'none');
+      outerHex.setAttribute('stroke', '#a0a0a0');
+      outerHex.setAttribute('stroke-width', '2.5');
+      outerHex.setAttribute('stroke-linejoin', 'round');
+      baseGroup.appendChild(outerHex);
+
+      spiderAxes.forEach((axis) => {
+        const outerP = getAxisPos(axis.angleDeg, rOuter);
+        const centerP = getAxisPos(axis.angleDeg, rCenterHex);
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', centerP.x);
+        line.setAttribute('y1', centerP.y);
+        line.setAttribute('x2', outerP.x);
+        line.setAttribute('y2', outerP.y);
+        line.setAttribute('stroke', '#111');
+        line.setAttribute('stroke-width', '2.5');
+        line.setAttribute('stroke-linecap', 'round');
+        baseGroup.appendChild(line);
+
+        // 3 Ticks
+        for (let t = 1; t <= 3; t++) {
+          const rTick = rCenterHex + (t / 3) * (rOuter - rCenterHex);
+          const pt = getAxisPos(axis.angleDeg, rTick);
+          const perpRad = ((axis.angleDeg + 90) * Math.PI) / 180;
+          const tickLen = 5.5;
+          const x1 = pt.x + tickLen * Math.cos(perpRad);
+          const y1 = pt.y + tickLen * Math.sin(perpRad);
+          const x2 = pt.x - tickLen * Math.cos(perpRad);
+          const y2 = pt.y - tickLen * Math.sin(perpRad);
+
+          const tickLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          tickLine.setAttribute('x1', x1);
+          tickLine.setAttribute('y1', y1);
+          tickLine.setAttribute('x2', x2);
+          tickLine.setAttribute('y2', y2);
+          tickLine.setAttribute('stroke', '#111');
+          tickLine.setAttribute('stroke-width', '2.2');
+          tickLine.setAttribute('stroke-linecap', 'round');
+          baseGroup.appendChild(tickLine);
+        }
+
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', outerP.x);
+        dot.setAttribute('cy', outerP.y);
+        dot.setAttribute('r', '4.2');
+        dot.setAttribute('fill', '#111');
+        baseGroup.appendChild(dot);
+
+        // Rock-solid non-glitching label: wrapped in <g> with dedicated hitbox circle!
+        const labelDist = rOuter + 22;
+        const lp = getAxisPos(axis.angleDeg, labelDist);
+
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'spider-label-item');
+        group.setAttribute('transform', `translate(${lp.x}, ${lp.y})`);
+
+        // Invisible generous circular hitbox
+        const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        hitbox.setAttribute('cx', '0');
+        hitbox.setAttribute('cy', '0');
+        hitbox.setAttribute('r', '18');
+        hitbox.setAttribute('class', 'spider-label-hitbox');
+        group.appendChild(hitbox);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', '0');
+        text.setAttribute('y', '8');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', axis.color);
+        text.setAttribute('class', 'spider-label');
+        text.textContent = axis.label;
+        group.appendChild(text);
+
+        group.addEventListener('mouseenter', () => triggerJellyWobble(text));
+        group.addEventListener('click', () => {
+          stats[axis.key] = (stats[axis.key] + 1) % 4;
+          bounceJellyWobble(text);
+          updateAll();
+        });
+
+        labelsGroup.appendChild(group);
+      });
+
+      // Center solid black hexagon
+      let centerHexPts = spiderAxes.map(axis => {
+        const pt = getAxisPos(axis.angleDeg, rCenterHex);
+        return `${pt.x},${pt.y}`;
+      }).join(' ');
+
+      const centerHex = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      centerHex.setAttribute('points', centerHexPts);
+      centerHex.setAttribute('fill', '#111');
+      centerHex.setAttribute('stroke', '#111');
+      centerHex.setAttribute('stroke-width', '2');
+      baseGroup.appendChild(centerHex);
+    }
+
+    let animFrameId = null;
+
+    function startSpiderAnimation() {
+      if (animFrameId) return;
+      let lastTime = performance.now();
+
+      function step(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.05);
+        lastTime = now;
+
+        const spring = 160;
+        const damping = 14;
+        let isMoving = false;
+
+        const pts = [];
+
+        spiderAxes.forEach(axis => {
+          const target = stats[axis.key];
+          const st = animStats[axis.key];
+
+          const diff = target - st.val;
+          const force = diff * spring - st.vel * damping;
+          st.vel += force * dt;
+          st.val += st.vel * dt;
+
+          if (Math.abs(diff) > 0.005 || Math.abs(st.vel) > 0.01) {
+            isMoving = true;
+          }
+
+          const rCurrent = rCenterHex + (Math.max(0, st.val) / maxVal) * (rOuter - rCenterHex);
+          const pt = getAxisPos(axis.angleDeg, rCurrent);
+          pts.push(`${pt.x.toFixed(1)},${pt.y.toFixed(1)}`);
+
+          const handle = document.querySelector(`.spider-node[data-stat="${axis.key}"]`);
+          if (handle) {
+            handle.setAttribute('cx', pt.x.toFixed(1));
+            handle.setAttribute('cy', pt.y.toFixed(1));
+            if (st.val > 3.05) {
+              handle.classList.add('overdrive');
+            } else {
+              handle.classList.remove('overdrive');
+            }
+          }
+        });
+
+        const polygon = document.getElementById('spiderPolygon');
+        if (polygon) {
+          polygon.setAttribute('points', pts.join(' '));
+        }
+
+        // Overdrive dashed spoke extensions when pulled too far
+        const overdriveGroup = document.getElementById('spiderOverdrive');
+        if (overdriveGroup) {
+          overdriveGroup.innerHTML = '';
+          spiderAxes.forEach(axis => {
+            const st = animStats[axis.key];
+            if (st.val > 3.05) {
+              const outerP = getAxisPos(axis.angleDeg, rOuter);
+              const rCurrent = rCenterHex + (Math.max(0, st.val) / maxVal) * (rOuter - rCenterHex);
+              const curP = getAxisPos(axis.angleDeg, rCurrent);
+
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', outerP.x.toFixed(1));
+              line.setAttribute('y1', outerP.y.toFixed(1));
+              line.setAttribute('x2', curP.x.toFixed(1));
+              line.setAttribute('y2', curP.y.toFixed(1));
+              line.setAttribute('stroke', spiderChartColor);
+              line.setAttribute('stroke-width', '2.5');
+              line.setAttribute('stroke-dasharray', '4,3');
+              line.setAttribute('stroke-linecap', 'round');
+              overdriveGroup.appendChild(line);
+
+              for (let t = 4; t <= Math.floor(st.val); t++) {
+                const rTick = rCenterHex + (t / 3) * (rOuter - rCenterHex);
+                const pt = getAxisPos(axis.angleDeg, rTick);
+                const perpRad = ((axis.angleDeg + 90) * Math.PI) / 180;
+                const tickLen = 6;
+                const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tick.setAttribute('x1', (pt.x + tickLen * Math.cos(perpRad)).toFixed(1));
+                tick.setAttribute('y1', (pt.y + tickLen * Math.sin(perpRad)).toFixed(1));
+                tick.setAttribute('x2', (pt.x - tickLen * Math.cos(perpRad)).toFixed(1));
+                tick.setAttribute('y2', (pt.y - tickLen * Math.sin(perpRad)).toFixed(1));
+                tick.setAttribute('stroke', spiderChartColor);
+                tick.setAttribute('stroke-width', '2.2');
+                tick.setAttribute('stroke-linecap', 'round');
+                overdriveGroup.appendChild(tick);
+              }
+            }
+          });
+        }
+
+        if (isMoving) {
+          animFrameId = requestAnimationFrame(step);
+        } else {
+          animFrameId = null;
+        }
+      }
+
+      animFrameId = requestAnimationFrame(step);
+    }
+
+    function initSpiderNodes() {
+      const nodesGroup = document.getElementById('spiderNodes');
+      nodesGroup.innerHTML = '';
+
+      spiderAxes.forEach(axis => {
+        const val = stats[axis.key];
+        const rCurrent = rCenterHex + (val / maxVal) * (rOuter - rCenterHex);
+        const pt = getAxisPos(axis.angleDeg, rCurrent);
+
+        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        handle.setAttribute('cx', pt.x);
+        handle.setAttribute('cy', pt.y);
+        handle.setAttribute('class', 'spider-node' + (val > 3 ? ' overdrive' : ''));
+        handle.dataset.stat = axis.key;
+
+        handle.addEventListener('mousedown', (e) => startDragNode(e, axis.key));
+        handle.addEventListener('touchstart', (e) => startDragNode(e, axis.key), { passive: false });
+
+        nodesGroup.appendChild(handle);
+      });
+    }
+
+    let activeDragAxis = null;
+
+    function startDragNode(e, key) {
+      e.preventDefault();
+      activeDragAxis = key;
+      window.addEventListener('mousemove', onDragNode);
+      window.addEventListener('mouseup', endDragNode);
+      window.addEventListener('touchmove', onDragNode, { passive: false });
+      window.addEventListener('touchend', endDragNode);
+    }
+
+    function onDragNode(e) {
+      if (!activeDragAxis) return;
+      if (e.preventDefault) e.preventDefault();
+      const svg = document.getElementById('spiderSvg');
+      const rect = svg.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const svgX = ((clientX - rect.left) / rect.width) * 320;
+      const svgY = ((clientY - rect.top) / rect.height) * 320;
+
+      const dist = Math.hypot(svgX - cx, svgY - cy);
+      let newVal = Math.round(((dist - rCenterHex) / (rOuter - rCenterHex)) * 3);
+      // Allow dragging too far out to level 7!
+      newVal = Math.max(0, Math.min(7, newVal));
+
+      const oldVal = stats[activeDragAxis];
+      if (newVal !== oldVal) {
+        stats[activeDragAxis] = newVal;
+
+        // If dragged into the "too far" zone (> 3) outwards, break off extra stars / skulls!
+        if (newVal > 3 && newVal > oldVal) {
+          const fromLvl = Math.max(4, oldVal + 1);
+          for (let lvl = fromLvl; lvl <= newVal; lvl++) {
+            breakOffStarOrSkull(activeDragAxis, lvl);
+          }
+        }
+
+        updateAll();
+      }
+    }
+
+    function endDragNode() {
+      activeDragAxis = null;
+      window.removeEventListener('mousemove', onDragNode);
+      window.removeEventListener('mouseup', endDragNode);
+      window.removeEventListener('touchmove', onDragNode);
+      window.removeEventListener('touchend', endDragNode);
+    }
+
+    function clearBrokenStars() {
+      const container = document.getElementById('brokenStarsContainer');
+      if (container) container.innerHTML = '';
+      const cracks = document.getElementById('spiderCracks');
+      if (cracks) cracks.innerHTML = '';
+    }
+
+    function triggerChartCrack(svgX, svgY, angleDeg) {
+      const crackGroup = document.getElementById('spiderCracks');
+      if (!crackGroup) return;
+      const rad = (angleDeg * Math.PI) / 180;
+      const perp = rad + Math.PI / 2;
+      const p1x = (svgX - 6 * Math.cos(rad) + 5 * Math.cos(perp)).toFixed(1);
+      const p1y = (svgY - 6 * Math.sin(rad) + 5 * Math.sin(perp)).toFixed(1);
+      const p2x = (svgX + 2 * Math.cos(rad) - 5 * Math.cos(perp)).toFixed(1);
+      const p2y = (svgY + 2 * Math.sin(rad) - 5 * Math.sin(perp)).toFixed(1);
+      const p3x = (svgX + 8 * Math.cos(rad) + 4 * Math.cos(perp)).toFixed(1);
+      const p3y = (svgY + 8 * Math.sin(rad) + 4 * Math.sin(perp)).toFixed(1);
+
+      const crack = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      crack.setAttribute('points', `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`);
+      crack.setAttribute('stroke', '#111111');
+      crack.setAttribute('stroke-width', '3');
+      crack.setAttribute('stroke-linecap', 'round');
+      crack.setAttribute('stroke-linejoin', 'round');
+      crackGroup.appendChild(crack);
+
+      setTimeout(() => {
+        if (crack.parentNode) crack.remove();
+      }, 400);
+    }
+
+    function spawnComicCrack(x, y, isBones) {
+      const card = document.getElementById('statCard');
+      if (!card) return;
+      const comic = document.createElement('div');
+      comic.className = 'comic-crack-pop';
+      const words = isBones 
+        ? ['💀 CRACK!', '💀 SNAP!', 'TOO MANY BONES!', '💀 POP!'] 
+        : ['★ CRACK!', '★ SNAP!', '★ POP!', 'OFF THE CHARTS!', '★ OOPS!'];
+      comic.textContent = words[Math.floor(Math.random() * words.length)];
+      comic.style.left = `${x}px`;
+      comic.style.top = `${y}px`;
+      card.appendChild(comic);
+      setTimeout(() => {
+        if (comic.parentNode) comic.remove();
+      }, 750);
+    }
+
+    function breakOffStarOrSkull(axisKey, lvl) {
+      const axis = spiderAxes.find(a => a.key === axisKey);
+      if (!axis) return;
+      const isBones = (axisKey === 'b');
+
+      const card = document.getElementById('statCard');
+      const container = document.getElementById('brokenStarsContainer');
+      const svg = document.getElementById('spiderSvg');
+      if (!card || !container || !svg) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+
+      // Radius in SVG coordinates
+      const rBreak = rCenterHex + (lvl / 3) * (rOuter - rCenterHex);
+      const ptSvg = getAxisPos(axis.angleDeg, rBreak);
+
+      // Convert SVG coordinates to card container coordinates
+      const startX = (svgRect.left - cardRect.left) + (ptSvg.x / 320) * svgRect.width;
+      const startY = (svgRect.top - cardRect.top) + (ptSvg.y / 320) * svgRect.height;
+
+      spawnComicCrack(startX, startY, isBones);
+      triggerChartCrack(ptSvg.x, ptSvg.y, axis.angleDeg);
+      triggerJellyWobble(svg);
+
+      const el = document.createElement('div');
+      el.className = 'broken-item ' + (isBones ? 'broken-skull' : 'broken-star');
+      el.title = isBones ? 'broken off skull! (click to kick)' : 'broken off star! (click to kick)';
+      
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svgEl.setAttribute('viewBox', '0 0 24 24');
+      svgEl.setAttribute('width', '32');
+      svgEl.setAttribute('height', '32');
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', isBones ? '#skull-broken' : '#star-broken');
+      svgEl.appendChild(use);
+      el.appendChild(svgEl);
+
+      container.appendChild(el);
+
+      const rad = (axis.angleDeg * Math.PI) / 180;
+      const speed = 7.5 + Math.random() * 4.5;
+      const tang = (Math.random() - 0.5) * 5;
+      
+      let x = startX - 16;
+      let y = startY - 16;
+      let vx = Math.cos(rad) * speed - Math.sin(rad) * tang;
+      let vy = Math.sin(rad) * speed + Math.cos(rad) * tang - (3 + Math.random() * 3);
+      let rot = Math.random() * 360;
+      let vRot = (Math.random() - 0.5) * 24;
+      let isResting = false;
+
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.transform = `rotate(${rot}deg)`;
+
+      function kick() {
+        vx = (Math.random() - 0.5) * 8;
+        vy = -7 - Math.random() * 4;
+        vRot = (Math.random() - 0.5) * 20;
+        if (isResting) {
+          isResting = false;
+          requestAnimationFrame(physicsStep);
+        }
+      }
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        kick();
+      });
+
+      function physicsStep() {
+        if (isResting) return;
+
+        vy += 0.58; // Gravity
+        vx *= 0.985;
+        x += vx;
+        y += vy;
+        rot += vRot;
+
+        const floorY = card.clientHeight - 42;
+        const leftWall = 10;
+        const rightWall = card.clientWidth - 42;
+
+        // Bounce on card bottom floor
+        if (y >= floorY) {
+          y = floorY;
+          vy = -vy * 0.44;
+          vx *= 0.72;
+          vRot *= 0.6;
+
+          if (Math.abs(vy) < 0.65 && Math.abs(vx) < 0.3) {
+            isResting = true;
+            el.style.left = `${x}px`;
+            el.style.top = `${floorY}px`;
+            el.style.transform = `rotate(${rot}deg)`;
+            return;
+          }
+        }
+
+        // Bounce on walls
+        if (x <= leftWall) {
+          x = leftWall;
+          vx = -vx * 0.5;
+        } else if (x >= rightWall) {
+          x = rightWall;
+          vx = -vx * 0.5;
+        }
+
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.transform = `rotate(${rot}deg)`;
+
+        requestAnimationFrame(physicsStep);
+      }
+
+      requestAnimationFrame(physicsStep);
+    }
+
+    function triggerJellyWobble(el) {
+      if (!el || el.classList.contains('is-wobbling')) return;
+      el.classList.add('is-wobbling');
+      const cleanup = () => el.classList.remove('is-wobbling');
+      el.addEventListener('animationend', cleanup, { once: true });
+      el.addEventListener('animationcancel', cleanup, { once: true });
+    }
+
+    function bounceJellyWobble(el) {
+      if (!el) return;
+      el.classList.remove('is-wobbling');
+      void el.offsetWidth;
+      el.classList.add('is-wobbling');
+      const cleanup = () => el.classList.remove('is-wobbling');
+      el.addEventListener('animationend', cleanup, { once: true });
+      el.addEventListener('animationcancel', cleanup, { once: true });
+    }
+
+    function updateAll() {
+      renderRatingIcons();
+      startSpiderAnimation();
+    }
+
+    const titleBadgeEl = document.getElementById('titleBadge');
+    if (titleBadgeEl) {
+      titleBadgeEl.addEventListener('mouseenter', () => triggerJellyWobble(titleBadgeEl));
+      titleBadgeEl.addEventListener('click', () => bounceJellyWobble(titleBadgeEl));
+    }
+
+    document.querySelectorAll('.stat-row').forEach(row => {
+      const letter = row.querySelector('.bubble-letter');
+      if (!letter) return;
+      row.addEventListener('mouseenter', () => triggerJellyWobble(letter));
+      letter.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const key = row.dataset.stat;
+        stats[key] = (stats[key] + 1) % 4;
+        bounceJellyWobble(letter);
+        updateAll();
+      });
+    });
+
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let currentTool = 'pencil';
+    let currentColor = '#000000';
+    let currentBrushSize = 7;
+    let stampMode = null;
+    let hasUserDrawn = false;
+
+    const memCanvas = document.createElement('canvas');
+    const memCtx = memCanvas.getContext('2d');
+    memCanvas.width = 1200;
+    memCanvas.height = 700;
+    memCtx.fillStyle = '#ffffff';
+    memCtx.fillRect(0, 0, memCanvas.width, memCanvas.height);
+
+    const history = [];
+    const MAX_HISTORY = 25;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      renderMemCanvas();
+    }
+
+    function renderMemCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(memCanvas, 0, 0, memCanvas.width, memCanvas.height, 0, 0, rect.width, rect.height);
+      const hint = document.getElementById('canvasHint');
+      if (hint) {
+        hint.style.opacity = hasUserDrawn ? '0' : '0.85';
+      }
+    }
+
+    function saveState() {
+      if (history.length >= MAX_HISTORY) history.shift();
+      history.push(memCtx.getImageData(0, 0, memCanvas.width, memCanvas.height));
+    }
+
+    function restoreUndo() {
+      if (history.length > 1) {
+        history.pop();
+        const prev = history[history.length - 1];
+        memCtx.putImageData(prev, 0, 0);
+        renderMemCanvas();
+        showToast('undone! ↩️');
+      }
+    }
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const scaleX = memCanvas.width / rect.width;
+      const scaleY = memCanvas.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    let lastX = 0, lastY = 0;
+
+    function floodFill(startX, startY, fillColorHex) {
+      startX = Math.floor(startX);
+      startY = Math.floor(startY);
+      const w = memCanvas.width;
+      const h = memCanvas.height;
+      if (startX < 0 || startX >= w || startY < 0 || startY >= h) return;
+
+      const imgData = memCtx.getImageData(0, 0, w, h);
+      const data = imgData.data;
+
+      let hex = fillColorHex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      const fillR = parseInt(hex.substring(0, 2), 16);
+      const fillG = parseInt(hex.substring(2, 4), 16);
+      const fillB = parseInt(hex.substring(4, 6), 16);
+      const fillA = 255;
+
+      const startIndex = (startY * w + startX) * 4;
+      const targetR = data[startIndex];
+      const targetG = data[startIndex + 1];
+      const targetB = data[startIndex + 2];
+      const targetA = data[startIndex + 3];
+
+      // If already same color, return
+      if (Math.abs(targetR - fillR) <= 3 &&
+          Math.abs(targetG - fillG) <= 3 &&
+          Math.abs(targetB - fillB) <= 3 &&
+          Math.abs(targetA - fillA) <= 3) {
+        return;
+      }
+
+      function matchesTarget(idx) {
+        const dr = data[idx] - targetR;
+        const dg = data[idx + 1] - targetG;
+        const db = data[idx + 2] - targetB;
+        const da = data[idx + 3] - targetA;
+        return (dr * dr + dg * dg + db * db + da * da) <= 1800;
+      }
+
+      function colorPixel(idx) {
+        data[idx] = fillR;
+        data[idx + 1] = fillG;
+        data[idx + 2] = fillB;
+        data[idx + 3] = fillA;
+      }
+
+      const stack = [startX, startY];
+      const visited = new Uint8Array(w * h);
+
+      while (stack.length > 0) {
+        const y = stack.pop();
+        let x = stack.pop();
+
+        let idx = (y * w + x) * 4;
+        let pIdx = y * w + x;
+
+        while (x >= 0 && matchesTarget(idx) && !visited[pIdx]) {
+          x--;
+          idx -= 4;
+          pIdx--;
+        }
+        x++;
+        idx += 4;
+        pIdx++;
+
+        let spanAbove = false;
+        let spanBelow = false;
+
+        while (x < w && matchesTarget(idx) && !visited[pIdx]) {
+          visited[pIdx] = 1;
+          colorPixel(idx);
+
+          if (y > 0) {
+            const aboveIdx = idx - w * 4;
+            const aboveP = pIdx - w;
+            if (matchesTarget(aboveIdx) && !visited[aboveP]) {
+              if (!spanAbove) {
+                stack.push(x, y - 1);
+                spanAbove = true;
+              }
+            } else {
+              spanAbove = false;
+            }
+          }
+
+          if (y < h - 1) {
+            const belowIdx = idx + w * 4;
+            const belowP = pIdx + w;
+            if (matchesTarget(belowIdx) && !visited[belowP]) {
+              if (!spanBelow) {
+                stack.push(x, y + 1);
+                spanBelow = true;
+              }
+            } else {
+              spanBelow = false;
+            }
+          }
+
+          x++;
+          idx += 4;
+          pIdx++;
+        }
+      }
+
+      memCtx.putImageData(imgData, 0, 0);
+      hasUserDrawn = true;
+      renderMemCanvas();
+      saveState();
+      showToast('filled area! 🪣');
+    }
+
+    function startDraw(e) {
+      if (e.target !== canvas) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e);
+
+      hasUserDrawn = true;
+
+      if (stampMode) {
+        placeSticker(pos.x, pos.y, stampMode);
+        return;
+      }
+
+      if (currentTool === 'fill') {
+        floodFill(pos.x, pos.y, currentColor);
+        return;
+      }
+
+      isDrawing = true;
+      lastX = pos.x;
+      lastY = pos.y;
+      
+      const drawSize = currentBrushSize * (memCanvas.width / 500);
+      memCtx.beginPath();
+      memCtx.arc(lastX, lastY, drawSize / 2, 0, Math.PI * 2);
+      memCtx.fillStyle = (currentTool === 'eraser') ? '#ffffff' : currentColor;
+      memCtx.fill();
+      renderMemCanvas();
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e);
+      const drawSize = currentBrushSize * (memCanvas.width / 500);
+
+      memCtx.beginPath();
+      memCtx.moveTo(lastX, lastY);
+      memCtx.lineTo(pos.x, pos.y);
+      memCtx.strokeStyle = (currentTool === 'eraser') ? '#ffffff' : currentColor;
+      memCtx.lineWidth = drawSize;
+      memCtx.lineCap = 'round';
+      memCtx.lineJoin = 'round';
+      memCtx.stroke();
+
+      lastX = pos.x;
+      lastY = pos.y;
+      renderMemCanvas();
+    }
+
+    function stopDraw(e) {
+      if (isDrawing) {
+        isDrawing = false;
+        saveState();
+      }
+    }
+
+    function updateCanvasCursor() {
+      const frame = document.getElementById('canvasFrame');
+      if (!frame) return;
+      frame.classList.remove('cursor-pencil', 'cursor-eraser', 'cursor-stamp', 'cursor-fill');
+      if (stampMode) {
+        frame.classList.add('cursor-stamp');
+      } else if (currentTool === 'eraser') {
+        frame.classList.add('cursor-eraser');
+      } else if (currentTool === 'fill') {
+        frame.classList.add('cursor-fill');
+      } else {
+        frame.classList.add('cursor-pencil');
+      }
+    }
+
+    function placeSticker(x, y, stampKey) {
+      memCtx.save();
+      const stampColor = (currentColor === '#ffffff') ? '#000000' : currentColor;
+
+      if (stampKey === 'halo') {
+        // Retro glowing angel halo floating above
+        memCtx.beginPath();
+        memCtx.ellipse(x, y, 40, 14, -0.06, 0, Math.PI * 2);
+        memCtx.lineWidth = 6;
+        memCtx.strokeStyle = (stampColor === '#000000' || stampColor === '#111111') ? '#ffe600' : stampColor;
+        memCtx.stroke();
+
+        memCtx.beginPath();
+        memCtx.ellipse(x, y, 40, 14, -0.06, 0, Math.PI * 2);
+        memCtx.lineWidth = 1.8;
+        memCtx.strokeStyle = '#000000';
+        memCtx.stroke();
+
+        // Inner glint
+        memCtx.beginPath();
+        memCtx.ellipse(x - 5, y - 2, 32, 9, -0.06, Math.PI * 0.9, Math.PI * 1.6);
+        memCtx.lineWidth = 2.2;
+        memCtx.strokeStyle = '#ffffff';
+        memCtx.stroke();
+
+      } else if (stampKey === 'horns') {
+        // Retro devil horns
+        const hornFill = (stampColor === '#000000' || stampColor === '#111111') ? '#ed1b24' : stampColor;
+        memCtx.fillStyle = hornFill;
+        memCtx.strokeStyle = '#000000';
+        memCtx.lineWidth = 3;
+        memCtx.lineJoin = 'round';
+        // Left horn
+        memCtx.beginPath();
+        memCtx.moveTo(x - 32, y + 14);
+        memCtx.quadraticCurveTo(x - 34, y - 8, x - 48, y - 24);
+        memCtx.quadraticCurveTo(x - 24, y - 14, x - 16, y + 14);
+        memCtx.closePath();
+        memCtx.fill();
+        memCtx.stroke();
+        // Right horn
+        memCtx.beginPath();
+        memCtx.moveTo(x + 16, y + 14);
+        memCtx.quadraticCurveTo(x + 24, y - 14, x + 48, y - 24);
+        memCtx.quadraticCurveTo(x + 34, y - 8, x + 32, y + 14);
+        memCtx.closePath();
+        memCtx.fill();
+        memCtx.stroke();
+
+      } else if (stampKey === 'moustache') {
+        // Retro curled handlebar moustache
+        memCtx.fillStyle = stampColor;
+        memCtx.strokeStyle = '#000000';
+        memCtx.lineWidth = 3;
+        memCtx.lineJoin = 'round';
+        memCtx.beginPath();
+        memCtx.moveTo(x, y);
+        memCtx.bezierCurveTo(x - 14, y - 12, x - 40, y - 10, x - 52, y - 4);
+        memCtx.bezierCurveTo(x - 60, y - 1, x - 58, y + 9, x - 48, y + 7);
+        memCtx.bezierCurveTo(x - 38, y + 4, x - 24, y + 13, x, y + 6);
+        memCtx.bezierCurveTo(x + 24, y + 13, x + 38, y + 4, x + 48, y + 7);
+        memCtx.bezierCurveTo(x + 58, y + 9, x + 60, y - 1, x + 52, y - 4);
+        memCtx.bezierCurveTo(x + 40, y - 10, x + 14, y - 12, x, y);
+        memCtx.closePath();
+        memCtx.fill();
+        memCtx.stroke();
+
+      } else {
+        // Classic unicode symbols: star, heart, sparkle, skull, note
+        const glyphMap = {
+          'star': '★',
+          'heart': '♥',
+          'sparkle': '✦',
+          'skull': '☠',
+          'note': '♪'
+        };
+        const glyph = glyphMap[stampKey] || stampKey;
+        memCtx.font = 'bold 54px monospace, "MS Gothic", "Segoe UI Symbol", sans-serif';
+        memCtx.textAlign = 'center';
+        memCtx.textBaseline = 'middle';
+
+        // Outer dark stroke for crisp retro outline
+        memCtx.lineWidth = 4.5;
+        memCtx.lineJoin = 'round';
+        memCtx.strokeStyle = '#000000';
+        memCtx.strokeText(glyph, x, y);
+
+        // Color fill from palette
+        memCtx.fillStyle = stampColor;
+        memCtx.fillText(glyph, x, y);
+      }
+
+      memCtx.restore();
+      renderMemCanvas();
+      saveState();
+      showToast(`placed ${stampKey} stamp!`);
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    window.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    window.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', stopDraw);
+
+    document.getElementById('toolPencil').addEventListener('click', function() {
+      currentTool = 'pencil';
+      stampMode = null;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sticker-stamp').forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+      updateCanvasCursor();
+    });
+
+    document.getElementById('toolFill').addEventListener('click', function() {
+      currentTool = 'fill';
+      stampMode = null;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sticker-stamp').forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+      updateCanvasCursor();
+      showToast('fill bucket selected! 🪣');
+    });
+
+    document.getElementById('toolEraser').addEventListener('click', function() {
+      currentTool = 'eraser';
+      stampMode = null;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sticker-stamp').forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+      updateCanvasCursor();
+    });
+
+    document.getElementById('toolUndo').addEventListener('click', restoreUndo);
+
+    document.getElementById('toolClearCanvas').addEventListener('click', function() {
+      memCtx.fillStyle = '#ffffff';
+      memCtx.fillRect(0, 0, memCanvas.width, memCanvas.height);
+      hasUserDrawn = false;
+      renderMemCanvas();
+      saveState();
+      showToast('canvas cleared! 🧹');
+    });
+
+    document.querySelectorAll('.brush-size-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.brush-size-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentBrushSize = parseInt(this.dataset.size);
+      });
+    });
+
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', function() {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+        currentColor = this.dataset.color;
+        if (!stampMode) {
+          if (currentTool !== 'fill') {
+            currentTool = 'pencil';
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('toolPencil').classList.add('active');
+          }
+        }
+        updateCanvasCursor();
+      });
+    });
+
+    // Spider chart recoloring menu listeners
+    document.querySelectorAll('.spider-swatch').forEach(sw => {
+      sw.addEventListener('click', function() {
+        setSpiderColor(this.dataset.color);
+        showToast('spider web recolored! 🕸️');
+      });
+    });
+
+    const spiderCustomColorInput = document.getElementById('spiderCustomColor');
+    if (spiderCustomColorInput) {
+      spiderCustomColorInput.addEventListener('input', function() {
+        setSpiderColor(this.value);
+      });
+    }
+
+    document.querySelectorAll('.sticker-stamp').forEach(stamp => {
+      stamp.addEventListener('click', function() {
+        const stampKey = this.dataset.stamp;
+        if (stampMode === stampKey) {
+          stampMode = null;
+          this.classList.remove('active');
+          document.getElementById('toolPencil').classList.add('active');
+          currentTool = 'pencil';
+          showToast('stamp unequipped');
+        } else {
+          document.querySelectorAll('.sticker-stamp').forEach(s => s.classList.remove('active'));
+          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          stampMode = stampKey;
+          showToast(`click canvas to stamp ${stampKey}!`);
+        }
+        updateCanvasCursor();
+      });
+    });
+
+    // Toolbar and stamps drawer collapse/expand toggles
+    function toggleToolsMenu() {
+      const toolsEl = document.getElementById('canvasTools');
+      if (!toolsEl) return;
+      toolsEl.classList.toggle('is-minimized');
+      const isMin = toolsEl.classList.contains('is-minimized');
+      const icon = toolsEl.querySelector('.collapse-icon');
+      if (icon) icon.textContent = isMin ? '+' : '-';
+    }
+
+    function toggleStampsMenu() {
+      const drawerEl = document.getElementById('stickersDrawer');
+      if (!drawerEl) return;
+      drawerEl.classList.toggle('is-minimized');
+      const isMin = drawerEl.classList.contains('is-minimized');
+      const icon = drawerEl.querySelector('.collapse-icon');
+      if (icon) icon.textContent = isMin ? '+' : '-';
+    }
+
+    const btnToggleTools = document.getElementById('btnToggleTools');
+    if (btnToggleTools) {
+      btnToggleTools.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleToolsMenu();
+      });
+    }
+
+    const canvasToolsEl = document.getElementById('canvasTools');
+    if (canvasToolsEl) {
+      canvasToolsEl.addEventListener('click', (e) => {
+        if (canvasToolsEl.classList.contains('is-minimized')) {
+          toggleToolsMenu();
+        }
+      });
+    }
+
+    const btnToggleStamps = document.getElementById('btnToggleStamps');
+    if (btnToggleStamps) {
+      btnToggleStamps.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleStampsMenu();
+      });
+    }
+
+    const stickersDrawerEl = document.getElementById('stickersDrawer');
+    if (stickersDrawerEl) {
+      stickersDrawerEl.addEventListener('click', (e) => {
+        if (stickersDrawerEl.classList.contains('is-minimized')) {
+          toggleStampsMenu();
+        }
+      });
+    }
+
+    // Windows 95 titlebar interactive buttons
+    const winMinBtn = document.getElementById('winMinimizeBtn');
+    if (winMinBtn) {
+      winMinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleToolsMenu();
+        toggleStampsMenu();
+      });
+    }
+
+    const winMaxBtn = document.getElementById('winMaximizeBtn');
+    if (winMaxBtn) {
+      winMaxBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const win = document.getElementById('win95DrawingWindow');
+        if (win) bounceJellyWobble(win);
+      });
+    }
+
+    const winCloseBtn = document.getElementById('winCloseBtn');
+    if (winCloseBtn) {
+      winCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('toolClearCanvas').click();
+      });
+    }
+
+    // Image Upload directly from canvas toolbar
+    document.getElementById('btnUploadTrigger').addEventListener('click', () => {
+      document.getElementById('imageLoader').click();
+    });
+
+    document.getElementById('imageLoader').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const hRatio = memCanvas.width / img.width;
+          const vRatio = memCanvas.height / img.height;
+          const ratio = Math.min(hRatio, vRatio);
+          const drawW = img.width * ratio;
+          const drawH = img.height * ratio;
+          const centerShiftX = (memCanvas.width - drawW) / 2;
+          const centerShiftY = (memCanvas.height - drawH) / 2;
+
+          memCtx.fillStyle = '#ffffff';
+          memCtx.fillRect(0, 0, memCanvas.width, memCanvas.height);
+          memCtx.drawImage(img, 0, 0, img.width, img.height,
+                           centerShiftX, centerShiftY, drawW, drawH);
+          hasUserDrawn = true;
+          renderMemCanvas();
+          saveState();
+          showToast('pic uploaded! doodle over it 🎨');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Randomize Button
+    const randomNames = [
+      "scrunkly", "gloop", "sir wobbles", "blorbo", "captain splorp",
+      "professor peanuts", "bingus", "lil' calamity", "puffball",
+      "stinky cheese", "lord crumbles", "noodle boy", "goober", "spamton g.",
+      "the creature", "mister squish", "pancake", "worm dude"
+    ];
+
+    const randomSkills = [
+      "can fit inside teacup", "crimes & mischief", "bites ankles silently",
+      "sleeping 22 hours daily", "100% immune to consequences",
+      "squishes under doorframes", "hypnotic purring", "can detonate like grenade",
+      "understands 12 dead languages", "cannot be perceived by radar",
+      "professional soup tester", "steals shiny pebbles"
+    ];
+
+    document.getElementById('btnRandom').addEventListener('click', () => {
+      const card = document.getElementById('statCard');
+      card.style.animation = 'none';
+      card.offsetHeight;
+      card.style.animation = 'card-squish 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+      const name = randomNames[Math.floor(Math.random() * randomNames.length)];
+      const skill = randomSkills[Math.floor(Math.random() * randomSkills.length)];
+      document.getElementById('inputName').value = name;
+      document.getElementById('inputSkill').value = skill;
+
+      clearBrokenStars();
+      ['c', 'e', 's1', 's2', 'b', 'm'].forEach(k => {
+        // 90% normal 0..3, 10% chance to roll a 4 or 5 for a hilarious break-off surprise!
+        if (Math.random() < 0.1) {
+          stats[k] = 4;
+          setTimeout(() => breakOffStarOrSkull(k, 4), 200);
+        } else {
+          stats[k] = Math.floor(Math.random() * 4);
+        }
+      });
+
+      showToast('🎲 new silly blorbo rolled!');
+      updateAll();
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      document.getElementById('inputName').value = '';
+      document.getElementById('inputSkill').value = '';
+      clearBrokenStars();
+      ['c', 'e', 's1', 's2', 'b', 'm'].forEach(k => stats[k] = 0);
+      memCtx.fillStyle = '#ffffff';
+      memCtx.fillRect(0, 0, memCanvas.width, memCanvas.height);
+      hasUserDrawn = false;
+      renderMemCanvas();
+      saveState();
+      showToast('reset to blank template! 🧹');
+      updateAll();
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function renderFullCardCanvas() {
+      const exportCanvas = document.createElement('canvas');
+      const ew = 1000;
+      const eh = 920;
+      exportCanvas.width = ew;
+      exportCanvas.height = eh;
+      const ectx = exportCanvas.getContext('2d');
+
+      ectx.fillStyle = '#ffffff';
+      ectx.fillRect(0, 0, ew, eh);
+
+      ectx.lineWidth = 5;
+      ectx.strokeStyle = '#111111';
+      ectx.strokeRect(15, 15, ew - 30, eh - 30);
+
+      ectx.font = 'bold 32px "Patrick Hand", "Comic Sans MS", cursive, sans-serif';
+      ectx.fillStyle = '#111111';
+      ectx.textBaseline = 'top';
+
+      const nameVal = document.getElementById('inputName').value.trim() || '__________';
+      const skillVal = document.getElementById('inputSkill').value.trim() || '__________';
+
+      ectx.fillText('name: ' + nameVal, 40, 36);
+      ectx.beginPath();
+      ectx.moveTo(40, 75);
+      ectx.lineTo(440, 75);
+      ectx.strokeStyle = '#999999';
+      ectx.lineWidth = 3;
+      ectx.stroke();
+
+      ectx.fillText('skill: ' + skillVal, 480, 36);
+      ectx.beginPath();
+      ectx.moveTo(480, 75);
+      ectx.lineTo(950, 75);
+      ectx.stroke();
+
+      const portraitBoxX = 40;
+      const portraitBoxY = 95;
+      const portraitBoxW = 920;
+      const portraitBoxH = 380;
+
+      ectx.drawImage(memCanvas, 0, 0, memCanvas.width, memCanvas.height,
+                     portraitBoxX, portraitBoxY, portraitBoxW, portraitBoxH);
+      ectx.lineWidth = 3.5;
+      ectx.strokeStyle = '#222222';
+      ectx.strokeRect(portraitBoxX, portraitBoxY, portraitBoxW, portraitBoxH);
+
+      const statItems = [
+        { key: 'c', label: 'chuckability:', badge: 'c', color: colors.c, isBones: false },
+        { key: 'e', label: 'engaging:', badge: 'e', color: colors.e, isBones: false },
+        { key: 's1', label: 'squishiness:', badge: 's', color: colors.s1, isBones: false },
+        { key: 's2', label: 'splorpability:', badge: 's', color: colors.s2, isBones: false },
+        { key: 'b', label: 'bones:', badge: 'b', color: colors.b, isBones: true },
+        { key: 'm', label: 'media literacy:', badge: 'm', color: colors.m, isBones: false }
+      ];
+
+      let startY = 515;
+      const rowGap = 60;
+
+      statItems.forEach((item, idx) => {
+        const rowY = startY + idx * rowGap;
+
+        ectx.font = '900 36px "DynaPuff", "Shantell Sans", "Comic Sans MS", sans-serif';
+        ectx.textAlign = 'center';
+        ectx.textBaseline = 'middle';
+        ectx.lineWidth = 5;
+        ectx.strokeStyle = '#111';
+        ectx.strokeText(item.badge, 58, rowY + 20);
+        ectx.fillStyle = item.color;
+        ectx.fillText(item.badge, 58, rowY + 20);
+
+        ectx.setLineDash([4, 4]);
+        ectx.strokeStyle = '#a8a8a8';
+        ectx.lineWidth = 2;
+        ectx.beginPath();
+        ectx.moveTo(85, rowY + 20);
+        ectx.lineTo(135, rowY + 20);
+        ectx.stroke();
+        ectx.setLineDash([]);
+
+        ectx.font = 'bold 24px "Patrick Hand", "Comic Sans MS", cursive';
+        ectx.fillStyle = '#111';
+        ectx.textAlign = 'left';
+        ectx.fillText(item.label, 145, rowY + 20);
+
+        const currentVal = stats[item.key];
+        const iconStartX = 410;
+        for (let star = 1; star <= Math.min(3, currentVal); star++) {
+          const ix = iconStartX + (star - 1) * 44;
+          const iy = rowY + 6;
+          drawExportIcon(ectx, ix, iy, true, item.isBones, false);
+        }
+        for (let star = currentVal + 1; star <= 3; star++) {
+          const ix = iconStartX + (star - 1) * 44;
+          const iy = rowY + 6;
+          drawExportIcon(ectx, ix, iy, false, item.isBones, false);
+        }
+        if (currentVal > 3) {
+          for (let star = 4; star <= Math.min(6, currentVal); star++) {
+            const ix = iconStartX + (star - 1) * 44;
+            const iy = rowY + 6;
+            drawExportIcon(ectx, ix, iy, true, item.isBones, true);
+          }
+        }
+      });
+
+      const scX = 770;
+      const scY = 675;
+      const scOuterR = 145;
+      const scCenterR = 30;
+
+      ectx.beginPath();
+      spiderAxes.forEach((axis, i) => {
+        const rad = (axis.angleDeg * Math.PI) / 180;
+        const px = scX + scOuterR * Math.cos(rad);
+        const py = scY + scOuterR * Math.sin(rad);
+        if (i === 0) ectx.moveTo(px, py);
+        else ectx.lineTo(px, py);
+      });
+      ectx.closePath();
+      ectx.lineWidth = 3;
+      ectx.strokeStyle = '#b0b0b0';
+      ectx.stroke();
+
+      spiderAxes.forEach(axis => {
+        const rad = (axis.angleDeg * Math.PI) / 180;
+        const outerPx = scX + scOuterR * Math.cos(rad);
+        const outerPy = scY + scOuterR * Math.sin(rad);
+        const centerPx = scX + scCenterR * Math.cos(rad);
+        const centerPy = scY + scCenterR * Math.sin(rad);
+
+        ectx.beginPath();
+        ectx.moveTo(centerPx, centerPy);
+        ectx.lineTo(outerPx, outerPy);
+        ectx.lineWidth = 3;
+        ectx.strokeStyle = '#111';
+        ectx.stroke();
+
+        for (let t = 1; t <= 3; t++) {
+          const rTick = scCenterR + (t / 3) * (scOuterR - scCenterR);
+          const tx = scX + rTick * Math.cos(rad);
+          const ty = scY + rTick * Math.sin(rad);
+          const perp = rad + Math.PI / 2;
+          const tlen = 7;
+          ectx.beginPath();
+          ectx.moveTo(tx + tlen * Math.cos(perp), ty + tlen * Math.sin(perp));
+          ectx.lineTo(tx - tlen * Math.cos(perp), ty - tlen * Math.sin(perp));
+          ectx.stroke();
+        }
+
+        ectx.beginPath();
+        ectx.arc(outerPx, outerPy, 5, 0, Math.PI * 2);
+        ectx.fillStyle = '#111';
+        ectx.fill();
+
+        const labelDist = scOuterR + 26;
+        const lx = scX + labelDist * Math.cos(rad);
+        const ly = scY + labelDist * Math.sin(rad);
+
+        ectx.font = '900 34px "DynaPuff", "Shantell Sans", "Comic Sans MS", sans-serif';
+        ectx.textAlign = 'center';
+        ectx.textBaseline = 'middle';
+        ectx.strokeStyle = '#111';
+        ectx.lineWidth = 5;
+        ectx.strokeText(axis.label, lx, ly);
+        ectx.fillStyle = axis.color;
+        ectx.fillText(axis.label, lx, ly);
+      });
+
+      ectx.beginPath();
+      spiderAxes.forEach((axis, i) => {
+        const val = stats[axis.key];
+        const rCurrent = scCenterR + (val / 3) * (scOuterR - scCenterR);
+        const rad = (axis.angleDeg * Math.PI) / 180;
+        const px = scX + rCurrent * Math.cos(rad);
+        const py = scY + rCurrent * Math.sin(rad);
+        if (i === 0) ectx.moveTo(px, py);
+        else ectx.lineTo(px, py);
+      });
+      ectx.closePath();
+      ectx.fillStyle = hexToRgba(spiderChartColor, 0.44);
+      ectx.fill();
+      ectx.lineWidth = 4;
+      ectx.strokeStyle = spiderChartColor;
+      ectx.stroke();
+
+      spiderAxes.forEach(axis => {
+        const val = stats[axis.key];
+        const rad = (axis.angleDeg * Math.PI) / 180;
+        const outerPx = scX + scOuterR * Math.cos(rad);
+        const outerPy = scY + scOuterR * Math.sin(rad);
+        const rCurrent = scCenterR + (val / 3) * (scOuterR - scCenterR);
+        const px = scX + rCurrent * Math.cos(rad);
+        const py = scY + rCurrent * Math.sin(rad);
+
+        if (val > 3) {
+          ectx.beginPath();
+          ectx.setLineDash([6, 4]);
+          ectx.moveTo(outerPx, outerPy);
+          ectx.lineTo(px, py);
+          ectx.lineWidth = 3;
+          ectx.strokeStyle = spiderChartColor;
+          ectx.stroke();
+          ectx.setLineDash([]);
+        }
+
+        ectx.beginPath();
+        ectx.arc(px, py, val > 3 ? 8.5 : 6.5, 0, Math.PI * 2);
+        ectx.fillStyle = val > 3 ? spiderChartColor : '#ffffff';
+        ectx.fill();
+        ectx.lineWidth = 3;
+        ectx.strokeStyle = val > 3 ? '#ffe600' : '#111';
+        ectx.stroke();
+      });
+
+      ectx.beginPath();
+      spiderAxes.forEach((axis, i) => {
+        const rad = (axis.angleDeg * Math.PI) / 180;
+        const px = scX + scCenterR * Math.cos(rad);
+        const py = scY + scCenterR * Math.sin(rad);
+        if (i === 0) ectx.moveTo(px, py);
+        else ectx.lineTo(px, py);
+      });
+      ectx.closePath();
+      ectx.fillStyle = '#111';
+      ectx.fill();
+
+      // Draw resting broken stars and skulls at the bottom of the card on export canvas!
+      const brokenEls = document.querySelectorAll('#brokenStarsContainer .broken-item');
+      if (brokenEls.length > 0) {
+        const cardEl = document.getElementById('statCard');
+        const cardW = cardEl ? cardEl.clientWidth : 860;
+        const cardH = cardEl ? cardEl.clientHeight : 800;
+        const scaleX = ew / cardW;
+        const scaleY = eh / cardH;
+
+        brokenEls.forEach(b => {
+          const bx = parseFloat(b.style.left) || 0;
+          const by = parseFloat(b.style.top) || 0;
+          const isB = b.classList.contains('broken-skull');
+          drawExportIcon(ectx, bx * scaleX, by * scaleY, true, isB, true);
+        });
+      }
+
+      return exportCanvas;
+    }
+
+    function drawExportIcon(ctx, x, y, isFilled, isBones, isBroken) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      if (isBroken) {
+        ctx.rotate(0.2);
+      }
+
+      if (isBones) {
+        ctx.beginPath();
+        ctx.moveTo(6, 13);
+        ctx.bezierCurveTo(6, 6, 9, 3, 14, 3);
+        ctx.bezierCurveTo(19, 3, 22, 6, 22, 13);
+        ctx.bezierCurveTo(22, 17, 19.5, 19, 18, 19);
+        ctx.lineTo(18, 24);
+        ctx.lineTo(10, 24);
+        ctx.lineTo(10, 19);
+        ctx.bezierCurveTo(8.5, 19, 6, 17, 6, 13);
+        ctx.closePath();
+        ctx.fillStyle = isFilled ? '#f5e8be' : '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#111';
+        ctx.stroke();
+
+        if (isBroken) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#111';
+          ctx.beginPath();
+          ctx.moveTo(8.5, 10.5); ctx.lineTo(12.5, 13.5);
+          ctx.moveTo(12.5, 10.5); ctx.lineTo(8.5, 13.5);
+          ctx.moveTo(15.5, 10.5); ctx.lineTo(19.5, 13.5);
+          ctx.moveTo(19.5, 10.5); ctx.lineTo(15.5, 13.5);
+          ctx.moveTo(12, 4); ctx.lineTo(14, 8); ctx.lineTo(10, 12); ctx.lineTo(15, 16); ctx.lineTo(12.5, 21);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.ellipse(10.5, 12, 2.2, 2.8, 0, 0, Math.PI * 2);
+          ctx.ellipse(17.5, 12, 2.2, 2.8, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.lineWidth = 1.3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(12.8, 20); ctx.lineTo(12.8, 23.5);
+        ctx.moveTo(15.2, 20); ctx.lineTo(15.2, 23.5);
+        ctx.stroke();
+
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(12, 2);
+        ctx.lineTo(15.09, 8.26);
+        ctx.lineTo(22, 9.27);
+        ctx.lineTo(17, 14.14);
+        ctx.lineTo(18.18, 21.02);
+        ctx.lineTo(12, 17.77);
+        ctx.lineTo(5.82, 21.02);
+        ctx.lineTo(7, 14.14);
+        ctx.lineTo(2, 9.27);
+        ctx.lineTo(8.91, 8.26);
+        ctx.closePath();
+
+        ctx.fillStyle = isFilled ? '#ffe600' : '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#111';
+        ctx.stroke();
+
+        if (isBroken) {
+          ctx.lineWidth = 2.4;
+          ctx.strokeStyle = '#111';
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(11, 2);
+          ctx.lineTo(13.5, 8);
+          ctx.lineTo(9.5, 13);
+          ctx.lineTo(14, 17);
+          ctx.lineTo(12, 21);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    document.getElementById('btnExport').addEventListener('click', () => {
+      showToast('rendering high-res card... 🖼️');
+      const exportCanvas = renderFullCardCanvas();
+      const nameVal = document.getElementById('inputName').value.trim() || 'blorbo';
+      const link = document.createElement('a');
+      const safeName = (nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'blorbo');
+      link.download = `${safeName}_stat_card.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+      showToast('card downloaded! 🎉');
+    });
+
+    document.getElementById('btnCopyClip').addEventListener('click', () => {
+      const exportCanvas = renderFullCardCanvas();
+      exportCanvas.toBlob(blob => {
+        if (!blob) {
+          showToast('could not create image blob 😿');
+          return;
+        }
+        navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]).then(() => {
+          showToast('copied card to clipboard! 📋 paste it anywhere!');
+        }).catch(err => {
+          showToast('clipboard access denied, try save png instead!');
+        });
+      });
+    });
+
+    // --- Init ---
+    window.addEventListener('load', () => {
+      initSpiderBase();
+      initSpiderNodes();
+      resizeCanvas();
+      saveState();
+      updateAll();
+      updateCanvasCursor();
+    });
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      startSpiderAnimation();
+    });
+
+  </script>
+</body>
+</html>

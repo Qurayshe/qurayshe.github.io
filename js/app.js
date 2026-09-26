@@ -71,6 +71,7 @@ class App {
       ai: (moduleId) => this.onAIActive(moduleId),
       motion: (demoId) => this.onMotionActive(demoId),
       resume: (filter) => this.onResumeActive(filter),
+      misc: (toolId) => this.onMiscActive(toolId),
       about: () => this.router.navigate('#home')
     });
 
@@ -147,22 +148,36 @@ class App {
     }
   }
 
+  onMiscActive(toolId) {
+    // Misc tools are standalone single-page apps embedded via iframe.
+    // Dynamically point the embed frame at the requested tool (default: blorbo).
+    const frame = document.getElementById('misc-embed-frame');
+    if (frame) {
+      const toolPath = toolId ? `./misc/${toolId}/index.html` : './misc/blorbo/index.html';
+      if (frame.getAttribute('src') !== toolPath) {
+        frame.setAttribute('src', toolPath);
+      }
+    }
+  }
+
   /* --------------------------------------------------------------------------
      Navbar Dropdown, Mobile Menu & Fullscreen Actions
      -------------------------------------------------------------------------- */
   bindNavbarInteractions() {
-    const dropdown = document.getElementById('nav-labs-dropdown');
-    const dropdownBtn = document.getElementById('btn-labs-dropdown');
-    const menuItems = document.querySelectorAll('.dropdown-item');
+    // Generic open/close binding for every nav dropdown (Labs & Curriculum, Misc, ...)
+    const navDropdowns = document.querySelectorAll('.nav-dropdown');
 
-    if (dropdown && dropdownBtn) {
+    navDropdowns.forEach((dropdown) => {
+      const dropdownBtn = dropdown.querySelector('.nav-dropdown-btn');
+      if (!dropdownBtn) return;
+
       dropdownBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = dropdown.classList.toggle('open');
         dropdownBtn.setAttribute('aria-expanded', String(isOpen));
       });
 
-      menuItems.forEach((item) => {
+      dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
         item.addEventListener('click', () => {
           dropdown.classList.remove('open');
           dropdownBtn.setAttribute('aria-expanded', 'false');
@@ -177,7 +192,7 @@ class App {
           dropdownBtn.setAttribute('aria-expanded', 'false');
         }
       });
-    }
+    });
 
     // Fullscreen Toggle Button
     const fsBtn = document.getElementById('btn-nav-fullscreen');

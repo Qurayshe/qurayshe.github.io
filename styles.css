@@ -326,6 +326,12 @@ a:hover {
   border: 1px solid rgba(168, 85, 247, 0.35);
 }
 
+.badge-misc {
+  background: rgba(52, 211, 153, 0.14);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
 .dropdown-item-info {
   display: flex;
   flex-direction: column;
@@ -535,6 +541,23 @@ a:hover {
 
 .app-section.active {
   display: block;
+}
+
+/* Misc Tools Section — standalone single-page apps embedded via iframe */
+.misc-embed-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 72px);
+  min-height: 640px;
+  border: none;
+  background: #f5f0e8;
+}
+
+@media (max-width: 900px) {
+  .misc-embed-frame {
+    height: calc(100vh - 56px);
+    min-height: 560px;
+  }
 }
 
 @keyframes fadeIn {

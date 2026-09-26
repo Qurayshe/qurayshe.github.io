@@ -22,6 +22,7 @@ export class Router {
     // 1. Update Navigation Bar Active State
     const labSections = ['systems', 'servers', 'ai', 'motion'];
     const isLabActive = labSections.includes(section);
+    const isMiscActive = section === 'misc';
 
     document.querySelectorAll('.nav-link').forEach((link) => {
       const href = link.getAttribute('href');
@@ -37,9 +38,15 @@ export class Router {
       labsDropdownBtn.classList.toggle('active', isLabActive);
     }
 
+    const miscDropdownBtn = document.getElementById('btn-misc-dropdown');
+    if (miscDropdownBtn) {
+      miscDropdownBtn.classList.toggle('active', isMiscActive);
+    }
+
     document.querySelectorAll('.dropdown-item').forEach((item) => {
       const href = item.getAttribute('href')?.replace('#', '');
-      item.classList.toggle('active', href === section);
+      // Match both plain routes (#systems) and nested routes (#misc/blorbo)
+      item.classList.toggle('active', href === section || href?.split('/')[0] === section);
     });
 
     // 2. Switch Visible Section Container
