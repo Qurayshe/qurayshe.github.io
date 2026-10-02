@@ -25,6 +25,16 @@ void process(std::span<const int> data) { ... }
 
 ---
 
+## 3. Buffer Passing Across Paradigms
+
+| Paradigm | How Contiguous Buffers are Passed | Pitfalls / Advantages |
+| :--- | :--- | :--- |
+| **CPL / C-Style C++** | `const char* str` (null-terminated) or `const int* buf, int len` | Out-of-bounds reads if length is wrong; `strlen()` is $O(N)$ runtime cost; buffer overrun attacks. |
+| **Google-Style C++** | `absl::string_view` and `absl::Span<const T>` | $O(1)$ length check; bounds checked in debug mode (`ABSL_DCHECK`); seamless interoperability with Protobufs and strings. |
+| **ISO C++ '26 Core Guidelines** | `std::string_view`, `std::span<const T, Extent>`, Ranges views | Fully standardized non-owning views; bounds-checked iteration; zero allocation overhead; works with C++26 Contracts. |
+
+---
+
 ## Hands-On Program
 
-Open [`21_memory_views.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/21_views_and_zero_copy/21_memory_views.cpp) for zero-allocation token slicing across vectors and raw C arrays! (*^▽^*)
+Open [`21_memory_views.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/21_views_and_zero_copy/21_memory_views.cpp) for zero-allocation token slicing across vectors and raw C arrays! (*^▽^*)

@@ -12,17 +12,19 @@
 import { HeroScene } from './hero/hero-scene.js';
 import { Router } from './modules/router.js';
 import { SystemsViewer } from './modules/systems-viewer.js';
+import { GraphicsViewer } from './modules/graphics-viewer.js';
 import { ServerViewer } from './modules/server-viewer.js';
 import { AIViewer } from './modules/ai-viewer.js';
 import { MotionLab } from './modules/motion-lab.js';
 import { ResumeViewer } from './modules/resume-viewer.js';
 import { SearchModal } from './modules/search-modal.js';
-import { SYSTEMS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from './data/manifest.js';
+import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from './data/manifest.js';
 
 class App {
   constructor() {
     this.heroScene = null;
     this.systemsViewer = null;
+    this.graphicsViewer = null;
     this.serverViewer = null;
     this.aiViewer = null;
     this.motionLab = null;
@@ -41,6 +43,11 @@ class App {
     const systemsContainer = document.getElementById('systems-container');
     if (systemsContainer) {
       this.systemsViewer = new SystemsViewer(systemsContainer);
+    }
+
+    const graphicsContainer = document.getElementById('graphics-container');
+    if (graphicsContainer) {
+      this.graphicsViewer = new GraphicsViewer(graphicsContainer);
     }
 
     const serverContainer = document.getElementById('server-container');
@@ -67,6 +74,7 @@ class App {
     this.router = new Router({
       home: () => this.onHomeActive(),
       systems: (moduleId) => this.onSystemsActive(moduleId),
+      graphics: (moduleId) => this.onGraphicsActive(moduleId),
       servers: (stageId) => this.onServersActive(stageId),
       ai: (moduleId) => this.onAIActive(moduleId),
       motion: (demoId) => this.onMotionActive(demoId),
@@ -102,6 +110,17 @@ class App {
       } else if (moduleId && this.systemsViewer.currentModule.id !== moduleId) {
         const found = this.systemsViewer.allModules.find((m) => m.id === moduleId);
         if (found) this.systemsViewer.loadModule(found);
+      }
+    }
+  }
+
+  onGraphicsActive(moduleId) {
+    if (this.graphicsViewer) {
+      if (!this.graphicsViewer.currentModule) {
+        this.graphicsViewer.init(moduleId);
+      } else if (moduleId && this.graphicsViewer.currentModule.id !== moduleId) {
+        const found = this.graphicsViewer.allModules.find((m) => m.id === moduleId);
+        if (found) this.graphicsViewer.loadModule(found);
       }
     }
   }

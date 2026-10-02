@@ -14,7 +14,8 @@
 
 static site on github pages containing code examples and interactive demos
 
-- **cprog1**: 32x systems c99->c11->cpp20 (basicish sys arch)
+- **cprog1**: 33x systems c99->c11->cpp20->cpp26 (basicish sys arch, CPL/C-style vs Google vs ISO '26)
+- **graphicslab**: 9x computer graphics (CPU framebuffers, Bresenham, triangles, Z-buffer, raytracer, Vulkan vs OpenGL vs WebGPU)
 - **rustserver**: 6x rust+golang servers (backend stuff)
 - **ailab**: 16x machine learning & ai fundamentals (math -> perceptrons -> transformers -> sota)
 - **qutest2**: 11x threejs animations (frontendslop)
@@ -25,16 +26,30 @@ runs in browser w/o build
 
 ## projects!!!
 
-### 1. c+systems. c99+c11+cpp20 (`cprog1`)
+### 1. c+systems. c99+c11+cpp20+cpp26 (`cprog1`)
 
 | focus | key topics | source files |
 | :--- | :--- | :--- |
 | **1. c foundations** | compilation pipeline pointers stack struct alignment arena allocators vtables binary io | `01_types_and_bits.c`<br/>`02_pointer_basics.c`<br/>`04_struct_alignment.c`<br/>`05_simple_arena.c` |
 | **2. advanced systems** | atomics memory barriers cache locality simd avx2 syscalls pool allocators mmap bytecode vm | `09_atomics_and_spinlocks.c`<br/>`10b_avx2_vectorization.c`<br/>`12_pool_allocator.c`<br/>`16_stack_vm.c` |
-| **3. modern c++** | raii rule of 5 smart pointers move semantics constexpr pmr lock free ring buffer | `17_raii_demo.cpp`<br/>`18_smart_pointers.cpp`<br/>`19_move_semantics.cpp`<br/>`24_spsc_ring_buffer.cpp` |
+| **3. modern c++** | raii rule of 5/0 c-style vs google vs iso'26 smart pointers move semantics constexpr pmr lock free | `17_raii_demo.cpp`<br/>`17c_paradigms_comparison.cpp`<br/>`18_smart_pointers.cpp`<br/>`24_spsc_ring_buffer.cpp` |
 | **4. runtime internals** | garbage collection nan boxing event loop epoll b-tree wal http parser jit codegen | `25_mark_and_sweep_gc.c`<br/>`26b_nan_boxing_engine.c`<br/>`27b_epoll_reactor_pattern.c`<br/>`31_mini_jit_compiler.c` |
 
-### 2. server architecture!!! (`rustserver`)
+### 2. graphics programming (`graphicslab`)
+
+| topic | focus | source files |
+| :--- | :--- | :--- |
+| **1. software framebuffer** | linear RAM, RGBA stride, Porter-Duff alpha blending, binary Netpbm PPM | `01_software_framebuffer.c` |
+| **2. bresenham & wireframes** | integer-only line algorithm, 3D wireframe cube projection | `02_bresenham_wireframe.c` |
+| **3. triangle rasterization** | bounding box scanline, Pineda edge functions, barycentric color interpolation | `03_triangle_rasterizer.cpp` |
+| **4. z-buffer & depth testing** | hidden surface removal, perspective-correct 1/z depth interpolation | `04_zbuffer_rasterizer.cpp` |
+| **5. 3d math (mvp)** | homogeneous 4D coordinates, LookAt camera view matrix, perspective frustum | `05_mvp_transform_math.cpp` |
+| **6. software raytracer** | ray-sphere algebra, Lambertian diffuse, Blinn-Phong specular, shadow & reflection rays | `06_software_raytracer.cpp` |
+| **7. gpu architecture** | SIMT warps/wavefronts, programmable pipeline, Host vs Device VRAM staging | `07_gpu_architecture_and_pipeline.md` |
+| **8. modern api comparison** | Vulkan 1.3 explicit PSOs & queues vs OpenGL 4.5+ state machine vs WebGPU WGSL | `08_vulkan_triangle.cpp`<br/>`08_opengl_triangle.cpp`<br/>`08_webgpu_triangle.js` |
+| **9. pbr & shaders** | Cook-Torrance microfacet BRDF, GGX normal distribution, Schlick Fresnel in GLSL & WGSL | `09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
+
+### 3. server architecture!!! (`rustserver`)
 
 | topic | rust | go |
 | :--- | :--- | :--- |
@@ -45,7 +60,7 @@ runs in browser w/o build
 | **5. persistence** | async sqlite with sqlx | sqlite with `database/sql` pool |
 | **6. telemetry** | `tracing-subscriber` signal handlers | `log/slog` `signal.NotifyContext` |
 
-### 3. 3d lab!!! (`qutest2`)
+### 4. 3d lab!!! (`qutest2`)
 
 | module | tech | concepts |
 | :--- | :--- | :--- |
@@ -61,7 +76,7 @@ runs in browser w/o build
 | **3.4 3d card deck** | hybrid | raycaster mouse tracking card tilt |
 | **3.5 audio equalizer** | hybrid | 64 band soundwave reactive bars |
 
-### 4. machine learning & ai fundamentals (`ailab`)
+### 5. machine learning & ai fundamentals (`ailab`)
 
 | phase | key topics | implementation files |
 | :--- | :--- | :--- |

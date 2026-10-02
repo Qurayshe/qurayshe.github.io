@@ -49,6 +49,13 @@
               <div class="dropdown-item-desc">Memory layout, pointers, allocators, ELF &amp; ASM</div>
             </div>
           </a>
+          <a class="dropdown-item" href="#graphics" role="menuitem">
+            <span class="dropdown-item-badge badge-graphics">Graphics</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">Graphics Programming</div>
+              <div class="dropdown-item-desc">Rasterizers, Z-Buffer, 3D math, Vulkan &amp; WebGPU</div>
+            </div>
+          </a>
           <a class="dropdown-item" href="#servers" role="menuitem">
             <span class="dropdown-item-badge badge-server">Rust &amp; Go</span>
             <div class="dropdown-item-info">
@@ -190,6 +197,32 @@
               </a>
             </article>
 
+            <!-- Card: Graphics Programming Lab -->
+            <article class="portal-card portal-card-graphics">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-emerald);">C++ &times; Vulkan</span>
+                  <span class="card-stat-pill">9 Modules</span>
+                </div>
+                <h3 class="portal-card-title">Graphics Programming</h3>
+                <p class="portal-card-desc">
+                  From software framebuffers, Bresenham lines, and barycentric triangle rasterizers in pure C/C++ to Vulkan 1.3, OpenGL 4.5, WebGPU, and Cook-Torrance PBR.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Software Rasterizer</span>
+                  <span class="portal-tag">Z-Buffer</span>
+                  <span class="portal-tag">3D Math MVP</span>
+                  <span class="portal-tag">Raytracer</span>
+                  <span class="portal-tag">Vulkan 1.3</span>
+                  <span class="portal-tag">WebGPU</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#graphics">
+                <span>Launch Graphics Lab</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+
             <!-- Card 2: Server Architecture Lab -->
             <article class="portal-card portal-card-servers">
               <div>
@@ -279,6 +312,13 @@
     </section>
 
     <!-- ====================================================================
+         SECTION: GRAPHICS LAB (graphicslab)
+         ==================================================================== -->
+    <section id="section-graphics" class="app-section">
+      <div id="graphics-container"></div>
+    </section>
+
+    <!-- ====================================================================
          SECTION 3: SERVER LAB (rustserver & golang)
          ==================================================================== -->
     <section id="section-servers" class="app-section">
@@ -332,7 +372,7 @@
       </a>
     </div>
     <div class="footer-right">
-      <span>Systems &middot; Servers &middot; AI Lab &middot; 3D Motion</span>
+      <span>Systems &middot; Graphics &middot; Servers &middot; AI Lab &middot; 3D Motion</span>
     </div>
   </footer>
 

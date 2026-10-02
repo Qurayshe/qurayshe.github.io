@@ -82,6 +82,17 @@ Why write 50 lines of boilerplate if you don't have to?
 
 ---
 
+## 4. Object Model Across Paradigms
+
+| Aspect | CPL / C-Style C++ | Google-Style C++ | ISO C++ '26 Core Guidelines |
+| :--- | :--- | :--- | :--- |
+| **Object Construction** | Manual `Init(struct Foo* f)` | Explicit constructors; factory `Create()` returning `absl::StatusOr` | Constructors with member initializers & designated initializers |
+| **Copy Semantics** | Shallow `memcpy()` (causes double-free bugs!) | Explicitly deleted (`= delete`) by default; copy only when needed | Value semantics or `= default` with RAII members |
+| **Move Semantics** | Non-existent; manual pointer swapping | `std::move` supported; clear ownership handoff | First-class language feature; automatic move-by-default returns |
+| **Destruction** | Manual `Destroy()` or raw `free()` | `~ClassName()` automatic via smart pointers | Compiler-generated `= default` (Rule of Zero) |
+
+---
+
 ## Hands-On Program
 
-Open [`17b_lifecycles_and_rule_of_five.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/17b_cpp_object_model_and_lifecycles/17b_lifecycles_and_rule_of_five.cpp) to trace every constructor, copy, move, and destructor call in real-time console output! (*^▽^*)
+Open [`17b_lifecycles_and_rule_of_five.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/17b_cpp_object_model_and_lifecycles/17b_lifecycles_and_rule_of_five.cpp) to trace every constructor, copy, move, and destructor call in real-time console output! (*^▽^*)

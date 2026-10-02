@@ -3,7 +3,7 @@
  * Real-time instant indexing and navigation across all 50+ modules, servers, and 3D demos.
  */
 
-import { SYSTEMS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from '../data/manifest.js';
+import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from '../data/manifest.js';
 import { RESUME_DATA } from '../data/resume-data.js';
 import { escapeHtml } from '../utils/helpers.js';
 
@@ -36,6 +36,24 @@ export class SearchModal {
           desc: mod.desc,
           keywords: mod.tags.join(' '),
           route: `#systems/${mod.id}`
+        });
+      });
+    });
+
+    // 1b. Index Graphics Lab Modules
+    GRAPHICS_CURRICULUM.forEach((part) => {
+      part.modules.forEach((mod) => {
+        this.items.push({
+          type: 'graphics',
+          category: `Graphics Lab • Part ${part.part}`,
+          icon: '◆',
+          badge: 'Graphics',
+          badgeClass: 'badge-graphics',
+          id: mod.id,
+          title: `${mod.num}. ${mod.title}`,
+          desc: mod.desc,
+          keywords: `graphics rasterizer zbuffer vulkan opengl webgpu math 3d ${mod.tags.join(' ')}`,
+          route: `#graphics/${mod.id}`
         });
       });
     });

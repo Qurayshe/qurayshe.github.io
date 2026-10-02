@@ -300,6 +300,17 @@ export const SYSTEMS_CURRICULUM = [
         tags: ['Rule of 5', 'Object Model', 'Lifecycles', 'C++']
       },
       {
+        id: '17c_c_style_vs_google_vs_iso_cpp',
+        num: '17c',
+        title: 'C-Style C++ vs Google vs ISO \'26',
+        desc: 'CPL lineage & "C with Classes" vs Google Style (-fno-exceptions, StatusOr) vs Modern ISO C++26 (Contracts, Expected, Rule of Zero).',
+        mdPath: 'cprog1/17c_c_style_vs_google_vs_iso_cpp/17c_c_style_vs_google_vs_iso_cpp.md',
+        codeFiles: [
+          { name: '17c_paradigms_comparison.cpp', path: 'cprog1/17c_c_style_vs_google_vs_iso_cpp/17c_paradigms_comparison.cpp', lang: 'cpp' }
+        ],
+        tags: ['C-Style C++', 'Google Style', 'Abseil', 'ISO C++26', 'Contracts', 'Rule of Zero']
+      },
+      {
         id: '18_smart_pointers_internals',
         num: '18',
         title: 'Smart Pointers Under the Hood',
@@ -1137,6 +1148,130 @@ export const AI_CURRICULUM = [
           { name: '16_mcts_reasoning_speculative.py', path: 'ailab/16_reasoning_and_inference_sota/16_mcts_reasoning_speculative.py', lang: 'python' }
         ],
         tags: ['Reasoning', 'Test-Time Compute', 'Speculative Decoding', 'MCTS']
+      }
+    ]
+  }
+];
+
+export const GRAPHICS_CURRICULUM = [
+  // Part 1: Basic Graphics from Scratch in C/C++
+  {
+    part: 1,
+    partTitle: 'Part 1: Graphics from Scratch in C & C++',
+    partDesc: 'Framebuffers, RGBA stride, Bresenham wireframes, barycentric triangle rasterization, depth buffers, 3D math, and raytracing.',
+    badge: 'CPU Software Engine',
+    modules: [
+      {
+        id: '01_software_framebuffer',
+        num: '01',
+        title: 'The Software Framebuffer & PPM',
+        desc: 'Displays as 1D linear RAM, RGBA32 stride math, alpha blending, and zero-dependency Netpbm PPM image serialization.',
+        mdPath: 'graphicslab/01_software_framebuffer/01_software_framebuffer.md',
+        codeFiles: [
+          { name: '01_software_framebuffer.c', path: 'graphicslab/01_software_framebuffer/01_software_framebuffer.c', lang: 'c' }
+        ],
+        tags: ['Framebuffer', 'PPM', 'RGB', 'Alpha Blending', 'C']
+      },
+      {
+        id: '02_bresenham_wireframe',
+        num: '02',
+        title: 'Bresenham Lines & 3D Wireframes',
+        desc: 'Integer-only incremental error accumulator for drawing straight lines without floating point; 3D rotating wireframe cube.',
+        mdPath: 'graphicslab/02_bresenham_wireframe/02_bresenham_wireframe.md',
+        codeFiles: [
+          { name: '02_bresenham_wireframe.c', path: 'graphicslab/02_bresenham_wireframe/02_bresenham_wireframe.c', lang: 'c' }
+        ],
+        tags: ['Bresenham', 'Lines', 'Wireframe', 'Rasterization', 'C']
+      },
+      {
+        id: '03_triangle_rasterization',
+        num: '03',
+        title: 'Triangle Rasterization & Barycentric Math',
+        desc: 'The fundamental atomic GPU primitive: AABB bounding box scanline, Pineda edge functions, and smooth vertex color interpolation.',
+        mdPath: 'graphicslab/03_triangle_rasterization/03_triangle_rasterization.md',
+        codeFiles: [
+          { name: '03_triangle_rasterizer.cpp', path: 'graphicslab/03_triangle_rasterization/03_triangle_rasterizer.cpp', lang: 'cpp' }
+        ],
+        tags: ['Triangles', 'Barycentric Coordinates', 'Gouraud', 'Rasterizer', 'C++']
+      },
+      {
+        id: '04_zbuffer_and_depth',
+        num: '04',
+        title: 'Z-Buffering & Hidden Surface Removal',
+        desc: 'Why Painter\'s algorithm fails with cycles; allocating depth buffers, depth testing, and perspective-correct 1/z interpolation.',
+        mdPath: 'graphicslab/04_zbuffer_and_depth/04_zbuffer_and_depth.md',
+        codeFiles: [
+          { name: '04_zbuffer_rasterizer.cpp', path: 'graphicslab/04_zbuffer_and_depth/04_zbuffer_rasterizer.cpp', lang: 'cpp' }
+        ],
+        tags: ['Z-Buffer', 'Depth Test', 'Hidden Surfaces', 'Perspective Correct', 'C++']
+      },
+      {
+        id: '05_3d_math_and_transformations',
+        num: '05',
+        title: '3D Math: Model, View, Projection (MVP)',
+        desc: 'Homogeneous coordinates (4D), 4x4 matrix multiplication, LookAt camera view matrix, perspective frustum, and perspective divide.',
+        mdPath: 'graphicslab/05_3d_math_and_transformations/05_3d_math_and_transformations.md',
+        codeFiles: [
+          { name: '05_mvp_transform_math.cpp', path: 'graphicslab/05_3d_math_and_transformations/05_mvp_transform_math.cpp', lang: 'cpp' }
+        ],
+        tags: ['3D Math', 'MVP Matrix', 'LookAt Camera', 'Perspective Projection', 'Homogeneous']
+      },
+      {
+        id: '06_software_raytracer',
+        num: '06',
+        title: 'Software Raytracer from Scratch',
+        desc: 'Forward projection vs backward light simulation: Ray-sphere quadratic algebra, surface normals, Lambertian diffuse, Blinn-Phong, and shadow rays.',
+        mdPath: 'graphicslab/06_software_raytracer/06_software_raytracer.md',
+        codeFiles: [
+          { name: '06_software_raytracer.cpp', path: 'graphicslab/06_software_raytracer/06_software_raytracer.cpp', lang: 'cpp' }
+        ],
+        tags: ['Raytracing', 'Ray-Sphere', 'Lambertian', 'Blinn-Phong', 'Shadow Rays', 'C++']
+      }
+    ]
+  },
+
+  // Part 2: Modern GPU Graphics APIs & Shaders
+  {
+    part: 2,
+    partTitle: 'Part 2: Modern GPU Architectures & API Comparisons',
+    partDesc: 'Hardware SIMT execution, programmable pipeline stages, Vulkan vs OpenGL vs WebGPU side-by-side, and Cook-Torrance PBR shaders.',
+    badge: 'Modern GPU APIs',
+    modules: [
+      {
+        id: '07_gpu_architecture_and_pipeline',
+        num: '07',
+        title: 'GPU Architecture & Programmable Pipeline',
+        desc: 'CPU latency cores vs GPU throughput SIMT execution warps; programmable vertex/fragment stages; Host vs Device VRAM staging.',
+        mdPath: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md',
+        codeFiles: [
+          { name: '07_gpu_architecture_and_pipeline.md', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md', lang: 'markdown' }
+        ],
+        tags: ['GPU Architecture', 'SIMT', 'Programmable Pipeline', 'Vertex Shader', 'VRAM']
+      },
+      {
+        id: '08_vulkan_opengl_webgpu_comparison',
+        num: '08',
+        title: 'Modern APIs: Vulkan vs OpenGL vs WebGPU',
+        desc: 'Exhaustive architectural comparison: OpenGL global state vs Vulkan explicit PSOs & command buffers vs WebGPU next-gen W3C standard.',
+        mdPath: 'graphicslab/08_vulkan_opengl_webgpu_comparison/08_vulkan_opengl_webgpu_comparison.md',
+        codeFiles: [
+          { name: '08_opengl_triangle.cpp', path: 'graphicslab/08_vulkan_opengl_webgpu_comparison/08_opengl_triangle.cpp', lang: 'cpp' },
+          { name: '08_vulkan_triangle.cpp', path: 'graphicslab/08_vulkan_opengl_webgpu_comparison/08_vulkan_triangle.cpp', lang: 'cpp' },
+          { name: '08_webgpu_triangle.js', path: 'graphicslab/08_vulkan_opengl_webgpu_comparison/08_webgpu_triangle.js', lang: 'javascript' }
+        ],
+        tags: ['Vulkan', 'OpenGL', 'WebGPU', 'DirectX 12', 'Metal', 'SPIR-V', 'WGSL']
+      },
+      {
+        id: '09_shaders_and_pbr',
+        num: '09',
+        title: 'Modern Shaders & Physically Based Rendering',
+        desc: 'From empirical Blinn-Phong to energy-conserving Cook-Torrance microfacet specular BRDF; writing GLSL and WGSL shaders.',
+        mdPath: 'graphicslab/09_shaders_and_pbr/09_shaders_and_pbr.md',
+        codeFiles: [
+          { name: '09_pbr_shader.glsl', path: 'graphicslab/09_shaders_and_pbr/09_pbr_shader.glsl', lang: 'c' },
+          { name: '09_pbr_shader.wgsl', path: 'graphicslab/09_shaders_and_pbr/09_pbr_shader.wgsl', lang: 'rust' }
+        ],
+        tags: ['GLSL', 'WGSL', 'PBR', 'BRDF', 'Microfacet', 'Shaders', 'Cook-Torrance']
       }
     ]
   }

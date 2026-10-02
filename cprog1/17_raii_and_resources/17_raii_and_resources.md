@@ -25,6 +25,16 @@ void thread_safe_work() {
 
 ---
 
+## 3. Style Comparison: C-Style C++ vs. Google-Style vs. ISO Core Guidelines '26
+
+| Paradigm | How It Handles Resources | Failure Modes & Risk |
+| :--- | :--- | :--- |
+| **CPL / C-Style C++** | Manual `Init()` & `Destroy()` functions, raw `malloc()`/`free()`, manual `goto cleanup;` | Forgotten `free()`, early return leaks, double-free crashes. |
+| **Google-Style C++** | Strict RAII via `std::unique_ptr` with custom deleters (`std::unique_ptr<FILE, decltype(&fclose)>`), no exceptions (`-fno-exceptions`), explicit status returns (`absl::Status`). | Eliminates leaks; avoids hidden stack unwinding overhead. |
+| **ISO C++ '26 Core Guidelines** | **Rule of Zero**: compose standard RAII wrappers (`std::fstream`, `std::unique_ptr`, `std::jthread`), monadic `std::expected` for status. | Zero boilerplate; impossible to leak resources or double-free. |
+
+---
+
 ## Hands-On Program
 
-Open [`17_raii_demo.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/17_raii_and_resources/17_raii_demo.cpp) to see custom scoped file handles and automatic stack unwinding! (≧∇≦)ﾉ
+Open [`17_raii_demo.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/17_raii_and_resources/17_raii_demo.cpp) to see custom scoped file handles and automatic stack unwinding! (≧∇≦)ﾉ
