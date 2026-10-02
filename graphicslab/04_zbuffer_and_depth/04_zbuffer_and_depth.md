@@ -48,12 +48,12 @@ Z-Buffer Depth Test:
 
 ## 2. Perspective-Correct Depth Interpolation ($1/z$)
 
-In screen-space rasterization, depth does **not** vary linearly across the pixel grid because of perspective division!
+Because 2D screen pixels are generated via the perspective divide ($x' = x/z, \; y' = y/z$), original 3D depth $z$ does **not** vary linearly across the flat 2D screen pixel grid!
 
-If you linearly interpolate $z$ using screen-space barycentric weights $(b_0, b_1, b_2)$:
-$$z_{\text{wrong}} = b_0 z_0 + b_1 z_1 + b_2 z_2 \quad \text{(Distorted & Causes Z-fighting!)}$$
+If you naively interpolate $z$ linearly using screen-space barycentric weights $(b_0, b_1, b_2)$:
+$$z_{\text{wrong}} = b_0 z_0 + b_1 z_1 + b_2 z_2 \quad \text{(Distorted & Causes Severe Z-fighting!)}$$
 
-However, reciprocal depth $\frac{1}{z}$ **is strictly linear in screen space**:
+However, reciprocal depth $\frac{1}{z}$ **is strictly linear in 2D screen pixel space**:
 $$\frac{1}{z(P)} = b_0 \frac{1}{z_0} + b_1 \frac{1}{z_1} + b_2 \frac{1}{z_2}$$
 
 Therefore, for every pixel, we compute:

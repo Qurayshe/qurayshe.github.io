@@ -55,13 +55,17 @@ void draw_line(int x0, int y0, int x1, int y1, ColorRGB color) {
 typedef struct { float x, y, z; } Vec3;
 typedef struct { int x, y; } Point2D;
 
-// Perspective project a 3D point onto the 2D viewport
+// Perspective project a 3D point onto the 2D viewport:
+// Step 1: Simple 3D -> 2D Perspective Projection:
+//   x' = x / z,  y' = y / z
+// Step 2: Convert to Screen Pixel Space:
+//   pixel_x = (WIDTH  / 2) + (x' * fov_scale)
+//   pixel_y = (HEIGHT / 2) - (y' * fov_scale)   [Inverted Y for screen]
 Point2D project(Vec3 p, float fov_scale, float camera_dist) {
-    // Simple pinhole camera model
     float z = p.z + camera_dist;
-    if (z <= 0.1f) z = 0.1f; // Prevent division by zero
-    int px = (int)(WIDTH / 2.0f + (p.x * fov_scale / z));
-    int py = (int)(HEIGHT / 2.0f - (p.y * fov_scale / z)); // Invert Y for screen coords
+    if (z <= 0.1f) z = 0.1f; // Prevent division by zero near plane
+    int px = (int)(WIDTH  / 2.0f + (p.x * fov_scale / z));
+    int py = (int)(HEIGHT / 2.0f - (p.y * fov_scale / z));
     return (Point2D){ px, py };
 }
 

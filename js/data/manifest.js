@@ -1244,7 +1244,8 @@ export const GRAPHICS_CURRICULUM = [
         desc: 'CPU latency cores vs GPU throughput SIMT execution warps; programmable vertex/fragment stages; Host vs Device VRAM staging.',
         mdPath: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md',
         codeFiles: [
-          { name: '07_gpu_architecture_and_pipeline.md', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md', lang: 'markdown' }
+          { name: '07_simt_pipeline_emulator.cpp', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_simt_pipeline_emulator.cpp', lang: 'cpp' },
+          { name: '07_pipeline_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_pipeline_shaders.glsl', lang: 'c' }
         ],
         tags: ['GPU Architecture', 'SIMT', 'Programmable Pipeline', 'Vertex Shader', 'VRAM']
       },

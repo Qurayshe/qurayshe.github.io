@@ -2,13 +2,18 @@
 
 > *"Why is every 3D model in gaming made of triangles? Because 3 points are always strictly coplanar, uniquely defined, and trivially convex."*
 
-The triangle is the fundamental atomic primitive of computer graphics. Whether inside a Nintendo 64 or an NVIDIA RTX 5090, the hardware rasterizer is dedicated to taking 3 projected 2D screen vertices $(v_0, v_1, v_2)$ and deciding **which pixels are inside the triangle**, while smoothly interpolating colors, UV coordinates, and depth.
+The triangle is the fundamental atomic primitive of computer graphics. Whether inside a Nintendo 64 or an NVIDIA RTX 5090, the hardware rasterizer takes 3D vertices $(x, y, z)$ projected into 2D screen pixel space ($x' = x/z, \; y' = y/z \to X_{\text{pixel}}, Y_{\text{pixel}}$) and decides **which pixels are inside the triangle**, while smoothly interpolating colors, UV coordinates, and depth.
 
 ---
 
-## 1. The Rasterization Strategy: Bounding Box Traversal
+## 1. From 3D Space to 2D Rasterization Grid
 
-Given three screen-space vertices $V_0(x_0, y_0), V_1(x_1, y_1), V_2(x_2, y_2)$:
+Before rasterization begins:
+1. Each 3D triangle vertex $(x, y, z)$ in camera space is projected via simple perspective division:
+   $$x' = \frac{x}{z}, \quad y' = \frac{y}{z}$$
+2. The projected points are mapped into discrete 2D screen pixel coordinates:
+   $$X_{\text{pixel}} = \frac{\text{Width}}{2} + \left(f \cdot \frac{x}{z}\right), \quad Y_{\text{pixel}} = \frac{\text{Height}}{2} - \left(f \cdot \frac{y}{z}\right)$$
+3. The 2D rasterizer processes the resulting integer/sub-pixel vertices $V_0(x_0, y_0), V_1(x_1, y_1), V_2(x_2, y_2)$ using **Bounding Box Traversal**:
 
 ```
 Screen Rasterization Grid:
