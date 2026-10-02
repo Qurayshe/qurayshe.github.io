@@ -295,7 +295,7 @@ class App {
      -------------------------------------------------------------------------- */
   bindHomeInteractions() {
     // 3D Hero Mode Switcher Buttons
-    const modeBtns = document.querySelectorAll('.hero-mode-btn');
+    const modeBtns = document.querySelectorAll('.hero-mode-btn[data-mode]');
     modeBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         modeBtns.forEach((b) => b.classList.remove('active'));
@@ -306,6 +306,21 @@ class App {
         }
       });
     });
+
+    // ASCII Filter Mode Toggle Button
+    const asciiBtn = document.getElementById('btn-hero-ascii');
+    const asciiStatus = document.getElementById('hero-ascii-status');
+    if (asciiBtn) {
+      asciiBtn.addEventListener('click', () => {
+        if (this.heroScene) {
+          const isEnabled = this.heroScene.toggleAscii();
+          asciiBtn.classList.toggle('active', isEnabled);
+          if (asciiStatus) {
+            asciiStatus.textContent = isEnabled ? 'ASCII: ON' : 'ASCII: OFF';
+          }
+        }
+      });
+    }
 
     // Hero 3D Canvas Click Trigger (Triggers Shockwave & Card Elastic Ripple)
     const heroViewport = document.getElementById('hero-3d-viewport');

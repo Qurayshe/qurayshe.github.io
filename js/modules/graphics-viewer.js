@@ -1,5 +1,7 @@
 /**
  * Graphics Programming Curriculum & Interactive Lab Viewer (graphicslab)
+ * Built with the exact same robust layout and styling as the C Systems Lab (cprog1)
+ * and AI Lab (ailab).
  * 
  * Features:
  *  - 9-module curriculum: from scratch in C/C++ to Vulkan, OpenGL, WebGPU & PBR
@@ -7,6 +9,7 @@
  *  - Multi-file source code inspection with Prism.js syntax highlighting
  *  - Live Interactive CPU Software Rasterizer & Z-Buffer Visualizer on HTML5 Canvas
  *  - Interactive GPU API Feature Matrix (Vulkan vs OpenGL vs WebGPU vs Metal vs DirectX 12)
+ *  - Previous/Next pagination and full-text filter search
  */
 
 import { GRAPHICS_CURRICULUM } from '../data/manifest.js';
@@ -45,7 +48,7 @@ export class GraphicsViewer {
 
   renderLayout() {
     this.container.innerHTML = `
-      <div class="lab-layout">
+      <div class="lab-layout graphics-lab-layout">
         <!-- Sidebar Navigation -->
         <aside class="lab-sidebar" id="graphics-sidebar">
           <div class="lab-sidebar-header">
@@ -228,20 +231,15 @@ export class GraphicsViewer {
 
           </div>
 
-          <!-- Bottom Navigation Pagination -->
-          <div class="lab-bottom-nav">
-            <button class="btn-lab-nav" id="btn-graphics-prev">
+          <!-- Bottom Navigation Pagination (Matching Systems Lab & AI Lab) -->
+          <div class="lab-pagination">
+            <button class="pagination-btn" id="btn-graphics-prev">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              <div class="btn-lab-nav-text">
-                <span class="sub">Previous Module</span>
-                <span class="title" id="graphics-prev-title">None</span>
-              </div>
+              <span>Previous Module</span>
             </button>
-            <button class="btn-lab-nav" id="btn-graphics-next">
-              <div class="btn-lab-nav-text">
-                <span class="sub">Next Module</span>
-                <span class="title" id="graphics-next-title">Next</span>
-              </div>
+            <div class="pagination-indicator" id="graphics-progress-label">Module 1 of 9</div>
+            <button class="pagination-btn" id="btn-graphics-next">
+              <span>Next Module</span>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
@@ -254,10 +252,11 @@ export class GraphicsViewer {
   }
 
   renderSidebar() {
-    const tree = document.getElementById('graphics-curriculum-tree');
-    if (!tree) return;
+    const treeEl = document.getElementById('graphics-curriculum-tree');
+    if (!treeEl) return;
 
-    let html = '';
+    treeEl.innerHTML = '';
+
     GRAPHICS_CURRICULUM.forEach((part) => {
       const filteredMods = part.modules.filter((m) => {
         if (!this.searchQuery) return true;
@@ -271,42 +270,44 @@ export class GraphicsViewer {
 
       if (filteredMods.length === 0) return;
 
-      html += `
-        <div class="curriculum-part">
-          <div class="curriculum-part-header">
-            <span class="curriculum-part-badge">${part.badge}</span>
-            <span class="curriculum-part-title">${part.partTitle}</span>
-          </div>
-          <div class="curriculum-module-list">
+      const partGroup = document.createElement('div');
+      partGroup.className = 'curriculum-part-group';
+
+      const partHeader = document.createElement('div');
+      partHeader.className = 'curriculum-part-header';
+      partHeader.innerHTML = `
+        <span class="part-badge">Part ${part.part}</span>
+        <span class="part-name">${part.badge}</span>
       `;
+      partGroup.appendChild(partHeader);
+
+      const list = document.createElement('ul');
+      list.className = 'curriculum-list';
 
       filteredMods.forEach((mod) => {
-        const isActive = this.currentModule && this.currentModule.id === mod.id;
-        html += `
-          <button class="module-nav-item ${isActive ? 'active' : ''}" data-module-id="${mod.id}">
-            <span class="module-num">${mod.num}</span>
-            <div class="module-nav-info">
-              <span class="module-nav-title">${mod.title}</span>
-              <span class="module-nav-desc">${mod.desc}</span>
-            </div>
-          </button>
+        const li = document.createElement('li');
+        li.className = `curriculum-item ${this.currentModule && this.currentModule.id === mod.id ? 'active' : ''}`;
+        li.dataset.id = mod.id;
+
+        li.innerHTML = `
+          <span class="curriculum-item-num">${mod.num}</span>
+          <div class="curriculum-item-info">
+            <div class="curriculum-item-title">${mod.title}</div>
+            <div class="curriculum-item-desc">${mod.desc}</div>
+          </div>
         `;
+
+        li.addEventListener('click', () => {
+          this.loadModule(mod);
+          const sidebar = document.getElementById('graphics-sidebar');
+          if (sidebar) sidebar.classList.remove('open');
+        });
+
+        list.appendChild(li);
       });
 
-      html += `</div></div>`;
-    });
-
-    tree.innerHTML = html;
-
-    tree.querySelectorAll('.module-nav-item').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-module-id');
-        const target = this.allModules.find((m) => m.id === id);
-        if (target) {
-          window.location.hash = `#graphics/${target.id}`;
-          this.loadModule(target);
-        }
-      });
+      partGroup.appendChild(list);
+      treeEl.appendChild(partGroup);
     });
   }
 
@@ -338,16 +339,6 @@ export class GraphicsViewer {
       });
     }
 
-    // Pagination
-    const prevBtn = document.getElementById('btn-graphics-prev');
-    const nextBtn = document.getElementById('btn-graphics-next');
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => this.navigatePagination(-1));
-    }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => this.navigatePagination(1));
-    }
-
     // Copy Code button
     const copyBtn = document.getElementById('btn-copy-graphics-code');
     if (copyBtn) {
@@ -373,16 +364,43 @@ export class GraphicsViewer {
   async loadModule(mod) {
     this.currentModule = mod;
     this.selectedCodeFileIndex = 0;
+    window.location.hash = `graphics/${mod.id}`;
 
-    // Update breadcrumbs and titles
+    // Update Header
     const bcrumb = document.getElementById('graphics-breadcrumbs');
     if (bcrumb) bcrumb.innerText = `Part ${mod.partNumber} • ${mod.badge}`;
 
     const title = document.getElementById('graphics-title');
     if (title) title.innerText = `${mod.num}. ${mod.title}`;
 
-    this.renderSidebar();
-    this.updatePagination();
+    // Update pagination controls
+    const currentIndex = this.allModules.findIndex((m) => m.id === mod.id);
+    const prevBtn = document.getElementById('btn-graphics-prev');
+    const nextBtn = document.getElementById('btn-graphics-next');
+    const progressLabel = document.getElementById('graphics-progress-label');
+
+    if (progressLabel) {
+      progressLabel.innerText = `Module ${currentIndex + 1} of ${this.allModules.length}`;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = currentIndex === 0;
+      prevBtn.onclick = () => {
+        if (currentIndex > 0) this.loadModule(this.allModules[currentIndex - 1]);
+      };
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = currentIndex === this.allModules.length - 1;
+      nextBtn.onclick = () => {
+        if (currentIndex < this.allModules.length - 1) this.loadModule(this.allModules[currentIndex + 1]);
+      };
+    }
+
+    // Highlight active item in sidebar
+    document.querySelectorAll('#graphics-curriculum-tree .curriculum-item').forEach((item) => {
+      item.classList.toggle('active', item.dataset.id === mod.id);
+    });
 
     // 1. Fetch & render markdown
     const mdView = document.getElementById('graphics-markdown-view');
@@ -398,7 +416,7 @@ export class GraphicsViewer {
       }
     }
 
-    // 2. Render code file tabs and fetch first code file
+    // 2. Render code file tabs and fetch code file
     this.renderCodeFiles();
   }
 
@@ -436,36 +454,6 @@ export class GraphicsViewer {
       highlightCode(codeView, file.lang || 'c');
     } catch (err) {
       codeView.textContent = `// Failed to load source file: ${file.path}`;
-    }
-  }
-
-  updatePagination() {
-    const currIndex = this.allModules.findIndex((m) => m.id === this.currentModule.id);
-    const prevMod = currIndex > 0 ? this.allModules[currIndex - 1] : null;
-    const nextMod = currIndex < this.allModules.length - 1 ? this.allModules[currIndex + 1] : null;
-
-    const prevBtn = document.getElementById('btn-graphics-prev');
-    const nextBtn = document.getElementById('btn-graphics-next');
-    const prevTitle = document.getElementById('graphics-prev-title');
-    const nextTitle = document.getElementById('graphics-next-title');
-
-    if (prevBtn && prevTitle) {
-      prevBtn.disabled = !prevMod;
-      prevTitle.innerText = prevMod ? `${prevMod.num}. ${prevMod.title}` : 'None';
-    }
-    if (nextBtn && nextTitle) {
-      nextBtn.disabled = !nextMod;
-      nextTitle.innerText = nextMod ? `${nextMod.num}. ${nextMod.title}` : 'None';
-    }
-  }
-
-  navigatePagination(direction) {
-    const currIndex = this.allModules.findIndex((m) => m.id === this.currentModule.id);
-    const targetIndex = currIndex + direction;
-    if (targetIndex >= 0 && targetIndex < this.allModules.length) {
-      const target = this.allModules[targetIndex];
-      window.location.hash = `#graphics/${target.id}`;
-      this.loadModule(target);
     }
   }
 

@@ -58,7 +58,23 @@ export class SearchModal {
       });
     });
 
-    // 2. Index Server Stages
+    // 2. Index 3D Motion Demos
+    MOTION_LAB_EXAMPLES.forEach((demo) => {
+      this.items.push({
+        type: 'motion',
+        category: '3D Motion Lab',
+        icon: '◆',
+        badge: demo.badge,
+        badgeClass: demo.badgeClass || 'badge-anime',
+        id: demo.id,
+        title: `${demo.num}. ${demo.title}`,
+        desc: demo.desc,
+        keywords: `three.js anime.js webgl 3d animation shader particle ${demo.category}`,
+        route: `#motion/${demo.id}`
+      });
+    });
+
+    // 3. Index Server Stages
     SERVER_STAGES.forEach((stage) => {
       this.items.push({
         type: 'servers',
@@ -74,7 +90,7 @@ export class SearchModal {
       });
     });
 
-    // 3. Index AI & ML Modules
+    // 4. Index AI & ML Modules
     AI_CURRICULUM.forEach((part) => {
       part.modules.forEach((mod) => {
         this.items.push({
@@ -89,22 +105,6 @@ export class SearchModal {
           keywords: `ai ml deep learning math python ${mod.tags.join(' ')}`,
           route: `#ai/${mod.id}`
         });
-      });
-    });
-
-    // 3. Index 3D Motion Demos
-    MOTION_LAB_EXAMPLES.forEach((demo) => {
-      this.items.push({
-        type: 'motion',
-        category: '3D Motion Lab',
-        icon: '◆',
-        badge: demo.badge,
-        badgeClass: demo.badgeClass || 'badge-anime',
-        id: demo.id,
-        title: `${demo.num}. ${demo.title}`,
-        desc: demo.desc,
-        keywords: `three.js anime.js webgl 3d animation shader particle ${demo.category}`,
-        route: `#motion/${demo.id}`
       });
     });
 

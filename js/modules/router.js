@@ -20,7 +20,7 @@ export class Router {
     let [section, subParam] = hash.split('/');
 
     // 1. Update Navigation Bar Active State
-    const labSections = ['systems', 'graphics', 'servers', 'ai', 'motion'];
+    const labSections = ['systems', 'graphics', 'motion', 'servers', 'ai'];
     const isLabActive = labSections.includes(section);
     const isMiscActive = section === 'misc';
 

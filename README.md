@@ -16,9 +16,9 @@ static site on github pages containing code examples and interactive demos
 
 - **cprog1**: 33x systems c99->c11->cpp20->cpp26 (basicish sys arch, CPL/C-style vs Google vs ISO '26)
 - **graphicslab**: 9x computer graphics (CPU framebuffers, Bresenham, triangles, Z-buffer, raytracer, Vulkan vs OpenGL vs WebGPU)
+- **qutest2**: 11x threejs animations (frontendslop)
 - **rustserver**: 6x rust+golang servers (backend stuff)
 - **ailab**: 16x machine learning & ai fundamentals (math -> perceptrons -> transformers -> sota)
-- **qutest2**: 11x threejs animations (frontendslop)
 
 runs in browser w/o build
 
@@ -49,18 +49,7 @@ runs in browser w/o build
 | **8. modern api comparison** | Vulkan 1.3 explicit PSOs & queues vs OpenGL 4.5+ state machine vs WebGPU WGSL | `08_vulkan_triangle.cpp`<br/>`08_opengl_triangle.cpp`<br/>`08_webgpu_triangle.js` |
 | **9. pbr & shaders** | Cook-Torrance microfacet BRDF, GGX normal distribution, Schlick Fresnel in GLSL & WGSL | `09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
 
-### 3. server architecture!!! (`rustserver`)
-
-| topic | rust | go |
-| :--- | :--- | :--- |
-| **1. raw tcp & http** | `std::net::TcpListener` manual read write | `net/http` standard library |
-| **2. concurrency** | threadpool `Arc<Mutex<Receiver>>` `mpsc` | goroutines channels `sync.WaitGroup` |
-| **3. async & routing** | tokio runtime `async`/`await` | go 1.22+ `http.NewServeMux` middleware |
-| **4. json api** | axum router state extractors `serde_json` | `encoding/json` struct tags |
-| **5. persistence** | async sqlite with sqlx | sqlite with `database/sql` pool |
-| **6. telemetry** | `tracing-subscriber` signal handlers | `log/slog` `signal.NotifyContext` |
-
-### 4. 3d lab!!! (`qutest2`)
+### 3. 3d web motion & graphics (`qutest2`)
 
 | module | tech | concepts |
 | :--- | :--- | :--- |
@@ -75,6 +64,17 @@ runs in browser w/o build
 | **3.3 glitch shader** | hybrid | glsl shader fresnel scanlines uniforms |
 | **3.4 3d card deck** | hybrid | raycaster mouse tracking card tilt |
 | **3.5 audio equalizer** | hybrid | 64 band soundwave reactive bars |
+
+### 4. server architecture (`rustserver` & `golang`)
+
+| topic | rust | go |
+| :--- | :--- | :--- |
+| **1. raw tcp & http** | `std::net::TcpListener` manual read write | `net/http` standard library |
+| **2. concurrency** | threadpool `Arc<Mutex<Receiver>>` `mpsc` | goroutines channels `sync.WaitGroup` |
+| **3. async & routing** | tokio runtime `async`/`await` | go 1.22+ `http.NewServeMux` middleware |
+| **4. json api** | axum router state extractors `serde_json` | `encoding/json` struct tags |
+| **5. persistence** | async sqlite with sqlx | sqlite with `database/sql` pool |
+| **6. telemetry** | `tracing-subscriber` signal handlers | `log/slog` `signal.NotifyContext` |
 
 ### 5. machine learning & ai fundamentals (`ailab`)
 

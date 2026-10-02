@@ -37,6 +37,16 @@ export class HeroScene {
     this.matrixLines = null;
     this.waveBars = [];
 
+    // ASCII Filter Pipeline
+    this.asciiEnabled = true;
+    this.asciiCellWidth = 8;
+    this.asciiCellHeight = 12;
+    this.asciiChars = " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+    this.asciiCanvas = null;
+    this.asciiCtx = null;
+    this.sampleCanvas = null;
+    this.sampleCtx = null;
+
     this.init();
   }
 
@@ -53,7 +63,8 @@ export class HeroScene {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -61,7 +72,26 @@ export class HeroScene {
     this.renderer.toneMappingExposure = 1.3;
 
     this.container.innerHTML = '';
+    this.container.style.position = 'relative';
     this.container.appendChild(this.renderer.domElement);
+
+    // 2b. Full-scene Dynamic ASCII Filter Overlay Canvas
+    this.asciiCanvas = document.createElement('canvas');
+    this.asciiCanvas.className = 'hero-ascii-canvas';
+    this.asciiCanvas.style.position = 'absolute';
+    this.asciiCanvas.style.inset = '0';
+    this.asciiCanvas.style.width = '100%';
+    this.asciiCanvas.style.height = '100%';
+    this.asciiCanvas.style.pointerEvents = 'none';
+    this.asciiCanvas.style.zIndex = '2';
+    this.asciiCtx = this.asciiCanvas.getContext('2d');
+
+    this.sampleCanvas = document.createElement('canvas');
+    this.sampleCtx = this.sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+    this.container.appendChild(this.asciiCanvas);
+    this.resizeAsciiCanvases(width, height);
+    this.toggleAscii(true);
 
     // 3. Main Rig Group
     this.mainGroup = new THREE.Group();
@@ -798,6 +828,93 @@ export class HeroScene {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.resizeAsciiCanvases(width, height);
+  }
+
+  resizeAsciiCanvases(width, height) {
+    if (!this.asciiCanvas || !this.sampleCanvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.asciiCanvas.width = Math.round(width * dpr);
+    this.asciiCanvas.height = Math.round(height * dpr);
+
+    const cols = Math.max(10, Math.floor(width / this.asciiCellWidth));
+    const rows = Math.max(10, Math.floor(height / this.asciiCellHeight));
+    this.sampleCanvas.width = cols;
+    this.sampleCanvas.height = rows;
+  }
+
+  toggleAscii(forceState) {
+    this.asciiEnabled = typeof forceState === 'boolean' ? forceState : !this.asciiEnabled;
+    if (this.asciiCanvas) {
+      this.asciiCanvas.style.display = this.asciiEnabled ? 'block' : 'none';
+    }
+    if (this.renderer && this.renderer.domElement) {
+      this.renderer.domElement.style.opacity = this.asciiEnabled ? '0.06' : '1';
+    }
+    return this.asciiEnabled;
+  }
+
+  renderAscii() {
+    if (!this.asciiEnabled || !this.asciiCtx || !this.sampleCtx || !this.renderer) return;
+
+    const cols = this.sampleCanvas.width;
+    const rows = this.sampleCanvas.height;
+    if (cols <= 0 || rows <= 0) return;
+
+    this.sampleCtx.clearRect(0, 0, cols, rows);
+    this.sampleCtx.drawImage(this.renderer.domElement, 0, 0, cols, rows);
+
+    let imgData;
+    try {
+      imgData = this.sampleCtx.getImageData(0, 0, cols, rows).data;
+    } catch (e) {
+      return;
+    }
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const canvasW = this.asciiCanvas.width;
+    const canvasH = this.asciiCanvas.height;
+    const ctx = this.asciiCtx;
+
+    ctx.clearRect(0, 0, canvasW, canvasH);
+    ctx.font = `bold ${Math.round(this.asciiCellHeight * dpr * 0.9)}px "JetBrains Mono", "Courier New", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const cellW = canvasW / cols;
+    const cellH = canvasH / rows;
+    const chars = this.asciiChars;
+    const charLen = chars.length;
+
+    let pIdx = 0;
+    for (let y = 0; y < rows; y++) {
+      const cy = y * cellH + cellH * 0.5;
+      for (let x = 0; x < cols; x++) {
+        const r = imgData[pIdx];
+        const g = imgData[pIdx + 1];
+        const b = imgData[pIdx + 2];
+        const a = imgData[pIdx + 3];
+        pIdx += 4;
+
+        if (a < 15) continue;
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum < 14) continue;
+
+        const charIdx = Math.min(charLen - 1, Math.floor((lum / 255) * charLen));
+        const char = chars[charIdx];
+        if (char === ' ') continue;
+
+        const cx = x * cellW + cellW * 0.5;
+        const boostR = Math.min(255, Math.floor(r * 1.15 + 18));
+        const boostG = Math.min(255, Math.floor(g * 1.15 + 18));
+        const boostB = Math.min(255, Math.floor(b * 1.15 + 18));
+        const alpha = Math.min(1, (a / 255) * (0.35 + (lum / 255) * 0.65));
+
+        ctx.fillStyle = `rgba(${boostR},${boostG},${boostB},${alpha})`;
+        ctx.fillText(char, cx, cy);
+      }
+    }
   }
 
   animate() {
@@ -912,6 +1029,10 @@ export class HeroScene {
 
     this.camera.lookAt(0, 0, 0);
     this.renderer.render(this.scene, this.camera);
+
+    if (this.asciiEnabled) {
+      this.renderAscii();
+    }
   }
 
   destroy() {
@@ -921,6 +1042,9 @@ export class HeroScene {
     window.removeEventListener('resize', this.onResize);
     if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+    }
+    if (this.asciiCanvas && this.asciiCanvas.parentNode) {
+      this.asciiCanvas.parentNode.removeChild(this.asciiCanvas);
     }
   }
 }

@@ -56,6 +56,13 @@
               <div class="dropdown-item-desc">Rasterizers, Z-Buffer, 3D math, Vulkan &amp; WebGPU</div>
             </div>
           </a>
+          <a class="dropdown-item" href="#motion" role="menuitem">
+            <span class="dropdown-item-badge badge-motion">WebGL</span>
+            <div class="dropdown-item-info">
+              <div class="dropdown-item-title">Web Motion Graphics</div>
+              <div class="dropdown-item-desc">Three.js shaders, Anime.js &amp; audio visualizer</div>
+            </div>
+          </a>
           <a class="dropdown-item" href="#servers" role="menuitem">
             <span class="dropdown-item-badge badge-server">Rust &amp; Go</span>
             <div class="dropdown-item-info">
@@ -68,13 +75,6 @@
             <div class="dropdown-item-info">
               <div class="dropdown-item-title">AI &amp; ML Fundamentals</div>
               <div class="dropdown-item-desc">Math prerequisites, backprop, transformers &amp; SOTA</div>
-            </div>
-          </a>
-          <a class="dropdown-item" href="#motion" role="menuitem">
-            <span class="dropdown-item-badge badge-motion">WebGL</span>
-            <div class="dropdown-item-info">
-              <div class="dropdown-item-title">3D Motion Lab</div>
-              <div class="dropdown-item-desc">Three.js shaders, Anime.js &amp; audio visualizer</div>
             </div>
           </a>
         </div>
@@ -153,6 +153,11 @@
               <button class="hero-mode-btn" data-mode="geometry">Polyhedron</button>
               <button class="hero-mode-btn" data-mode="matrix">Matrix Grid</button>
               <button class="hero-mode-btn" data-mode="wave">Wave</button>
+              <div class="hero-mode-divider"></div>
+              <button class="hero-mode-btn hero-ascii-btn active" id="btn-hero-ascii" title="Toggle ASCII shader filter (default: ON)">
+                <span class="ascii-dot"></span>
+                <span id="hero-ascii-status">ASCII: ON</span>
+              </button>
             </div>
           </div>
 
@@ -223,31 +228,6 @@
               </a>
             </article>
 
-            <!-- Card 2: Server Architecture Lab -->
-            <article class="portal-card portal-card-servers">
-              <div>
-                <div class="card-top-meta">
-                  <span class="card-stat-pill" style="color: var(--accent-amber);">Rust &times; Go</span>
-                  <span class="card-stat-pill">6 Stages</span>
-                </div>
-                <h3 class="portal-card-title">Server Architecture</h3>
-                <p class="portal-card-desc">
-                  Step-by-step comparison of HTTP servers in Rust and Go: raw TCP sockets, worker threadpools vs goroutines, Tokio async, Axum, SQLx persistence, and signal handling.
-                </p>
-                <div class="portal-tags-row">
-                  <span class="portal-tag">Raw Sockets</span>
-                  <span class="portal-tag">ThreadPool vs Goroutines</span>
-                  <span class="portal-tag">Tokio Async</span>
-                  <span class="portal-tag">Axum</span>
-                  <span class="portal-tag">SQLx SQLite</span>
-                </div>
-              </div>
-              <a class="portal-card-btn" href="#servers">
-                <span>Compare Implementations</span>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </a>
-            </article>
-
             <!-- Card 3: 3D Motion Lab -->
             <article class="portal-card portal-card-motion">
               <div>
@@ -273,7 +253,32 @@
               </a>
             </article>
 
-            <!-- Card 4: Machine Learning & AI Fundamentals Lab -->
+            <!-- Card 4: Server Architecture Lab -->
+            <article class="portal-card portal-card-servers">
+              <div>
+                <div class="card-top-meta">
+                  <span class="card-stat-pill" style="color: var(--accent-amber);">Rust &times; Go</span>
+                  <span class="card-stat-pill">6 Stages</span>
+                </div>
+                <h3 class="portal-card-title">Server Architecture</h3>
+                <p class="portal-card-desc">
+                  Step-by-step comparison of HTTP servers in Rust and Go: raw TCP sockets, worker threadpools vs goroutines, Tokio async, Axum, SQLx persistence, and signal handling.
+                </p>
+                <div class="portal-tags-row">
+                  <span class="portal-tag">Raw Sockets</span>
+                  <span class="portal-tag">ThreadPool vs Goroutines</span>
+                  <span class="portal-tag">Tokio Async</span>
+                  <span class="portal-tag">Axum</span>
+                  <span class="portal-tag">SQLx SQLite</span>
+                </div>
+              </div>
+              <a class="portal-card-btn" href="#servers">
+                <span>Compare Implementations</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </article>
+
+            <!-- Card 5: Machine Learning & AI Fundamentals Lab -->
             <article class="portal-card portal-card-ai">
               <div>
                 <div class="card-top-meta">
@@ -319,24 +324,24 @@
     </section>
 
     <!-- ====================================================================
-         SECTION 3: SERVER LAB (rustserver & golang)
+         SECTION 3: 3D MOTION LAB (qutest2)
+         ==================================================================== -->
+    <section id="section-motion" class="app-section">
+      <div id="motion-container"></div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: SERVER LAB (rustserver & golang)
          ==================================================================== -->
     <section id="section-servers" class="app-section">
       <div id="server-container"></div>
     </section>
 
     <!-- ====================================================================
-         SECTION: AI & ML LAB (ailab)
+         SECTION 5: AI & ML LAB (ailab)
          ==================================================================== -->
     <section id="section-ai" class="app-section">
       <div id="ai-container"></div>
-    </section>
-
-    <!-- ====================================================================
-         SECTION 4: 3D MOTION LAB (qutest2)
-         ==================================================================== -->
-    <section id="section-motion" class="app-section">
-      <div id="motion-container"></div>
     </section>
 
     <!-- ====================================================================
