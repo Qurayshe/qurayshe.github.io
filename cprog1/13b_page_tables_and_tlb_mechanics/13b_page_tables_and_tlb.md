@@ -70,4 +70,4 @@ Child Virtual Page A  /
 
 ## Hands-On Program
 
-Open [`13b_tlb_and_cow_demo.c`](file:///c:/Users/kkhoie/Downloads/cprog1/13b_page_tables_and_tlb_mechanics/13b_tlb_and_cow_demo.c) to observe TLB strided memory access benchmarks and COW page-splitting behavior! (*^▽^*)
+Open [`13b_tlb_and_cow_demo.c`](#systems/13b_page_tables_and_tlb_mechanics) to observe TLB strided memory access benchmarks and COW page-splitting behavior! (*^▽^*)

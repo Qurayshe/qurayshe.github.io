@@ -25,4 +25,4 @@ A Hash Map is an underlying contiguous C array of buckets:
 
 ## Hands-On Program
 
-Open [`28_open_addressing_hashmap.c`](file:///c:/Users/kkhoie/Downloads/cprog1/28_hashmaps_and_dynamic_collections/28_open_addressing_hashmap.c) to see open-addressing hash maps with dynamic `realloc` resizing in C! (*^▽^*)
+Open [`28_open_addressing_hashmap.c`](#systems/28_hashmaps_and_dynamic_collections) to see open-addressing hash maps with dynamic `realloc` resizing in C! (*^▽^*)

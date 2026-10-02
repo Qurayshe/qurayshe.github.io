@@ -49,5 +49,5 @@ Given `0x12345678`:
 
 ## Hands-On Programs
 
-1. [`06_bitwise_manipulation.c`](file:///c:/Users/kkhoie/Downloads/cprog1/06_bitwise_and_registers/06_bitwise_manipulation.c): Bitmask recipes and permission systems.
-2. [`06_endianness_and_registers.c`](file:///c:/Users/kkhoie/Downloads/cprog1/06_bitwise_and_registers/06_endianness_and_registers.c): Detecting endianness and simulated hardware UART peripheral control! (o゜▽゜)o
+1. [`06_bitwise_manipulation.c`](#systems/06_bitwise_and_registers): Bitmask recipes and permission systems.
+2. [`06_endianness_and_registers.c`](#systems/06_bitwise_and_registers): Detecting endianness and simulated hardware UART peripheral control! (o゜▽゜)o

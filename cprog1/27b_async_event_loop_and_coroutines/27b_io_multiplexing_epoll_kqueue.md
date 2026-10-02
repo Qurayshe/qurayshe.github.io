@@ -51,4 +51,4 @@ Welcome to **Asynchronous I/O Multiplexing with `epoll` and the Reactor Pattern*
 
 ## Hands-On Program
 
-Open [`27b_epoll_reactor_pattern.c`](file:///c:/Users/kkhoie/Downloads/cprog1/27b_async_event_loop_and_coroutines/27b_epoll_reactor_pattern.c) to inspect non-blocking pipe event registration and event loop dispatching! (*^▽^*)
+Open [`27b_epoll_reactor_pattern.c`](#systems/27b_async_event_loop_and_coroutines) to inspect non-blocking pipe event registration and event loop dispatching! (*^▽^*)

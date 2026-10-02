@@ -70,4 +70,4 @@ Direct Threading:
 
 ## Hands-On Program
 
-Open [`16b_threaded_code_vm.c`](file:///c:/Users/kkhoie/Downloads/cprog1/16b_vm_dispatch_techniques/16b_threaded_code_vm.c) to benchmark 50 million iterations of Switch Dispatch vs Direct Threaded Dispatch! (*^▽^*)
+Open [`16b_threaded_code_vm.c`](#systems/16b_vm_dispatch_techniques) to benchmark 50 million iterations of Switch Dispatch vs Direct Threaded Dispatch! (*^▽^*)

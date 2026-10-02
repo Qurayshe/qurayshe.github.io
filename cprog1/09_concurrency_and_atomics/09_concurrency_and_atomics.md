@@ -45,4 +45,4 @@ void spinlock_lock(spinlock_t *lock) {
 
 ## Hands-On Program
 
-Check out [`09_atomics_and_spinlocks.c`](file:///c:/Users/kkhoie/Downloads/cprog1/09_concurrency_and_atomics/09_atomics_and_spinlocks.c) for lock-free counters, CAS demonstrations, and custom spinlocks in action! (*^▽^*)
+Check out [`09_atomics_and_spinlocks.c`](#systems/09_concurrency_and_atomics) for lock-free counters, CAS demonstrations, and custom spinlocks in action! (*^▽^*)

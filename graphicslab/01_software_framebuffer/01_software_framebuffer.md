@@ -92,7 +92,7 @@ You can view `.ppm` files in Photoshop, GIMP, VS Code extensions, or convert the
 
 ## 5. Summary & Code Inspection
 
-Open [`01_software_framebuffer.c`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/01_software_framebuffer/01_software_framebuffer.c) to see a complete implementation of:
+Open [`01_software_framebuffer.c`](#graphics/01_software_framebuffer) to see a complete implementation of:
 1. Dynamic heap-allocated framebuffer (`Framebuffer* fb_create(width, height)`)
 2. Clear screen, draw pixel with boundary safety
 3. Solid rectangle rasterization

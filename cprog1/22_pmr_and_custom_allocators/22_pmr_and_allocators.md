@@ -20,4 +20,4 @@ vec.push_back(42);
 
 ## Hands-On Program
 
-Open [`22_pmr_arena.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/22_pmr_and_custom_allocators/22_pmr_arena.cpp) to see stack-backed vectors and nested arenas in action! (≧∇≦)ﾉ
+Open [`22_pmr_arena.cpp`](#systems/22_pmr_and_custom_allocators) to see stack-backed vectors and nested arenas in action! (≧∇≦)ﾉ

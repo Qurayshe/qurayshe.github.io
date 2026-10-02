@@ -219,4 +219,4 @@ Why? Because `5 + (-5)` using standard binary addition wraps around to `0000 000
 
 ## Hands-On Program
 
-Go check out [`01_types_and_bits.c`](file:///c:/Users/kkhoie/Downloads/cprog1/01_compilation_and_memory/01_types_and_bits.c) and run it to see exact sizes and raw memory bit dumps live on your screen! (≧∇≦)ﾉ
+Go check out [`01_types_and_bits.c`](#systems/01_compilation_and_memory) and run it to see exact sizes and raw memory bit dumps live on your screen! (≧∇≦)ﾉ

@@ -31,4 +31,4 @@ Buffer(Buffer&& other) noexcept {
 
 ## Hands-On Program
 
-Open [`19_move_semantics.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/19_move_semantics_and_rvalues/19_move_semantics.cpp) to watch O(1) pointer theft in action! (≧∇≦)ﾉ
+Open [`19_move_semantics.cpp`](#systems/19_move_semantics_and_rvalues) to watch O(1) pointer theft in action! (≧∇≦)ﾉ

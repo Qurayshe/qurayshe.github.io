@@ -67,4 +67,4 @@ AVX2 works best when data arrays are aligned to **32-byte boundaries** in RAM:
 
 ## Hands-On Benchmark Program
 
-Check out [`10b_avx2_vectorization.c`](file:///c:/Users/kkhoie/Downloads/cprog1/10b_simd_vector_intrinsics/10b_avx2_vectorization.c) to see scalar vs AVX2 dot-product and vector-add benchmarks running in real time! (o゜▽゜)o
+Check out [`10b_avx2_vectorization.c`](#systems/10b_simd_vector_intrinsics) to see scalar vs AVX2 dot-product and vector-add benchmarks running in real time! (o゜▽゜)o

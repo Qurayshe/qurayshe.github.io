@@ -48,4 +48,4 @@ A **Trampoline** is a tiny assembly stub that sets up registers according to the
 
 ## Hands-On Program
 
-Open [`31b_jit_trampolines.c`](file:///c:/Users/kkhoie/Downloads/cprog1/31_jit_compiler_and_dynamic_codegen/31b_jit_trampolines.c) to inspect a full $W \oplus X$ compliant dynamic compiler with I-Cache clearing! (*^▽^*)
+Open [`31b_jit_trampolines.c`](#systems/31_jit_compiler_and_dynamic_codegen) to inspect a full $W \oplus X$ compliant dynamic compiler with I-Cache clearing! (*^▽^*)

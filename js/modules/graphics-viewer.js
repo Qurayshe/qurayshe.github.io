@@ -94,7 +94,6 @@ export class GraphicsViewer {
               <div class="graphics-preview-card" id="graphics-preview-card">
                 <div class="graphics-preview-header">
                   <div class="preview-badge-row">
-                    <span class="preview-status-pill"><span class="status-dot"></span> LIVE ENGINE PREVIEW</span>
                     <span class="preview-tech-pill" id="graphics-preview-tech">CPU Rasterizer</span>
                   </div>
                   <div class="preview-title" id="graphics-preview-title">Visual Example</div>
@@ -312,6 +311,35 @@ export class GraphicsViewer {
     }
   }
 
+  selectCodeFileByName(filename) {
+    if (!this.currentModule || !this.currentModule.codeFiles) return;
+    const cleanTarget = filename.replace(/^[`'"]+|[`'"]+$/g, '').trim().toLowerCase();
+    const idx = this.currentModule.codeFiles.findIndex((f) => {
+      const fn = f.name.toLowerCase();
+      return fn === cleanTarget || fn.includes(cleanTarget) || cleanTarget.includes(fn);
+    });
+    if (idx !== -1 && idx !== this.selectedCodeFileIndex) {
+      this.selectedCodeFileIndex = idx;
+      this.renderCodeFiles();
+    }
+  }
+
+  highlightCodeViewer() {
+    const codeContainer = document.querySelector('.graphics-code-container') || document.getElementById('graphics-code-content');
+    if (!codeContainer) return;
+    const rect = codeContainer.getBoundingClientRect();
+    const isFullyVisible = (rect.top >= 70 && rect.bottom <= window.innerHeight);
+    if (!isFullyVisible) {
+      codeContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    codeContainer.classList.remove('code-viewer-highlight-pulse');
+    void codeContainer.offsetWidth;
+    codeContainer.classList.add('code-viewer-highlight-pulse');
+    setTimeout(() => {
+      codeContainer.classList.remove('code-viewer-highlight-pulse');
+    }, 1600);
+  }
+
   async loadCodeFile(file) {
     const codeView = document.getElementById('graphics-code-content');
     if (!codeView) return;
@@ -319,9 +347,16 @@ export class GraphicsViewer {
     codeView.textContent = `// Loading ${file.name}...`;
     try {
       const code = await fetchFile(file.path);
-      codeView.className = `language-${file.lang || 'c'}`;
+      const inferredLang = file.lang || (file.name.endsWith('.cpp') ? 'cpp' : file.name.endsWith('.c') ? 'c' : file.name.endsWith('.js') ? 'javascript' : 'c');
+      codeView.className = `language-${inferredLang}`;
+      const pre = codeView.closest('pre');
+      if (pre) {
+        pre.className = `code-block line-numbers language-${inferredLang}`;
+      }
       codeView.textContent = code;
-      highlightCode(codeView, file.lang || 'c');
+      if (typeof Prism !== 'undefined') {
+        Prism.highlightElement(codeView);
+      }
     } catch (err) {
       codeView.textContent = `// Failed to load source file: ${file.path}`;
     }

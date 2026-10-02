@@ -54,4 +54,4 @@ Suppose a lock-free stack has nodes: `[A] -> [B] -> [C]`:
 
 ## Hands-On Program
 
-Open [`24b_lock_free_stack_aba.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/24b_lock_free_patterns_and_aba_problem/24b_lock_free_stack_aba.cpp) to observe a lock-free Treiber stack with atomic CAS loops in action! (*^▽^*)
+Open [`24b_lock_free_stack_aba.cpp`](#systems/24b_lock_free_patterns_and_aba_problem) to observe a lock-free Treiber stack with atomic CAS loops in action! (*^▽^*)

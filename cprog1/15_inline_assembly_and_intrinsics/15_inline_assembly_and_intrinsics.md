@@ -20,4 +20,4 @@ On x86 CPUs, `__rdtsc()` reads the processor timestamp counter—giving you nano
 
 ## Hands-On Program
 
-Open [`15_intrinsics_and_cycles.c`](file:///c:/Users/kkhoie/Downloads/cprog1/15_inline_assembly_and_intrinsics/15_intrinsics_and_cycles.c) for single-cycle bit counting and cycle-accurate benchmarks! (≧∇≦)ﾉ
+Open [`15_intrinsics_and_cycles.c`](#systems/15_inline_assembly_and_intrinsics) for single-cycle bit counting and cycle-accurate benchmarks! (≧∇≦)ﾉ

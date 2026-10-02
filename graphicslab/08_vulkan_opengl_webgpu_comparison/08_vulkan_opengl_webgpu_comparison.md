@@ -113,6 +113,6 @@ device.queue.submit([commandEncoder.finish()]);
 ## 4. Source Files Inspection
 
 Check out the implementation files in this directory:
-- [`08_opengl_triangle.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/08_vulkan_opengl_webgpu_comparison/08_opengl_triangle.cpp): Complete modern Core Profile OpenGL triangle setup.
-- [`08_vulkan_triangle.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/08_vulkan_opengl_webgpu_comparison/08_vulkan_triangle.cpp): Structured, fully annotated Vulkan 1.3 pipeline architecture.
-- [`08_webgpu_triangle.js`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/08_vulkan_opengl_webgpu_comparison/08_webgpu_triangle.js): Next-generation WebGPU pipeline using WGSL shaders.
+- [`08_opengl_triangle.cpp`](#graphics/08_vulkan_opengl_webgpu_comparison): Complete modern Core Profile OpenGL triangle setup.
+- [`08_vulkan_triangle.cpp`](#graphics/08_vulkan_opengl_webgpu_comparison): Structured, fully annotated Vulkan 1.3 pipeline architecture.
+- [`08_webgpu_triangle.js`](#graphics/08_vulkan_opengl_webgpu_comparison): Next-generation WebGPU pipeline using WGSL shaders.

@@ -43,5 +43,5 @@ Arena Buffer (64 KB):
 
 ## Hands-On Programs
 
-1. [`05_heap_memory.c`](file:///c:/Users/kkhoie/Downloads/cprog1/05_dynamic_memory/05_heap_memory.c): Safe dynamic array vector implementation.
-2. [`05_simple_arena.c`](file:///c:/Users/kkhoie/Downloads/cprog1/05_dynamic_memory/05_simple_arena.c): A complete, super-fast Arena Allocator in ~70 lines of clean C!
+1. [`05_heap_memory.c`](#systems/05_dynamic_memory): Safe dynamic array vector implementation.
+2. [`05_simple_arena.c`](#systems/05_dynamic_memory): A complete, super-fast Arena Allocator in ~70 lines of clean C!

@@ -55,4 +55,4 @@ Because TCP does not preserve packet boundaries:
 
 ## Hands-On Program
 
-Open [`30b_tcp_framing_protocol.c`](file:///c:/Users/kkhoie/Downloads/cprog1/30_http_and_socket_networking/30b_tcp_framing_protocol.c) to inspect a length-prefixed packet encoder and incremental stream chunk parser! (*^▽^*)
+Open [`30b_tcp_framing_protocol.c`](#systems/30_http_and_socket_networking) to inspect a length-prefixed packet encoder and incremental stream chunk parser! (*^▽^*)

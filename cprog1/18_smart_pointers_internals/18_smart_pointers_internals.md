@@ -41,4 +41,4 @@ When the last shared pointer goes out of scope, the memory is freed!
 
 ## Hands-On Program
 
-Check out [`18_smart_pointers.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/18_smart_pointers_internals/18_smart_pointers.cpp) for ownership transfers, size comparisons, and custom C deleters! (*/ω＼*)
+Check out [`18_smart_pointers.cpp`](#systems/18_smart_pointers_internals) for ownership transfers, size comparisons, and custom C deleters! (*/ω＼*)

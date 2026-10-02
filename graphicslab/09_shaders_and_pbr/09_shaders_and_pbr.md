@@ -57,4 +57,4 @@ Modern 3D assets are authored with just 3 primary texture maps:
 2. **Roughness $[0.0, 1.0]$**: How microscopically smooth ($0.0$) or rough ($1.0$) the surface is.
 3. **Metallic $[0.0, 1.0]$**: Binary or blend between dielectric non-conductor ($0.0$) and pure conductor ($1.0$).
 
-Open [`09_pbr_shader.glsl`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/09_shaders_and_pbr/09_pbr_shader.glsl) and [`09_pbr_shader.wgsl`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/09_shaders_and_pbr/09_pbr_shader.wgsl) to see production-ready implementations in both OpenGL/Vulkan GLSL and WebGPU WGSL.
+Open [`09_pbr_shader.glsl`](#graphics/09_shaders_and_pbr) and [`09_pbr_shader.wgsl`](#graphics/09_shaders_and_pbr) to see production-ready implementations in both OpenGL/Vulkan GLSL and WebGPU WGSL.

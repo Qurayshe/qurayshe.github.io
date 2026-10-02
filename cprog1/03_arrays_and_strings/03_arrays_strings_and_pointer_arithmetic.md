@@ -55,4 +55,4 @@ Memory: [ 'H' | 'E' | 'L' | 'L' | 'O' | '\0' ]
 
 ## Hands-On Program
 
-Open [`03_arrays_and_strings.c`](file:///c:/Users/kkhoie/Downloads/cprog1/03_arrays_and_strings/03_arrays_and_strings.c) to see custom string functions written without `<string.h>` and 2D arrays laid out flat in memory! (≧∇≦)ﾉ
+Open [`03_arrays_and_strings.c`](#systems/03_arrays_and_strings) to see custom string functions written without `<string.h>` and 2D arrays laid out flat in memory! (≧∇≦)ﾉ

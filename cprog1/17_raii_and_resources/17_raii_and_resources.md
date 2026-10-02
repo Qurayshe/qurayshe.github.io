@@ -37,4 +37,4 @@ void thread_safe_work() {
 
 ## Hands-On Program
 
-Open [`17_raii_demo.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/17_raii_and_resources/17_raii_demo.cpp) to see custom scoped file handles and automatic stack unwinding! (≧∇≦)ﾉ
+Open [`17_raii_demo.cpp`](#systems/17_raii_and_resources) to see custom scoped file handles and automatic stack unwinding! (≧∇≦)ﾉ

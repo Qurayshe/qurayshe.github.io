@@ -24,4 +24,4 @@ constexpr uint32_t id = hash_str("USER_LOGIN");
 
 ## Hands-On Program
 
-Open [`20_constexpr_demo.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/20_constexpr_and_compile_time/20_constexpr_demo.cpp) to see compile-time string hashing and precomputed power-of-two tables verified with `static_assert`! (o゜▽゜)o
+Open [`20_constexpr_demo.cpp`](#systems/20_constexpr_and_compile_time) to see compile-time string hashing and precomputed power-of-two tables verified with `static_assert`! (o゜▽゜)o

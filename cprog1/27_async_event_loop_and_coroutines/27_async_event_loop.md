@@ -34,4 +34,4 @@ When you hit `await`, the function saves its state and **returns immediately** t
 
 ## Hands-On Program
 
-Open [`27_micro_event_loop.c`](file:///c:/Users/kkhoie/Downloads/cprog1/27_async_event_loop_and_coroutines/27_micro_event_loop.c) for a complete, single-threaded async event loop and coroutines in C! (≧∇≦)ﾉ
+Open [`27_micro_event_loop.c`](#systems/27_async_event_loop_and_coroutines) for a complete, single-threaded async event loop and coroutines in C! (≧∇≦)ﾉ

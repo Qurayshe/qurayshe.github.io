@@ -93,4 +93,4 @@ How does your binary call `printf()` inside `libc.so` without knowing its memory
 
 ## Hands-On Code Example
 
-Check out [`01b_symbol_resolution.c`](file:///c:/Users/kkhoie/Downloads/cprog1/01_compilation_and_memory/01b_symbol_resolution.c) to inspect weak symbol overriding, section allocations, and symbol address relocations! (o゜▽゜)o
+Check out [`01b_symbol_resolution.c`](#systems/01_compilation_and_memory) to inspect weak symbol overriding, section allocations, and symbol address relocations! (o゜▽゜)o

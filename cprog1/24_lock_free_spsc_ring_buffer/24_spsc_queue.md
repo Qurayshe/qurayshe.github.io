@@ -22,4 +22,4 @@ Ring Buffer Slots (Capacity = 4):
 
 ## Hands-On Program
 
-Open [`24_spsc_ring_buffer.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/24_lock_free_spsc_ring_buffer/24_spsc_ring_buffer.cpp) to see 1,000,000 messages stream across threads with zero locks! (*^▽^*)
+Open [`24_spsc_ring_buffer.cpp`](#systems/24_lock_free_spsc_ring_buffer) to see 1,000,000 messages stream across threads with zero locks! (*^▽^*)

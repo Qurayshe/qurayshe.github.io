@@ -1010,7 +1010,7 @@
       stroke-width: 2.6px;
       r: 6.5;
       cursor: grab;
-      transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.15s;
+      transition: r 0.15s ease, fill 0.15s;
     }
 
     .spider-node:hover {
@@ -1735,8 +1735,6 @@
         const dt = Math.min((now - lastTime) / 1000, 0.05);
         lastTime = now;
 
-        const spring = 160;
-        const damping = 14;
         let isMoving = false;
 
         const pts = [];
@@ -1745,13 +1743,21 @@
           const target = stats[axis.key];
           const st = animStats[axis.key];
 
-          const diff = target - st.val;
-          const force = diff * spring - st.vel * damping;
-          st.vel += force * dt;
-          st.val += st.vel * dt;
-
-          if (Math.abs(diff) > 0.005 || Math.abs(st.vel) > 0.01) {
-            isMoving = true;
+          if (activeDragAxis === axis.key) {
+            // Dragging: directly track target with zero bounce or lag
+            st.val = target;
+            st.vel = 0;
+          } else {
+            // Smooth transition without spring overshoot or oscillation
+            const diff = target - st.val;
+            if (Math.abs(diff) > 0.005) {
+              isMoving = true;
+              st.val += diff * Math.min(1, dt * 24);
+              st.vel = 0;
+            } else {
+              st.val = target;
+              st.vel = 0;
+            }
           }
 
           const rCurrent = rCenterHex + (Math.max(0, st.val) / maxVal) * (rOuter - rCenterHex);
@@ -1878,6 +1884,8 @@
       const oldVal = stats[activeDragAxis];
       if (newVal !== oldVal) {
         stats[activeDragAxis] = newVal;
+        animStats[activeDragAxis].val = newVal;
+        animStats[activeDragAxis].vel = 0;
 
         // If dragged into the "too far" zone (> 3) outwards, break off extra stars / skulls!
         if (newVal > 3 && newVal > oldVal) {
@@ -1892,7 +1900,12 @@
     }
 
     function endDragNode() {
+      if (activeDragAxis) {
+        animStats[activeDragAxis].val = stats[activeDragAxis];
+        animStats[activeDragAxis].vel = 0;
+      }
       activeDragAxis = null;
+      updateAll();
       window.removeEventListener('mousemove', onDragNode);
       window.removeEventListener('mouseup', endDragNode);
       window.removeEventListener('touchmove', onDragNode);

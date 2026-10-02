@@ -38,4 +38,4 @@ When switching from Fiber A to Fiber B:
 
 ## Hands-On Program
 
-Open [`27c_cooperative_fiber_scheduler.c`](file:///c:/Users/kkhoie/Downloads/cprog1/27c_async_event_loop_and_coroutines/27c_cooperative_fiber_scheduler.c) to inspect a working cooperative user-space coroutine scheduler! (*^▽^*)
+Open [`27c_cooperative_fiber_scheduler.c`](#systems/27c_async_event_loop_and_coroutines) to inspect a working cooperative user-space coroutine scheduler! (*^▽^*)

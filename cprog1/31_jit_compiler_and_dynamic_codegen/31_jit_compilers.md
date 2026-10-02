@@ -26,4 +26,4 @@ When a function is called a lot ("hot loop"), the JIT engine compiles bytecode d
 
 ## Hands-On Program
 
-Open [`31_mini_jit_compiler.c`](file:///c:/Users/kkhoie/Downloads/cprog1/31_jit_compiler_and_dynamic_codegen/31_mini_jit_compiler.c) to see a real working JIT compiler generating machine code in memory and executing it! (*^▽^*)
+Open [`31_mini_jit_compiler.c`](#systems/31_jit_compiler_and_dynamic_codegen) to see a real working JIT compiler generating machine code in memory and executing it! (*^▽^*)

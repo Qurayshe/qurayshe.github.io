@@ -54,4 +54,4 @@ Pointer: 1 11111111111 110000000000000000000000000... (Ptr Tag) | 0x7FFF12345678
 
 ## Hands-On Program
 
-Open [`26b_nan_boxing_engine.c`](file:///c:/Users/kkhoie/Downloads/cprog1/26b_dynamic_typing_and_boxed_objects/26b_nan_boxing_engine.c) to inspect bitwise NaN packaging, unpacking, and dynamic dispatch live! (*^▽^*)
+Open [`26b_nan_boxing_engine.c`](#systems/26b_dynamic_typing_and_boxed_objects) to inspect bitwise NaN packaging, unpacking, and dynamic dispatch live! (*^▽^*)

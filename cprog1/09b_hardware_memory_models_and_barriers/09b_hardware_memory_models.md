@@ -74,4 +74,4 @@ The C11 standard (`stdatomic.h`) provides 6 memory orders:
 
 ## Hands-On Program
 
-Open [`09b_memory_barriers_demo.c`](file:///c:/Users/kkhoie/Downloads/cprog1/09b_hardware_memory_models_and_barriers/09b_memory_barriers_demo.c) to observe atomic store/load pairs and how acquire-release semantics safely pass data between threads without heavy global mutex locks! (*^▽^*)
+Open [`09b_memory_barriers_demo.c`](#systems/09b_hardware_memory_models_and_barriers) to observe atomic store/load pairs and how acquire-release semantics safely pass data between threads without heavy global mutex locks! (*^▽^*)

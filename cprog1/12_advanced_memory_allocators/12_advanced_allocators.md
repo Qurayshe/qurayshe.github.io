@@ -28,4 +28,4 @@ Free Pool (Slots store pointers to the next free slot):
 
 ## Hands-On Program
 
-Open [`12_pool_allocator.c`](file:///c:/Users/kkhoie/Downloads/cprog1/12_advanced_memory_allocators/12_pool_allocator.c) for a complete, industrial-grade Memory Pool implementation in pure C! (≧∇≦)ﾉ
+Open [`12_pool_allocator.c`](#systems/12_advanced_memory_allocators) for a complete, industrial-grade Memory Pool implementation in pure C! (≧∇≦)ﾉ

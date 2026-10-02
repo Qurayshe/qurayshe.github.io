@@ -60,5 +60,5 @@ struct Flags {
 
 ## Hands-On Programs
 
-1. [`04_struct_alignment.c`](file:///c:/Users/kkhoie/Downloads/cprog1/04_structs_and_memory_layout/04_struct_alignment.c): Byte-by-byte visual memory dumps of struct padding!
-2. [`04_unions_and_bitfields.c`](file:///c:/Users/kkhoie/Downloads/cprog1/04_structs_and_memory_layout/04_unions_and_bitfields.c): Floating point bit inspections and register flags!
+1. [`04_struct_alignment.c`](#systems/04_structs_and_memory_layout): Byte-by-byte visual memory dumps of struct padding!
+2. [`04_unions_and_bitfields.c`](#systems/04_structs_and_memory_layout): Floating point bit inspections and register flags!

@@ -38,4 +38,4 @@ Row-major traversal is often **5x to 20x faster** on modern hardware just becaus
 
 ## Hands-On Program
 
-Run the benchmark in [`10_cache_locality_benchmark.c`](file:///c:/Users/kkhoie/Downloads/cprog1/10_cache_and_simd/10_cache_locality_benchmark.c) to see the live time difference on a 64 MB matrix! (≧∇≦)ﾉ
+Run the benchmark in [`10_cache_locality_benchmark.c`](#systems/10_cache_and_simd) to see the live time difference on a 64 MB matrix! (≧∇≦)ﾉ

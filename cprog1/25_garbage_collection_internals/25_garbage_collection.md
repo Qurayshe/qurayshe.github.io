@@ -45,4 +45,4 @@ A Tracing Garbage Collector runs in two distinct phases:
 
 ## Hands-On Program
 
-Open [`25_mark_and_sweep_gc.c`](file:///c:/Users/kkhoie/Downloads/cprog1/25_garbage_collection_internals/25_mark_and_sweep_gc.c) to see a full Mark-and-Sweep Garbage Collector running in pure C! q(≧▽≦q)
+Open [`25_mark_and_sweep_gc.c`](#systems/25_garbage_collection_internals) to see a full Mark-and-Sweep Garbage Collector running in pure C! q(≧▽≦q)

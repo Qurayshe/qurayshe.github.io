@@ -131,4 +131,4 @@ $$Y_{\text{pixel}} = (1 - y_{\text{ndc}}) \cdot \frac{\text{Height}}{2}$$
 
 ## 5. Source Code Inspection
 
-Open [`05_mvp_transform_math.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/05_3d_math_and_transformations/05_mvp_transform_math.cpp) to inspect a complete $4\times 4$ Matrix library and vertex transformer implemented from scratch in pure C++.
+Open [`05_mvp_transform_math.cpp`](#graphics/05_3d_math_and_transformations) to inspect a complete $4\times 4$ Matrix library and vertex transformer implemented from scratch in pure C++.

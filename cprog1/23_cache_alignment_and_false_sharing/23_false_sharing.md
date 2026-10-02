@@ -27,4 +27,4 @@ Now both CPU cores run at 100% speed with zero interference! q(≧▽≦q)
 
 ## Hands-On Program
 
-Run the benchmark in [`23_false_sharing_benchmark.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/23_cache_alignment_and_false_sharing/23_false_sharing_benchmark.cpp) to watch cache padding double your multi-threaded throughput! (o゜▽゜)o
+Run the benchmark in [`23_false_sharing_benchmark.cpp`](#systems/23_cache_alignment_and_false_sharing) to watch cache padding double your multi-threaded throughput! (o゜▽゜)o

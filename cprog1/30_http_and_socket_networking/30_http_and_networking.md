@@ -25,4 +25,4 @@ def get_users(req):
 
 ## Hands-On Program
 
-Open [`30_raw_http_parser.c`](file:///c:/Users/kkhoie/Downloads/cprog1/30_http_and_socket_networking/30_raw_http_parser.c) to see a zero-copy HTTP/1.1 request parser in pure C! (≧∇≦)ﾉ
+Open [`30_raw_http_parser.c`](#systems/30_http_and_socket_networking) to see a zero-copy HTTP/1.1 request parser in pure C! (≧∇≦)ﾉ

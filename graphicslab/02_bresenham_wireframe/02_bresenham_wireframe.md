@@ -159,7 +159,7 @@ $$\text{Byte Offset} = \text{Pixel Index} \times 4 \quad (\text{for RGBA32})$$
 
 ## 6. Implementation: 3D Wireframe Cube
 
-Here is the exact C function implementing this simple projection math from [`02_bresenham_wireframe.c`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/02_bresenham_wireframe/02_bresenham_wireframe.c):
+Here is the exact C function implementing this simple projection math from [`02_bresenham_wireframe.c`](#graphics/02_bresenham_wireframe):
 
 ```c
 typedef struct { float x, y, z; } Vec3;

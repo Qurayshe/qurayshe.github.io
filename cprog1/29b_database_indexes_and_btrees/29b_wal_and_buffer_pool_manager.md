@@ -46,4 +46,4 @@ If the server crashes immediately after step 4:
 
 ## Hands-On Program
 
-Open [`29b_wal_buffer_pool.c`](file:///c:/Users/kkhoie/Downloads/cprog1/29b_database_indexes_and_btrees/29b_wal_buffer_pool.c) to inspect buffer page pinning, dirty flushing, and sequential WAL append logging! (*^▽^*)
+Open [`29b_wal_buffer_pool.c`](#systems/29b_database_indexes_and_btrees) to inspect buffer page pinning, dirty flushing, and sequential WAL append logging! (*^▽^*)

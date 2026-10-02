@@ -296,6 +296,38 @@ export class SystemsViewer {
     this.loadCodeFile(module.codeFiles[this.selectedCodeFileIndex]);
   }
 
+  selectCodeFileByName(filename) {
+    if (!this.currentModule || !this.currentModule.codeFiles) return;
+    const cleanTarget = filename.replace(/^[`'"]+|[`'"]+$/g, '').trim().toLowerCase();
+    const idx = this.currentModule.codeFiles.findIndex((f) => {
+      const fn = f.name.toLowerCase();
+      return fn === cleanTarget || fn.includes(cleanTarget) || cleanTarget.includes(fn);
+    });
+    if (idx !== -1 && idx !== this.selectedCodeFileIndex) {
+      this.selectedCodeFileIndex = idx;
+      document.querySelectorAll('#systems-code-file-tabs .code-file-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+      });
+      this.loadCodeFile(this.currentModule.codeFiles[idx]);
+    }
+  }
+
+  highlightCodeViewer() {
+    const codeContainer = document.querySelector('#systems-code-content')?.closest('.code-viewer-container') || document.getElementById('systems-code-content');
+    if (!codeContainer) return;
+    const rect = codeContainer.getBoundingClientRect();
+    const isFullyVisible = (rect.top >= 70 && rect.bottom <= window.innerHeight);
+    if (!isFullyVisible) {
+      codeContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    codeContainer.classList.remove('code-viewer-highlight-pulse');
+    void codeContainer.offsetWidth;
+    codeContainer.classList.add('code-viewer-highlight-pulse');
+    setTimeout(() => {
+      codeContainer.classList.remove('code-viewer-highlight-pulse');
+    }, 1600);
+  }
+
   async loadCodeFile(file) {
     const codeContent = document.getElementById('systems-code-content');
     if (!codeContent) return;

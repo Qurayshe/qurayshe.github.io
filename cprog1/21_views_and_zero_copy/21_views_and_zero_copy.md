@@ -37,4 +37,4 @@ void process(std::span<const int> data) { ... }
 
 ## Hands-On Program
 
-Open [`21_memory_views.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/21_views_and_zero_copy/21_memory_views.cpp) for zero-allocation token slicing across vectors and raw C arrays! (*^▽^*)
+Open [`21_memory_views.cpp`](#systems/21_views_and_zero_copy) for zero-allocation token slicing across vectors and raw C arrays! (*^▽^*)

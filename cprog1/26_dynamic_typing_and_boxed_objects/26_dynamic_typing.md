@@ -40,4 +40,4 @@ typedef struct {
 
 ## Hands-On Program
 
-Open [`26_boxed_types_and_tagging.c`](file:///c:/Users/kkhoie/Downloads/cprog1/26_dynamic_typing_and_boxed_objects/26_boxed_types_and_tagging.c) to see dynamic boxed objects, runtime type dispatch, and type errors in pure C! (*^▽^*)
+Open [`26_boxed_types_and_tagging.c`](#systems/26_dynamic_typing_and_boxed_objects) to see dynamic boxed objects, runtime type dispatch, and type errors in pure C! (*^▽^*)

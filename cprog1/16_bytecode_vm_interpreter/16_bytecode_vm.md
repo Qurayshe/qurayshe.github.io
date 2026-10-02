@@ -39,4 +39,4 @@ while (vm->running) {
 
 ## Hands-On Program
 
-Open [`16_stack_vm.c`](file:///c:/Users/kkhoie/Downloads/cprog1/16_bytecode_vm_interpreter/16_stack_vm.c) to run a complete, fully functional Bytecode Virtual Machine in C! (*^▽^*)
+Open [`16_stack_vm.c`](#systems/16_bytecode_vm_interpreter) to run a complete, fully functional Bytecode Virtual Machine in C! (*^▽^*)

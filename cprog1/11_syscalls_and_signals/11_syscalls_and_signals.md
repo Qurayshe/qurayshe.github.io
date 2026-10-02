@@ -49,4 +49,4 @@ Signals are software interrupts from the OS (like `SIGINT` on `Ctrl+C`).
 
 ## Hands-On Program
 
-Open [`11_signals_and_syscalls.c`](file:///c:/Users/kkhoie/Downloads/cprog1/11_syscalls_and_signals/11_signals_and_syscalls.c) to see clean signal handlers and graceful shutdown loops! (*^▽^*)
+Open [`11_signals_and_syscalls.c`](#systems/11_syscalls_and_signals) to see clean signal handlers and graceful shutdown loops! (*^▽^*)

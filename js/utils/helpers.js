@@ -148,13 +148,21 @@ export function renderMath(container) {
 }
 
 /**
- * Triggers Prism.js syntax highlighting inside a given DOM node.
+ * Triggers Prism.js syntax highlighting inside a given DOM node or on the node itself.
  */
 export function highlightCode(container) {
-  if (typeof Prism !== 'undefined' && container) {
-    container.querySelectorAll('pre code').forEach((block) => {
-      Prism.highlightElement(block);
-    });
+  if (typeof Prism === 'undefined' || !container) return;
+
+  if (container.tagName && (container.tagName.toLowerCase() === 'code' || container.tagName.toLowerCase() === 'pre')) {
+    Prism.highlightElement(container);
+    return;
+  }
+
+  const blocks = container.querySelectorAll('pre code, code[class*="language-"]');
+  if (blocks.length > 0) {
+    blocks.forEach((block) => Prism.highlightElement(block));
+  } else if (typeof Prism.highlightAllUnder === 'function') {
+    Prism.highlightAllUnder(container);
   }
 }
 

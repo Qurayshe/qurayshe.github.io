@@ -39,4 +39,4 @@ Instead of copying disk bytes to kernel buffers and then to user buffers (`fread
 
 ## Hands-On Program
 
-Open [`13_virtual_memory_pages.c`](file:///c:/Users/kkhoie/Downloads/cprog1/13_virtual_memory_and_mmap/13_virtual_memory_pages.c) to inspect page offset math and simulated MMU Page Table entries! (≧∇≦)ﾉ
+Open [`13_virtual_memory_pages.c`](#systems/13_virtual_memory_and_mmap) to inspect page offset math and simulated MMU Page Table entries! (≧∇≦)ﾉ

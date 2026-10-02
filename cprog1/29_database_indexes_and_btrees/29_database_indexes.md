@@ -32,4 +32,4 @@ A 3-level 4KB B-Tree can index **10,000,000 rows in just 3 disk page reads**! Pu
 
 ## Hands-On Program
 
-Open [`29_page_btree_indexer.c`](file:///c:/Users/kkhoie/Downloads/cprog1/29_database_indexes_and_btrees/29_page_btree_indexer.c) to see a page-based B-Tree index resolver in pure C! (*^▽^*)
+Open [`29_page_btree_indexer.c`](#systems/29_database_indexes_and_btrees) to see a page-based B-Tree index resolver in pure C! (*^▽^*)

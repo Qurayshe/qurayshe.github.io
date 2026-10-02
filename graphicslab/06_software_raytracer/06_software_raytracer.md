@@ -83,4 +83,4 @@ $$I_{\text{specular}} = (\max(0, \vec{N} \cdot \vec{H}))^{\text{shininess}}$$
 Cast a new ray from $\vec{P} + \epsilon \vec{N}$ toward the light. If any object blocks the path before the light, $I_{\text{diffuse}} = 0$ (point is in shadow!).
 *(Note: $\epsilon \approx 0.001$ offsets the shadow ray to prevent self-intersection acne).*
 
-Open [`06_software_raytracer.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/06_software_raytracer/06_software_raytracer.cpp) to inspect the complete C++ raytracer that renders 3D shaded spheres with shadows and reflective floor planes!
+Open [`06_software_raytracer.cpp`](#graphics/06_software_raytracer) to inspect the complete C++ raytracer that renders 3D shaded spheres with shadows and reflective floor planes!

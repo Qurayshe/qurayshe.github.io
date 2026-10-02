@@ -54,4 +54,4 @@ When `call` pushes the 8-byte return address, inside the function entry `%rsp % 
 
 ## Hands-On Program
 
-Open [`15b_abi_and_stack_frames.c`](file:///c:/Users/kkhoie/Downloads/cprog1/15b_x64_abi_calling_conventions/15b_abi_and_stack_frames.c) to inspect inline assembly register capture, stack alignment checks, and register parameter passing! (*^▽^*)
+Open [`15b_abi_and_stack_frames.c`](#systems/15b_x64_abi_calling_conventions) to inspect inline assembly register capture, stack alignment checks, and register parameter passing! (*^▽^*)

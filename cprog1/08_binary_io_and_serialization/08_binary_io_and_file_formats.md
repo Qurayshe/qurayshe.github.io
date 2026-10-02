@@ -33,4 +33,4 @@ Every real format (PNG, ZIP, ELF) has a structure:
 
 ## Hands-On Program
 
-Open [`08_binary_file_records.c`](file:///c:/Users/kkhoie/Downloads/cprog1/08_binary_io_and_serialization/08_binary_file_records.c) to see binary header creation, record validation, and random-access seeking with `fseek`! q(≧▽≦q)
+Open [`08_binary_file_records.c`](#systems/08_binary_io_and_serialization) to see binary header creation, record validation, and random-access seeking with `fseek`! q(≧▽≦q)

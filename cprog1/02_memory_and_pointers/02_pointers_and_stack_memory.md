@@ -74,5 +74,5 @@ Low Memory
 
 ## Hands-On Programs
 
-1. [`02_pointer_basics.c`](file:///c:/Users/kkhoie/Downloads/cprog1/02_memory_and_pointers/02_pointer_basics.c): Dereferencing, swapping via pass-by-reference, and generic memory dumping.
-2. [`02_stack_inspection.c`](file:///c:/Users/kkhoie/Downloads/cprog1/02_memory_and_pointers/02_stack_inspection.c): Live inspection of stack growth direction and frame addresses!
+1. [`02_pointer_basics.c`](#systems/02_memory_and_pointers): Dereferencing, swapping via pass-by-reference, and generic memory dumping.
+2. [`02_stack_inspection.c`](#systems/02_memory_and_pointers): Live inspection of stack growth direction and frame addresses!

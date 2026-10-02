@@ -91,6 +91,7 @@ class App {
     this.bindHomeInteractions();
     this.bindCardHoverEffects();
     this.bindMagneticElements();
+    this.bindMarkdownLinkInteractions();
     this.animateHeroChoreography();
 
     // 6. Start Routing
@@ -411,6 +412,92 @@ class App {
       scale: [0.94, 1],
       duration: 1000
     }, '-=800');
+  }
+
+  bindMarkdownLinkInteractions() {
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a');
+      if (!anchor) return;
+
+      const rawHref = anchor.getAttribute('href') || '';
+      if (!rawHref) return;
+
+      const linkText = anchor.textContent.trim().replace(/^[`'"]+|[`'"]+$/g, '');
+      const isCodeFileText = /\.(c|cpp|h|hpp|glsl|wgsl|js|rs|go|py|json|md)$/i.test(linkText);
+
+      let targetLab = null;
+      let targetModuleId = null;
+      let targetFile = isCodeFileText ? linkText : null;
+
+      const hashMatch = rawHref.match(/^#(graphics|systems|servers|ai|motion)\/([^\/?#]+)(?:\?file=([^&#]+))?/i);
+      if (hashMatch) {
+        targetLab = hashMatch[1].toLowerCase();
+        targetModuleId = hashMatch[2];
+        if (hashMatch[3]) targetFile = decodeURIComponent(hashMatch[3]);
+      } else if (rawHref.includes('file:///')) {
+        if (rawHref.includes('graphicslab/')) {
+          targetLab = 'graphics';
+          const parts = rawHref.split('graphicslab/')[1]?.split('/');
+          if (parts && parts[0]) targetModuleId = parts[0];
+          if (parts && parts[1]) targetFile = parts[1];
+        } else if (rawHref.includes('cprog1/')) {
+          targetLab = 'systems';
+          const parts = rawHref.split('cprog1/')[1]?.split('/');
+          if (parts && parts[0]) targetModuleId = parts[0];
+          if (parts && parts[1]) targetFile = parts[1];
+        }
+      }
+
+      if (!targetLab || !targetModuleId) return;
+
+      if (targetFile && targetFile.endsWith('.md')) {
+        const modIdFromMd = targetFile.replace(/\.md$/, '');
+        targetFile = null;
+        if (modIdFromMd && modIdFromMd !== targetModuleId) {
+          targetModuleId = modIdFromMd;
+        }
+      }
+
+      e.preventDefault();
+
+      if (targetLab === 'graphics') {
+        const isCurrentLab = document.getElementById('section-graphics')?.classList.contains('active');
+        const isCurrentModule = isCurrentLab && this.graphicsViewer?.currentModule?.id === targetModuleId;
+
+        if (isCurrentModule) {
+          if (targetFile) {
+            this.graphicsViewer.selectCodeFileByName(targetFile);
+          }
+          this.graphicsViewer.highlightCodeViewer();
+        } else {
+          this.router.navigate(`#graphics/${targetModuleId}`);
+          setTimeout(() => {
+            if (targetFile) {
+              this.graphicsViewer?.selectCodeFileByName(targetFile);
+            }
+            this.graphicsViewer?.highlightCodeViewer();
+          }, 350);
+        }
+      } else if (targetLab === 'systems') {
+        const isCurrentLab = document.getElementById('section-systems')?.classList.contains('active');
+        const isCurrentModule = isCurrentLab && this.systemsViewer?.currentModule?.id === targetModuleId;
+
+        if (isCurrentModule) {
+          if (targetFile) {
+            this.systemsViewer.selectCodeFileByName(targetFile);
+          }
+          this.systemsViewer.highlightCodeViewer();
+        } else {
+          this.router.navigate(`#systems/${targetModuleId}`);
+          setTimeout(() => {
+            if (targetFile) {
+              this.systemsViewer?.selectCodeFileByName(targetFile);
+            }
+            this.systemsViewer?.highlightCodeViewer();
+          }, 350);
+        }
+      }
+    });
   }
 }
 

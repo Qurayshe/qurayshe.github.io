@@ -53,4 +53,4 @@ From single bits and pointer offsets, to OS kernels, zero-cost C++, and high-lev
 
 ## Hands-On Program
 
-Open [`32_system_trace_analyzer.c`](file:///c:/Users/kkhoie/Downloads/cprog1/32_grand_unified_software_architecture/32_system_trace_analyzer.c) to run a live software execution tracer showing the real memory addresses of all segments! (*^▽^*)
+Open [`32_system_trace_analyzer.c`](#systems/32_grand_unified_software_architecture) to run a live software execution tracer showing the real memory addresses of all segments! (*^▽^*)

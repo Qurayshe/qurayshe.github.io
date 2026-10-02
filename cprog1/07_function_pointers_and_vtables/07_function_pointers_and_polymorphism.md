@@ -49,4 +49,4 @@ Object (Circle)                VTable (ShapeOps)
 
 ## Hands-On Program
 
-Open [`07_function_pointers_and_vtables.c`](file:///c:/Users/kkhoie/Downloads/cprog1/07_function_pointers_and_vtables/07_function_pointers_and_vtables.c) to see generic callbacks, jump tables, and a full polymorphic Shape vtable hierarchy in pure C! (≧∇≦)ﾉ
+Open [`07_function_pointers_and_vtables.c`](#systems/07_function_pointers_and_vtables) to see generic callbacks, jump tables, and a full polymorphic Shape vtable hierarchy in pure C! (≧∇≦)ﾉ

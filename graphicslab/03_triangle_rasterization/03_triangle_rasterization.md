@@ -91,4 +91,4 @@ $E_{AB}(P)$ is the 2D cross-product:
 - $< 0$ if $P$ is to the left
 - $= 0$ if $P$ lies directly on the edge
 
-Open [`03_triangle_rasterizer.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/graphicslab/03_triangle_rasterization/03_triangle_rasterizer.cpp) to see edge functions and barycentric coordinates in action, rasterizing smooth RGB color-interpolated triangles!
+Open [`03_triangle_rasterizer.cpp`](#graphics/03_triangle_rasterization) to see edge functions and barycentric coordinates in action, rasterizing smooth RGB color-interpolated triangles!

@@ -41,4 +41,4 @@ Add a color in one line, and the whole codebase updates automatically! Pure magi
 
 ## Hands-On Program
 
-Open [`14_xmacros_and_codegen.c`](file:///c:/Users/kkhoie/Downloads/cprog1/14_advanced_preprocessor_metaprogramming/14_xmacros_and_codegen.c) to see X-Macros generate synchronized error tables and box types! (*^▽^*)
+Open [`14_xmacros_and_codegen.c`](#systems/14_advanced_preprocessor_metaprogramming) to see X-Macros generate synchronized error tables and box types! (*^▽^*)

@@ -95,4 +95,4 @@ Why write 50 lines of boilerplate if you don't have to?
 
 ## Hands-On Program
 
-Open [`17b_lifecycles_and_rule_of_five.cpp`](file:///c:/Users/kkhoie/Desktop/ktknaga/qurayshe.github.io/cprog1/17b_cpp_object_model_and_lifecycles/17b_lifecycles_and_rule_of_five.cpp) to trace every constructor, copy, move, and destructor call in real-time console output! (*^▽^*)
+Open [`17b_lifecycles_and_rule_of_five.cpp`](#systems/17b_cpp_object_model_and_lifecycles) to trace every constructor, copy, move, and destructor call in real-time console output! (*^▽^*)

@@ -65,4 +65,4 @@ If you pass a string to `fast_square("abc")`, the compiler immediately gives a r
 
 ## Hands-On Program
 
-Open [`20b_type_traits_and_concepts.cpp`](file:///c:/Users/kkhoie/Downloads/cprog1/20b_template_metaprogramming_and_type_traits/20b_type_traits_and_concepts.cpp) to see compile-time static type inspection and concept-constrained algorithms in action! (*^▽^*)
+Open [`20b_type_traits_and_concepts.cpp`](#systems/20b_template_metaprogramming_and_type_traits) to see compile-time static type inspection and concept-constrained algorithms in action! (*^▽^*)
