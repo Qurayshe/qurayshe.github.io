@@ -11,7 +11,7 @@
   --bg-card-hover: rgba(28, 22, 44, 0.85);
   --bg-sidebar: rgba(13, 10, 20, 0.94);
   --bg-input: rgba(255, 255, 255, 0.04);
-  --bg-code: #0b0912;
+  --bg-code: rgba(11, 9, 18, 0.1); /* 90% transparent */
 
   /* Primary Accent: Purple / Violet */
   --accent-primary: #a855f7;
@@ -1383,19 +1383,22 @@ a:hover {
    Code Inspector & File Tabs
    ========================================================================== */
 .code-viewer-container {
-  background: var(--bg-code);
+  background: rgba(11, 9, 18, 0.1) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 .code-viewer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.4rem 0.8rem;
-  background: rgba(18, 14, 28, 0.9);
+  padding: 0.45rem 0.85rem;
+  background: rgba(18, 14, 28, 0.15) !important;
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1483,12 +1486,13 @@ a:hover {
 pre.code-block,
 pre[class*="language-"],
 code[class*="language-"] {
+  background: transparent !important;
   margin: 0 !important;
   padding: 1.25rem !important;
   font-family: var(--font-mono) !important;
   font-size: 0.88rem !important;
   line-height: 1.6 !important;
-  max-height: 650px;
+  max-height: 540px;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   white-space: pre-wrap !important;
@@ -1497,9 +1501,28 @@ code[class*="language-"] {
 }
 
 .code-block code {
+  background: transparent !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
   overflow-wrap: anywhere !important;
+}
+
+.markdown-body pre,
+.markdown-body pre[class*="language-"] {
+  background: rgba(11, 9, 18, 0.1) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  margin: 1.25rem 0;
+  padding: 1.15rem !important;
+  overflow-x: auto;
+}
+
+.markdown-body pre code,
+.markdown-body pre[class*="language-"] code {
+  background: transparent !important;
+  padding: 0 !important;
 }
 
 /* ==========================================================================
@@ -1883,6 +1906,8 @@ code[class*="language-"] {
 
 .split-col {
   background: var(--bg-code);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1893,7 +1918,8 @@ code[class*="language-"] {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.8rem;
-  background: rgba(18, 14, 28, 0.9);
+  background: rgba(18, 14, 28, 0.2) !important;
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -4962,6 +4988,66 @@ code[class*="language-"] {
 
 .graphics-code-container pre.code-block {
   max-height: 480px;
+}
+
+/* ==========================================================================
+   Systems Lab Integrated Side-by-Side Workstation (Matching Graphics Lab)
+   ========================================================================== */
+.systems-workstation {
+  display: grid;
+  grid-template-columns: minmax(440px, 1.35fr) minmax(400px, 1fr);
+  gap: 2rem;
+  padding: 1.5rem clamp(1.2rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .systems-workstation {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.systems-lesson-col {
+  min-width: 0;
+}
+
+.systems-stage-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 0;
+  position: sticky;
+  top: 75px;
+}
+
+@media (max-width: 1180px) {
+  .systems-stage-col {
+    position: static;
+  }
+}
+
+.systems-concepts-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.systems-concepts-card .concepts-view {
+  max-width: 100%;
+}
+
+.systems-code-container {
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.25);
+}
+
+.systems-code-container pre.code-block {
+  max-height: 520px;
+}
+
+.systems-stage-col .concept-card {
+  padding: 1.2rem;
+  background: rgba(18, 14, 28, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .preview-canvas-box {

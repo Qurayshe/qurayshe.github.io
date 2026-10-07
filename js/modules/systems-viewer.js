@@ -12,7 +12,6 @@ export class SystemsViewer {
   constructor(container) {
     this.container = container;
     this.currentModule = null;
-    this.activeTab = 'lesson'; // 'lesson', 'code', 'concepts'
     this.searchQuery = '';
     this.selectedCodeFileIndex = 0;
     this.wasmEngine = null;
@@ -36,7 +35,7 @@ export class SystemsViewer {
 
   renderLayout() {
     this.container.innerHTML = `
-      <div class="lab-layout">
+      <div class="lab-layout systems-lab-layout">
         <!-- Sidebar Navigation -->
         <aside class="lab-sidebar" id="systems-sidebar">
           <div class="lab-sidebar-header">
@@ -68,36 +67,28 @@ export class SystemsViewer {
                 <h1 class="lab-main-title" id="systems-title">Compilation & Data Types</h1>
               </div>
             </div>
-
-            <!-- View Tabs -->
-            <div class="lab-tabs">
-              <button class="lab-tab active" data-tab="lesson">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                <span>Lesson Guide</span>
-              </button>
-              <button class="lab-tab" data-tab="code">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                <span>C/C++ Source Code</span>
-              </button>
-              <button class="lab-tab" data-tab="concepts">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                <span>Key Concepts & Memory</span>
-              </button>
-            </div>
           </div>
 
-          <!-- Tab Content Views -->
-          <div class="lab-tab-body">
-            <!-- Tab 1: Lesson Guide (Markdown) -->
-            <div class="lab-pane active" id="pane-systems-lesson">
+          <!-- Main Side-by-Side Workstation Layout (Matching Graphics Lab) -->
+          <div class="systems-workstation">
+            <!-- Left Column: Lesson Guide & Interactive Simulators -->
+            <div class="systems-lesson-col">
               <div class="markdown-body" id="systems-markdown-view">
                 <div class="loading-spinner">Loading lesson documentation...</div>
               </div>
             </div>
 
-            <!-- Tab 2: Code Inspector -->
-            <div class="lab-pane" id="pane-systems-code">
-              <div class="code-viewer-container">
+            <!-- Right Column: Concepts Preview + Source Code Inspector -->
+            <div class="systems-stage-col">
+              <!-- Key Concepts Preview Card -->
+              <div class="systems-concepts-card" id="systems-concepts-card">
+                <div class="concepts-view" id="systems-concepts-view">
+                  <!-- Injected dynamically per module -->
+                </div>
+              </div>
+
+              <!-- C/C++ Source Code Inspector & WASM Terminal -->
+              <div class="code-viewer-container systems-code-container">
                 <div class="code-viewer-header">
                   <div class="code-file-tabs" id="systems-code-file-tabs">
                     <!-- Dynamic File Tabs -->
@@ -107,7 +98,7 @@ export class SystemsViewer {
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                       <span>Run in WebAssembly</span>
                     </button>
-                    <button class="btn-copy" id="btn-systems-copy-code">
+                    <button class="btn-copy" id="btn-systems-copy-code" title="Copy code to clipboard">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                       <span>Copy Code</span>
                     </button>
@@ -127,13 +118,6 @@ export class SystemsViewer {
                   </div>
                   <pre class="wasm-terminal-output" id="systems-wasm-output">// Ready to execute WebAssembly simulation...</pre>
                 </div>
-              </div>
-            </div>
-
-            <!-- Tab 3: Key Concepts & Mental Models -->
-            <div class="lab-pane" id="pane-systems-concepts">
-              <div class="concepts-view" id="systems-concepts-view">
-                <!-- Injected dynamically -->
               </div>
             </div>
           </div>
@@ -394,23 +378,11 @@ export class SystemsViewer {
       .map((t) => `<span class="concept-tag">${escapeHtml(t)}</span>`)
       .join(' ');
 
-    let memorySimType = null;
-    if (module.id === '05_dynamic_memory') memorySimType = 'arena';
-    else if (module.id === '12_advanced_memory_allocators') memorySimType = 'pool';
-    else if (module.id === '22_pmr_and_custom_allocators') memorySimType = 'alignment';
-
-    let memVisualizerHtml = '';
-    if (memorySimType) {
-      memVisualizerHtml = `<div id="concepts-memory-visualizer" style="margin-bottom: 1.5rem;"></div>`;
-    }
-
     pane.innerHTML = `
-      ${memVisualizerHtml}
-
       <div class="concept-card">
         <h3 class="concept-title">Module Objective</h3>
         <p class="concept-desc">${module.desc}</p>
-        <div class="concept-tags-wrap" style="margin-top: 1rem;">
+        <div class="concept-tags-wrap" style="margin-top: 0.85rem;">
           ${tagsHtml}
         </div>
       </div>
@@ -430,19 +402,12 @@ export class SystemsViewer {
       <div class="concept-card">
         <h3 class="concept-title">Key Takeaways</h3>
         <ul class="concept-checklist">
-          <li>Low-level hardware word alignment avoids unaligned memory penalty cycles.</li>
+          <li>Hardware word alignment avoids unaligned memory penalty cycles.</li>
           <li>Pointer arithmetic scales directly by <code>sizeof(*ptr)</code> in bytes.</li>
-          <li>Zero-cost abstractions in modern C++ compile directly down to bare metal machine assembly.</li>
+          <li>Zero-cost abstractions compile directly down to bare metal machine assembly.</li>
         </ul>
       </div>
     `;
-
-    if (memorySimType) {
-      const simTarget = document.getElementById('concepts-memory-visualizer');
-      if (simTarget) {
-        new MemoryVisualizer(simTarget, memorySimType);
-      }
-    }
   }
 
   bindEvents() {
@@ -463,19 +428,6 @@ export class SystemsViewer {
         sidebar.classList.toggle('open');
       });
     }
-
-    // Tab switching
-    const tabs = document.querySelectorAll('.lab-tab');
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        document.querySelectorAll('.lab-pane').forEach((p) => p.classList.remove('active'));
-
-        tab.classList.add('active');
-        const targetPane = document.getElementById(`pane-systems-${tab.dataset.tab}`);
-        if (targetPane) targetPane.classList.add('active');
-      });
-    });
 
     // Copy Code Button
     const copyBtn = document.getElementById('btn-systems-copy-code');
