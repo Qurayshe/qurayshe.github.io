@@ -74,19 +74,11 @@ for (int i = 0; i < 1000; i++) {
 arena_reset(&arena); // offset = 0 (●'◡'●)
 ```
 
-### Live Memory Layout Comparison
+### Interactive Memory Simulation Grid: Naive Heap vs Linear Arena
 
-```
-BAD: Naive Heap after random free() calls (Fragmentation & Metadata Overhead)
-[16B Hdr][Entity 1][16B Hdr][ HOLE ][16B Hdr][Entity 3][16B Hdr][ LEAK (Lost Ptr!) ]
-                               ^
-                  Scattered unusable gaps!
-
-GOOD: Linear Arena Memory Space (Contiguous & Zero Fragmentation)
-[Entity 1][Entity 2][Entity 3][ Unallocated Free Buffer Capacity...           ]
-                              ^
-                         arena.offset (Bumps forward cleanly!)
-```
+The interactive simulator below models 64 bytes of memory divided into four 16-byte virtual pages (`Page 0` to `Page 3`). Use the buttons to allocate, free, and run stress tests to see how memory is utilized in real time:
+- **Set A (Naive Heap):** Shows how each dynamic chunk consumes a 1-byte bookkeeping metadata header (`H`), while random `free()` calls leave fragmented Swiss-cheese holes (`X`) that cannot be merged without costly defragmentation.
+- **Set B (Linear Arena):** Shows sequential bump allocation (`offset += size`) across pages with zero per-chunk headers, 0% fragmentation, and instant $O(1)$ bulk reset (`offset = 0`).
 
 <div class="memory-interactive-sim" data-sim="arena"></div>
 
@@ -107,3 +99,4 @@ We explore all three engineering-grade upgrades and C++ polymorphic memory resou
 
 1. [`05_heap_memory.c`](#systems/05_dynamic_memory): Safe dynamic array vector implementation.
 2. [`05_simple_arena.c`](#systems/05_dynamic_memory): A complete, super-fast Arena Allocator in ~70 lines of clean C!
+3. [`05_memory_simulation_compare.c`](#systems/05_dynamic_memory): Standalone program comparing Set A (Naive Heap) vs Set B (Arena). Switch to the **C/C++ Source Code** tab above and click **Run in WebAssembly** to execute it live inside your browser! (o゜▽゜)o

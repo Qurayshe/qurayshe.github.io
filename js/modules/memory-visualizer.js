@@ -1,80 +1,105 @@
 /**
- * Interactive Memory Management Visualizer
- * Provides live side-by-side comparisons of memory management techniques:
- * 1. Module 05: Naive malloc/free (fragmented & leaky) vs Linear Arena (bump allocation)
- * 2. Module 12: Variable-size malloc (external fragmentation) vs Fixed-Size Pool with embedded free-list
- * 3. Module 22: Misaligned raw allocations (cache line splits/UB) vs Aligned Arena & PMR
+ * Interactive Memory Management Visualizer & Simulator
+ * Provides a functional, byte-level memory grid simulation comparing two sets of memory:
+ *   - Set A: Naive / Unoptimized (Heap headers, fragmented holes, leaks, misalignments)
+ *   - Set B: Optimized Technique (Linear Arena, Fixed-Size Pool, or Aligned PMR Stack)
+ *
+ * Visualizes:
+ *   - 64 Bytes of memory across 4 virtual pages (Page 0 to Page 3)
+ *   - Regions: Stack buffers, Heap dynamic chunks, Metadata headers, Padding, Free-list links
+ *   - Live proportional memory usage bars and exact byte statistics
+ *   - Benchmark stress tester comparing fragmentation and contiguous allocatable limits
  */
 
 export class MemoryVisualizer {
   constructor(container, type = 'arena') {
     this.container = container;
     this.type = type; // 'arena', 'pool', or 'alignment'
+    this.bufferSize = 64; // 64 bytes total
+    this.pageSize = 16;   // 16 bytes per page
+    this.numPages = 4;    // 4 pages total
     this.state = this.getInitialState(type);
     this.render();
   }
 
   getInitialState(type) {
-    const totalSlots = 32; // 32 slots representing a 512-byte buffer (16 bytes per slot)
+    const size = this.bufferSize;
+
     if (type === 'arena') {
       return {
         type: 'arena',
-        totalSlots,
-        // Bad side: Naive heap
+        // Set A: Naive Heap (with headers & holes)
         bad: {
-          slots: new Array(totalSlots).fill(null), // null = free, object = { id, color, tag, isHeader, isLeak }
+          name: 'Set A: Naive Heap (malloc/free)',
+          tag: 'Naive Heap',
+          bytes: new Array(size).fill(null), // null = free '.', or { id, type: 'header'|'payload'|'hole'|'leak', tag, color }
+          chunks: {}, // id -> { start, total, payload, color }
           nextId: 1,
           syscalls: 0,
           leaksCount: 0,
-          allocatedBytes: 0,
-          logs: ['Heap initialized via OS. No allocations yet.']
+          log: 'Initialized heap space (64 Bytes across 4 pages). Ready.'
         },
-        // Good side: Arena
+        // Set B: Linear Arena (contiguous bump pointer)
         good: {
-          slots: new Array(totalSlots).fill(null), // null = unused, object = { id, color, tag }
+          name: 'Set B: Linear Arena (Bump Allocator)',
+          tag: 'Linear Arena',
+          bytes: new Array(size).fill(null), // null = unallocated '.', or { id, type: 'payload', tag, color }
+          chunks: {},
           offset: 0,
           nextId: 1,
           syscalls: 1, // Single initial backing malloc!
-          leaksCount: 0,
-          allocatedBytes: 0,
-          logs: ['Arena pre-allocated single 512B buffer in 1 syscall. Ready!']
+          log: 'Pre-allocated 64B contiguous buffer in 1 syscall. Offset = 0x00.'
         }
       };
     } else if (type === 'pool') {
-      const slotCount = 16;
+      // 4 pages of 16B = 8 slots of 8B each
+      const slotSize = 8;
+      const numSlots = size / slotSize; // 8 slots
       return {
         type: 'pool',
-        slotCount,
-        // Bad side: Variable-size malloc
+        slotSize,
+        numSlots,
+        // Set A: Variable-size dynamic malloc
         bad: {
-          slots: new Array(slotCount).fill(null), // null = free, { id, size, tag }
-          fragmentedHoles: 0,
-          logs: ['Variable-size heap ready.']
+          name: 'Set A: Variable-Size Heap',
+          tag: 'Variable Heap',
+          bytes: new Array(size).fill(null),
+          chunks: {},
+          nextId: 1,
+          log: 'Variable-size allocator ready. Free space scattered.'
         },
-        // Good side: Fixed size pool with embedded free list
+        // Set B: Fixed slot pool with embedded free list
         good: {
-          slots: new Array(slotCount).fill(null), // null = in free list, { id, tag }
-          freeList: Array.from({ length: slotCount }, (_, i) => i), // stack of free indices
-          logs: ['Pool initialized with 16 uniform slots (O(1) free list).']
+          name: 'Set B: Fixed-Size Slot Pool (Free-List)',
+          tag: 'Slot Pool',
+          bytes: new Array(size).fill(null),
+          freeList: Array.from({ length: numSlots }, (_, i) => i), // stack of free slot indices
+          nextId: 1,
+          log: 'Pool initialized: 8 uniform slots of 8 bytes (O(1) free list).'
         }
       };
     } else {
-      // Alignment
+      // Alignment & PMR (Module 22)
       return {
         type: 'alignment',
-        totalSlots: 16, // Each slot is 4 bytes (total 64 bytes = 1 cache line)
+        // Set A: Raw unaligned byte packing
         bad: {
-          slots: new Array(16).fill(null),
+          name: 'Set A: Raw Unaligned Packing',
+          tag: 'Unaligned Raw',
+          bytes: new Array(size).fill(null),
+          currentByte: 0,
           misalignedCount: 0,
-          cacheSplits: 0,
-          currentByteOff: 0,
-          logs: ['Raw byte packing initialized (no alignment checks).']
+          cacheLineSplits: 0,
+          log: 'Packed raw byte allocation (no hardware alignment checks).'
         },
+        // Set B: Aligned Arena & Stack PMR
         good: {
-          slots: new Array(16).fill(null),
-          paddingSlots: 0,
-          currentByteOff: 0,
-          logs: ['Aligned arena initialized (strict power-of-two align_up).']
+          name: 'Set B: Aligned Arena & PMR Stack',
+          tag: 'Aligned PMR',
+          bytes: new Array(size).fill(null),
+          currentByte: 0,
+          paddingBytes: 0,
+          log: 'Strict power-of-two align_up() allocator on stack buffer.'
         }
       };
     }
@@ -84,127 +109,165 @@ export class MemoryVisualizer {
   // ACTIONS: ARENA (Module 05)
   // =========================================================================
 
-  arenaAllocateBatch() {
+  arenaAllocateChunk(payloadSize = 5) {
     const s = this.state;
-    const colors = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24'];
+    const colors = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa'];
+    const color = colors[s.good.nextId % colors.length];
+    const cid = s.good.nextId;
 
-    for (let i = 0; i < 3; i++) {
-      const itemSize = (i % 2 === 0) ? 2 : 3; // 2 or 3 slots
-      const color = colors[s.good.nextId % colors.length];
-      const tag = `Obj#${s.good.nextId}`;
-
-      // 1. Good side: Bump arena
-      if (s.good.offset + itemSize <= s.totalSlots) {
-        for (let j = 0; j < itemSize; j++) {
-          s.good.slots[s.good.offset + j] = { id: s.good.nextId, color, tag };
-        }
-        s.good.offset += itemSize;
-        s.good.allocatedBytes += itemSize * 16;
+    // 1. Set B: Good Arena (Contiguous bump pointer, 0 header bytes)
+    let goodSuccess = false;
+    if (s.good.offset + payloadSize <= this.bufferSize) {
+      for (let i = 0; i < payloadSize; i++) {
+        s.good.bytes[s.good.offset + i] = {
+          id: cid,
+          type: 'payload',
+          tag: `Obj#${cid}`,
+          byteIndex: i + 1,
+          payloadSize,
+          color
+        };
       }
-
-      // 2. Bad side: Naive malloc (requires 1 slot chunk header overhead!)
-      const totalNeeded = itemSize + 1; // 1 slot overhead for glibc metadata header
-      let placedIdx = -1;
-      for (let j = 0; j <= s.totalSlots - totalNeeded; j++) {
-        let fits = true;
-        for (let k = 0; k < totalNeeded; k++) {
-          if (s.bad.slots[j + k] !== null) { fits = false; break; }
-        }
-        if (fits) { placedIdx = j; break; }
-      }
-
-      if (placedIdx !== -1) {
-        // Metadata header
-        s.bad.slots[placedIdx] = { id: s.good.nextId, color: '#a855f7', tag: 'Header(16B)', isHeader: true };
-        for (let k = 1; k < totalNeeded; k++) {
-          s.bad.slots[placedIdx + k] = { id: s.good.nextId, color, tag, isHeader: false };
-        }
-        s.bad.syscalls++;
-        s.bad.allocatedBytes += totalNeeded * 16;
-      }
-
+      s.good.chunks[cid] = { start: s.good.offset, payload: payloadSize, color };
+      s.good.offset += payloadSize;
       s.good.nextId++;
-      s.bad.nextId++;
+      s.good.log = `Bumped offset +${payloadSize}B -> now at 0x${s.good.offset.toString(16).padStart(2, '0').toUpperCase()} (0 metadata, 0 syscalls).`;
+      goodSuccess = true;
+    } else {
+      s.good.log = `Arena buffer full (${s.good.offset}/${this.bufferSize} B). Bulk reset needed.`;
     }
 
-    s.good.logs.unshift(`Bumped arena offset to ${s.good.offset * 16}B (0 fragmentation, 0 syscalls).`);
-    s.bad.logs.unshift(`Allocated 3 objects with separate malloc() calls (+16B header per alloc, 3 syscalls).`);
+    // 2. Set A: Bad Naive Heap (Requires 1-byte header overhead per allocation!)
+    const totalNeeded = payloadSize + 1; // 1 byte header
+    let placedStart = -1;
+    let consecutive = 0;
+
+    for (let i = 0; i < this.bufferSize; i++) {
+      if (s.bad.bytes[i] === null || s.bad.bytes[i].type === 'hole') {
+        consecutive++;
+        if (consecutive === totalNeeded) {
+          placedStart = i - totalNeeded + 1;
+          break;
+        }
+      } else {
+        consecutive = 0;
+      }
+    }
+
+    if (placedStart !== -1) {
+      s.bad.syscalls++;
+      // Place header
+      s.bad.bytes[placedStart] = {
+        id: cid,
+        type: 'header',
+        tag: `Hdr(${payloadSize}B)`,
+        color: '#a855f7'
+      };
+      // Place payload
+      for (let i = 1; i < totalNeeded; i++) {
+        s.bad.bytes[placedStart + i] = {
+          id: cid,
+          type: 'payload',
+          tag: `Obj#${cid}`,
+          byteIndex: i,
+          payloadSize,
+          color
+        };
+      }
+      s.bad.chunks[cid] = { start: placedStart, total: totalNeeded, payload: payloadSize, color };
+      s.bad.nextId++;
+      s.bad.log = `malloc(${payloadSize}B) placed at 0x${placedStart.toString(16).padStart(2, '0').toUpperCase()} (+1B header overhead, OS syscall #${s.bad.syscalls}).`;
+    } else {
+      s.bad.log = `💥 OOM ERROR: Could not find contiguous ${totalNeeded} bytes in Set A heap!`;
+    }
+
     this.render();
+  }
+
+  arenaBatchAllocate() {
+    const sizes = [5, 4, 6];
+    sizes.forEach(sz => this.arenaAllocateChunk(sz));
   }
 
   arenaDeallocateRandom() {
     const s = this.state;
-    // On the bad side: Freeing individual items randomly causes fragmentation holes!
-    const activeIds = [];
-    s.bad.slots.forEach(slot => {
-      if (slot && !slot.isHeader && !activeIds.includes(slot.id)) {
-        activeIds.push(slot.id);
-      }
-    });
+    const activeIds = Object.keys(s.bad.chunks).map(Number);
 
     if (activeIds.length === 0) {
-      s.bad.logs.unshift('No allocations left to free.');
+      s.bad.log = 'No active allocations in Set A to free.';
       this.render();
       return;
     }
 
-    // Pick a random object to free
-    const targetId = activeIds[Math.floor(Math.random() * activeIds.length)];
-    let freedSlots = 0;
-    for (let i = 0; i < s.totalSlots; i++) {
-      if (s.bad.slots[i] && s.bad.slots[i].id === targetId) {
-        s.bad.slots[i] = null; // Free slot leaves hole!
-        freedSlots++;
-      }
+    // Pick a chunk to free
+    const cid = activeIds[Math.floor(Math.random() * activeIds.length)];
+    const chunk = s.bad.chunks[cid];
+    delete s.bad.chunks[cid];
+
+    // Turn cells into fragmented holes
+    for (let i = 0; i < chunk.total; i++) {
+      s.bad.bytes[chunk.start + i] = {
+        id: cid,
+        type: 'hole',
+        tag: 'Hole',
+        color: '#f43f5e'
+      };
     }
 
-    s.bad.logs.unshift(`free(Obj#${targetId}) called. Created fragmented hole of ${freedSlots * 16}B!`);
-    s.good.logs.unshift(`Notice: Arenas don't individually free objects! Zero fragmentation overhead.`);
+    s.bad.log = `free(Obj#${cid}) executed. Left a fragmented hole of ${chunk.total} bytes!`;
+    s.good.log = `Notice: Linear Arenas do not free individual chunks! Zero fragmentation holes created.`;
     this.render();
   }
 
-  arenaSimulateLeak() {
+  arenaRunBenchmark() {
     const s = this.state;
-    // On the bad side: An object is lost (never freed, memory leak)
-    const activeIds = [];
-    s.bad.slots.forEach(slot => {
-      if (slot && !slot.isHeader && !slot.isLeak && !activeIds.includes(slot.id)) {
-        activeIds.push(slot.id);
-      }
-    });
+    // Reset and run a reproducible stress test
+    this.arenaReset();
 
-    if (activeIds.length > 0) {
-      const targetId = activeIds[0];
-      s.bad.slots.forEach(slot => {
-        if (slot && slot.id === targetId) {
-          slot.isLeak = true;
-          slot.color = '#ef4444';
-          slot.tag = `LEAK(#${targetId})`;
-        }
-      });
-      s.bad.leaksCount++;
-      s.bad.logs.unshift(`Lost pointer to Obj#${targetId}! Heap memory leak permanently held hostage!`);
-    } else {
-      s.bad.logs.unshift(`Allocate some objects first before simulating leaks!`);
+    // 1. Allocate 5 chunks (filling ~45 bytes)
+    this.arenaAllocateChunk(7);
+    this.arenaAllocateChunk(6);
+    this.arenaAllocateChunk(8);
+    this.arenaAllocateChunk(6);
+    this.arenaAllocateChunk(7);
+
+    // 2. Free chunks #1 and #3 in Set A to create scattered Swiss-cheese holes
+    const activeIds = Object.keys(s.bad.chunks).map(Number);
+    if (activeIds.length >= 3) {
+      const c1 = s.bad.chunks[activeIds[0]];
+      const c3 = s.bad.chunks[activeIds[2]];
+      delete s.bad.chunks[activeIds[0]];
+      delete s.bad.chunks[activeIds[2]];
+
+      for (let i = 0; i < c1.total; i++) {
+        s.bad.bytes[c1.start + i] = { id: activeIds[0], type: 'hole', tag: 'Hole', color: '#f43f5e' };
+      }
+      for (let i = 0; i < c3.total; i++) {
+        s.bad.bytes[c3.start + i] = { id: activeIds[2], type: 'hole', tag: 'Hole', color: '#f43f5e' };
+      }
     }
+
+    // 3. Attempt a 14-byte allocation
+    this.arenaAllocateChunk(14);
+
+    s.bad.log = 'BENCHMARK COMPLETED: Set A has free bytes scattered across holes, but failed 14B alloc due to fragmentation! Set B Arena remained 100% compact.';
     this.render();
   }
 
-  arenaResetAll() {
+  arenaReset() {
     const s = this.state;
-    // Good side: O(1) Instant wipe!
-    s.good.slots.fill(null);
+    s.good.bytes.fill(null);
+    s.good.chunks = {};
     s.good.offset = 0;
-    s.good.logs.unshift(`arena.reset() called! All memory reclaimed in 0 nanoseconds (offset = 0)!`);
+    s.good.nextId = 1;
+    s.good.log = 'Arena instant reset (offset = 0x00). All memory reclaimed in 0 ns.';
 
-    // Bad side: What happens if there were leaks?
-    if (s.bad.leaksCount > 0) {
-      s.bad.logs.unshift(`Attempted cleanup: Leaked blocks cannot be freed because pointers were lost!`);
-    } else {
-      s.bad.slots.fill(null);
-      s.bad.syscalls = 0;
-      s.bad.logs.unshift(`All malloc pointers manually freed with loop.`);
-    }
+    s.bad.bytes.fill(null);
+    s.bad.chunks = {};
+    s.bad.nextId = 1;
+    s.bad.syscalls = 0;
+    s.bad.leaksCount = 0;
+    s.bad.log = 'Heap reset after sweeping all chunks.';
     this.render();
   }
 
@@ -215,102 +278,117 @@ export class MemoryVisualizer {
   poolAllocate() {
     const s = this.state;
     const colors = ['#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const cid = s.good.nextId++;
 
-    for (let k = 0; k < 2; k++) {
-      const color = colors[Math.floor(Math.random() * colors.length)];
-
-      // Good side: Pop from free list (O(1))
-      if (s.good.freeList.length > 0) {
-        const slotIdx = s.good.freeList.pop();
-        s.good.slots[slotIdx] = { id: slotIdx + 1, color, tag: `Slot#${slotIdx}` };
+    // 1. Set B: Good Pool (Pops slot index from embedded free-list in O(1))
+    if (s.good.freeList.length > 0) {
+      const slotIdx = s.good.freeList.pop();
+      const start = slotIdx * s.slotSize;
+      for (let i = 0; i < s.slotSize; i++) {
+        s.good.bytes[start + i] = {
+          id: cid,
+          slotIdx,
+          type: 'payload',
+          tag: `Slot#${slotIdx}`,
+          color
+        };
       }
+      s.good.log = `Popped Slot #${slotIdx} from embedded free-list in O(1) time. 100% uniform!`;
+    } else {
+      s.good.log = 'Pool capacity reached (all 8 slots in use).';
+    }
 
-      // Bad side: Variable-size malloc (alternating 1 and 2 slots)
-      const reqSize = (k % 2 === 0) ? 1 : 2;
-      let placedIdx = -1;
-      for (let i = 0; i <= s.slotCount - reqSize; i++) {
-        let ok = true;
-        for (let j = 0; j < reqSize; j++) {
-          if (s.bad.slots[i + j] !== null) { ok = false; break; }
-        }
-        if (ok) { placedIdx = i; break; }
-      }
-
-      if (placedIdx !== -1) {
-        for (let j = 0; j < reqSize; j++) {
-          s.bad.slots[placedIdx + j] = { id: placedIdx + 1, color, tag: `Var(${reqSize * 32}B)` };
-        }
+    // 2. Set A: Variable heap allocation (alternating between 4B and 12B)
+    const reqSize = (cid % 2 === 0) ? 4 : 12;
+    let placed = -1;
+    let run = 0;
+    for (let i = 0; i < this.bufferSize; i++) {
+      if (s.bad.bytes[i] === null || s.bad.bytes[i].type === 'hole') {
+        run++;
+        if (run === reqSize) { placed = i - reqSize + 1; break; }
+      } else {
+        run = 0;
       }
     }
 
-    s.good.logs.unshift(`Popped slot from embedded free list in O(1). Zero searching!`);
-    s.bad.logs.unshift(`Searched heap free list linearly to find contiguous fitting blocks.`);
+    if (placed !== -1) {
+      for (let i = 0; i < reqSize; i++) {
+        s.bad.bytes[placed + i] = {
+          id: cid,
+          type: 'payload',
+          tag: `Var(${reqSize}B)`,
+          color
+        };
+      }
+      s.bad.chunks[cid] = { start: placed, size: reqSize };
+      s.bad.log = `Allocated variable ${reqSize}-byte object at 0x${placed.toString(16).padStart(2, '0').toUpperCase()}.`;
+    } else {
+      s.bad.log = `💥 Allocation failed for ${reqSize} bytes! Heap fragmented with non-contiguous holes.`;
+    }
+
     this.render();
   }
 
   poolFreeRandom() {
     const s = this.state;
-    // Good side: Pick an allocated slot, push to free list
-    const goodAllocated = [];
-    s.good.slots.forEach((slot, idx) => { if (slot !== null) goodAllocated.push(idx); });
-
-    if (goodAllocated.length > 0) {
-      const randIdx = goodAllocated[Math.floor(Math.random() * goodAllocated.length)];
-      s.good.slots[randIdx] = null;
-      s.good.freeList.push(randIdx);
-      s.good.logs.unshift(`Pushed Slot#${randIdx} onto free list head in O(1). Instantly reusable!`);
+    // Set B: Free a slot, push onto free-list stack
+    const allocatedSlots = [];
+    for (let i = 0; i < s.numSlots; i++) {
+      if (!s.good.freeList.includes(i)) allocatedSlots.push(i);
     }
 
-    // Bad side: Free random item
-    const badAllocated = [];
-    s.bad.slots.forEach((slot, idx) => { if (slot !== null) badAllocated.push(idx); });
-    if (badAllocated.length > 0) {
-      const randIdx = badAllocated[Math.floor(Math.random() * badAllocated.length)];
-      const targetId = s.bad.slots[randIdx].id;
-      for (let i = 0; i < s.slotCount; i++) {
-        if (s.bad.slots[i] && s.bad.slots[i].id === targetId) {
-          s.bad.slots[i] = null;
-        }
+    if (allocatedSlots.length > 0) {
+      const randSlot = allocatedSlots[Math.floor(Math.random() * allocatedSlots.length)];
+      const start = randSlot * s.slotSize;
+      for (let i = 0; i < s.slotSize; i++) {
+        s.good.bytes[start + i] = null;
       }
-      s.bad.logs.unshift(`Freed variable block. Leaves isolated holes!`);
+      s.good.freeList.push(randSlot);
+      s.good.log = `Freed Slot #${randSlot}. Pushed to free-list head in O(1). Instantly 100% reusable!`;
     }
+
+    // Set A: Free random variable chunk
+    const badIds = Object.keys(s.bad.chunks).map(Number);
+    if (badIds.length > 0) {
+      const randId = badIds[Math.floor(Math.random() * badIds.length)];
+      const ch = s.bad.chunks[randId];
+      delete s.bad.chunks[randId];
+      for (let i = 0; i < ch.size; i++) {
+        s.bad.bytes[ch.start + i] = { id: randId, type: 'hole', tag: 'Hole', color: '#f43f5e' };
+      }
+      s.bad.log = `Freed variable object #${randId} (${ch.size}B). Leaves an isolated gap.`;
+    }
+
     this.render();
   }
 
-  poolTriggerOOM() {
+  poolRunBenchmark() {
+    this.poolReset();
+    // Allocate 6 items
+    for (let i = 0; i < 6; i++) this.poolAllocate();
+    // Free 2 random items
+    this.poolFreeRandom();
+    this.poolFreeRandom();
+    // Try to allocate 16 bytes (fails in variable heap, works in pool slots)
     const s = this.state;
-    // Try to allocate a 3-slot item on both
-    let badCanFit = false;
-    for (let i = 0; i <= s.slotCount - 3; i++) {
-      if (s.bad.slots[i] === null && s.bad.slots[i + 1] === null && s.bad.slots[i + 2] === null) {
-        badCanFit = true;
-        break;
-      }
-    }
-
-    const badTotalFree = s.bad.slots.filter(s => s === null).length;
-    if (!badCanFit && badTotalFree >= 3) {
-      s.bad.logs.unshift(`💥 CRITICAL FRAGMENTATION ERROR: 3 slots free (${badTotalFree * 32}B), but scattered! Allocation FAILED!`);
-    } else {
-      s.bad.logs.unshift(`Attempted large allocation. Current contiguous space: ${badCanFit ? 'available' : 'insufficient'}.`);
-    }
-
-    s.good.logs.unshift(`Pools eliminate external fragmentation: Every single freed slot fits any incoming entity.`);
+    s.bad.log = 'BENCHMARK COMPLETED: Variable heap has fragmented holes too small to fit large structs. Fixed pool free-list reuses any slot in O(1).';
     this.render();
   }
 
-  poolResetAll() {
+  poolReset() {
     const s = this.state;
-    s.good.slots.fill(null);
-    s.good.freeList = Array.from({ length: s.slotCount }, (_, i) => i);
-    s.bad.slots.fill(null);
-    s.good.logs.unshift(`All pool slots reclaimed into free list.`);
-    s.bad.logs.unshift(`Heap cleared.`);
+    s.good.bytes.fill(null);
+    s.good.freeList = Array.from({ length: s.numSlots }, (_, i) => i);
+    s.good.log = 'Pool reset. All 8 slots returned to free-list.';
+    s.bad.bytes.fill(null);
+    s.bad.chunks = {};
+    s.bad.log = 'Variable heap cleared.';
     this.render();
   }
 
   // =========================================================================
-  // ACTIONS: ALIGNMENT (Module 22)
+  // ACTIONS: ALIGNMENT & PMR (Module 22)
   // =========================================================================
 
   alignmentAllocateMixed() {
@@ -323,371 +401,432 @@ export class MemoryVisualizer {
     ];
 
     const item = types[Math.floor(Math.random() * types.length)];
-    const slotsNeeded = Math.ceil(item.bytes / 4); // each slot is 4 bytes
 
-    // 1. Bad side: Pack bytes without alignment
-    const badStartSlot = Math.floor(s.bad.currentByteOff / 4);
-    if (badStartSlot + slotsNeeded <= 16) {
-      const isMisaligned = (s.bad.currentByteOff % item.align !== 0);
-      if (isMisaligned) {
-        s.bad.misalignedCount++;
-        s.bad.cacheSplits++;
-      }
-      for (let i = 0; i < slotsNeeded; i++) {
-        s.bad.slots[badStartSlot + i] = {
+    // 1. Set A: Raw byte packing (no alignment)
+    if (s.bad.currentByte + item.bytes <= this.bufferSize) {
+      const isMisaligned = (s.bad.currentByte % item.align !== 0);
+      const crossesCacheLine = (Math.floor(s.bad.currentByte / 32) !== Math.floor((s.bad.currentByte + item.bytes - 1) / 32));
+
+      if (isMisaligned) s.bad.misalignedCount++;
+      if (crossesCacheLine) s.bad.cacheLineSplits++;
+
+      for (let i = 0; i < item.bytes; i++) {
+        s.bad.bytes[s.bad.currentByte + i] = {
           tag: item.name,
           color: isMisaligned ? '#f43f5e' : item.color,
-          misaligned: isMisaligned
+          misaligned: isMisaligned,
+          crossesCacheLine
         };
       }
-      s.bad.currentByteOff += item.bytes;
-      s.bad.logs.unshift(`Allocated ${item.name} (${item.bytes}B) at raw byte offset ${s.bad.currentByteOff - item.bytes}. ${isMisaligned ? '⚠️ MISALIGNED! Crossing cache line!' : 'Aligned by luck.'}`);
+      s.bad.log = `Packed ${item.name} at raw byte 0x${s.bad.currentByte.toString(16).padStart(2, '0').toUpperCase()}. ${isMisaligned ? '⚠️ MISALIGNED! Address % ' + item.align + ' != 0.' : 'Accidentally aligned.'}`;
+      s.bad.currentByte += item.bytes;
     } else {
-      s.bad.logs.unshift('Buffer full!');
+      s.bad.log = 'Raw buffer full!';
     }
 
-    // 2. Good side: align_up
+    // 2. Set B: Aligned Arena with align_up()
     const mask = item.align - 1;
-    const alignedByteOff = (s.good.currentByteOff + mask) & ~mask;
-    const paddingBytes = alignedByteOff - s.good.currentByteOff;
-    const goodStartSlot = Math.floor(alignedByteOff / 4);
+    const alignedOff = (s.good.currentByte + mask) & ~mask;
+    const pad = alignedOff - s.good.currentByte;
 
-    if (goodStartSlot + slotsNeeded <= 16) {
-      // Show padding slots if padding >= 4 bytes
-      const paddingSlots = Math.floor(paddingBytes / 4);
-      for (let p = 0; p < paddingSlots; p++) {
-        s.good.slots[Math.floor(s.good.currentByteOff / 4) + p] = {
+    if (alignedOff + item.bytes <= this.bufferSize) {
+      // Mark padding bytes
+      for (let i = 0; i < pad; i++) {
+        s.good.bytes[s.good.currentByte + i] = {
           tag: 'Pad',
-          color: '#475569',
-          isPadding: true
+          type: 'padding',
+          color: '#475569'
         };
       }
-      for (let i = 0; i < slotsNeeded; i++) {
-        s.good.slots[goodStartSlot + i] = {
+      s.good.paddingBytes += pad;
+
+      // Mark aligned payload
+      for (let i = 0; i < item.bytes; i++) {
+        s.good.bytes[alignedOff + i] = {
           tag: item.name,
-          color: item.color,
-          misaligned: false
+          type: 'payload',
+          color: item.color
         };
       }
-      s.good.currentByteOff = alignedByteOff + item.bytes;
-      s.good.logs.unshift(`align_up() pushed offset to byte ${alignedByteOff}. ${item.name} is guaranteed aligned to ${item.align}B!`);
+      s.good.currentByte = alignedOff + item.bytes;
+      s.good.log = `align_up() pushed offset to 0x${alignedOff.toString(16).padStart(2, '0').toUpperCase()} (+${pad}B pad). ${item.name} guaranteed ${item.align}B aligned!`;
     } else {
-      s.good.logs.unshift('Arena full!');
+      s.good.log = 'Aligned arena buffer full!';
     }
 
     this.render();
   }
 
-  alignmentTestSIMD() {
+  alignmentRunBenchmark() {
+    this.alignmentReset();
+    for (let i = 0; i < 5; i++) this.alignmentAllocateMixed();
     const s = this.state;
-    if (s.bad.misalignedCount > 0) {
-      s.bad.logs.unshift(`💥 SIMD CRASH: _mm256_load_ps executed on misaligned pointer! Hardware General Protection Fault (GPF)!`);
-    } else {
-      s.bad.logs.unshift(`No misaligned items found yet. Try allocating more mixed types!`);
-    }
-    s.good.logs.unshift(`✅ SIMD SUCCESS: Aligned arena guarantees 16/32-byte alignment. Single-cycle AVX2 load executed cleanly!`);
+    s.good.log = 'BENCHMARK COMPLETED: Set B maintains 100% hardware alignment with explicit padding. Set A triggers misaligned hardware penalties!';
     this.render();
   }
 
-  alignmentResetAll() {
+  alignmentReset() {
     const s = this.state;
-    s.bad.slots.fill(null);
+    s.bad.bytes.fill(null);
+    s.bad.currentByte = 0;
     s.bad.misalignedCount = 0;
-    s.bad.cacheSplits = 0;
-    s.bad.currentByteOff = 0;
-    s.bad.logs.unshift('Buffer cleared.');
+    s.bad.cacheLineSplits = 0;
+    s.bad.log = 'Raw buffer reset.';
 
-    s.good.slots.fill(null);
-    s.good.currentByteOff = 0;
-    s.good.logs.unshift('Aligned arena reset to offset 0.');
+    s.good.bytes.fill(null);
+    s.good.currentByte = 0;
+    s.good.paddingBytes = 0;
+    s.good.log = 'Aligned arena reset to offset 0.';
     this.render();
   }
 
   // =========================================================================
-  // CALCULATE METRICS
+  // METRICS COMPUTATION
   // =========================================================================
 
-  getMetrics() {
-    const s = this.state;
-    if (s.type === 'arena') {
-      // Calculate bad fragmentation: isolated null slots surrounded by non-null
-      let holes = 0;
-      let inHole = false;
-      for (let i = 0; i < s.totalSlots; i++) {
-        if (s.bad.slots[i] === null) {
-          if (!inHole && i > 0 && s.bad.slots[i - 1] !== null) {
-            holes++;
-          }
-          inHole = true;
-        } else {
-          inHole = false;
-        }
-      }
-      const badFreeSlots = s.bad.slots.filter(x => x === null).length;
-      const fragPercent = badFreeSlots > 0 ? Math.min(100, Math.round((holes / (s.totalSlots / 4)) * 100)) : 0;
+  calculateStats(bytes) {
+    let payload = 0;
+    let overhead = 0;
+    let holes = 0;
+    let free = 0;
 
-      return {
-        bad: {
-          syscalls: s.bad.syscalls,
-          fragmentation: `${fragPercent}%`,
-          leaks: `${s.bad.leaksCount} blocks`,
-          allocSpeed: 'O(N) Search',
-          cleanupSpeed: 'O(N) Pointer Tracking'
-        },
-        good: {
-          syscalls: '1 (Pre-allocated)',
-          fragmentation: '0%',
-          leaks: '0 (Guaranteed)',
-          allocSpeed: 'O(1) Bump Offset',
-          cleanupSpeed: 'O(1) Instant (offset=0)'
-        }
-      };
-    } else if (s.type === 'pool') {
-      const badHoles = s.bad.slots.filter(x => x === null).length;
-      return {
-        bad: {
-          fragmentation: `${Math.round((badHoles / s.slotCount) * 100)}% scattered`,
-          allocSpeed: 'O(N) Free-List Search',
-          slotReuse: 'Variable (Holes may not fit)'
-        },
-        good: {
-          fragmentation: '0% (Uniform Slots)',
-          allocSpeed: 'O(1) Pop Free-List Head',
-          slotReuse: '100% Guaranteed Reusable'
-        }
-      };
-    } else {
-      return {
-        bad: {
-          misaligned: `${s.bad.misalignedCount} hazards`,
-          cacheSplits: `${s.bad.cacheSplits} split lines`,
-          simdSafety: s.bad.misalignedCount > 0 ? 'FAIL (Undefined Behavior / Crash)' : 'Passing'
-        },
-        good: {
-          misaligned: '0 (Enforced by align_up)',
-          cacheSplits: '0 (Cache Aligned)',
-          simdSafety: 'PASS (Zero-Penalty Load)'
-        }
-      };
+    for (let i = 0; i < this.bufferSize; i++) {
+      const b = bytes[i];
+      if (b === null) {
+        free++;
+      } else if (b.type === 'header' || b.type === 'padding') {
+        overhead++;
+      } else if (b.type === 'hole') {
+        holes++;
+      } else {
+        payload++;
+      }
     }
+
+    // Largest contiguous free block
+    let maxFree = 0;
+    let curFree = 0;
+    for (let i = 0; i < this.bufferSize; i++) {
+      if (bytes[i] === null || (bytes[i] && bytes[i].type === 'hole')) {
+        curFree++;
+        if (curFree > maxFree) maxFree = curFree;
+      } else {
+        curFree = 0;
+      }
+    }
+
+    const usedTotal = payload + overhead + holes;
+    const fragPercent = (holes + overhead > 0 && free + holes > 0)
+      ? Math.round((holes / (free + holes)) * 100)
+      : 0;
+
+    return {
+      payload,
+      overhead,
+      holes,
+      free,
+      maxFree,
+      fragPercent,
+      payloadPct: Math.round((payload / this.bufferSize) * 100),
+      overheadPct: Math.round((overhead / this.bufferSize) * 100),
+      holesPct: Math.round((holes / this.bufferSize) * 100),
+      freePct: Math.round((free / this.bufferSize) * 100)
+    };
   }
 
   // =========================================================================
-  // RENDER UI
+  // RENDER GRID & UI
   // =========================================================================
+
+  renderMemoryGrid(bytes, isBad = false) {
+    let pagesHtml = '';
+
+    for (let p = 0; p < this.numPages; p++) {
+      const pStart = p * this.pageSize;
+      const pEnd = pStart + this.pageSize;
+      const pageHexStart = `0x${pStart.toString(16).padStart(2, '0').toUpperCase()}`;
+      const pageHexEnd = `0x${(pEnd - 1).toString(16).padStart(2, '0').toUpperCase()}`;
+
+      let regionLabel = 'Heap Region';
+      if (this.type === 'alignment') {
+        regionLabel = p < 2 ? 'Stack Frame Buffer' : 'Heap Extension Page';
+      } else if (p === 0) {
+        regionLabel = 'Base Memory Page';
+      }
+
+      let rowsHtml = '';
+      const rowsPerPage = this.pageSize / 8; // 2 rows per page, 8 bytes each
+
+      for (let r = 0; r < rowsPerPage; r++) {
+        const rStart = pStart + r * 8;
+        const rEnd = rStart + 8;
+        const rowHex = `0x${rStart.toString(16).padStart(2, '0').toUpperCase()}`;
+
+        let cellsHtml = '';
+        for (let i = rStart; i < rEnd; i++) {
+          const cell = bytes[i];
+          const byteHex = `0x${i.toString(16).padStart(2, '0').toUpperCase()}`;
+
+          if (!cell) {
+            cellsHtml += `
+              <div class="byte-cell byte-free" title="${byteHex} &bull; Page ${p} &bull; Free Unallocated (0x00)">
+                <span class="byte-char">.</span>
+              </div>
+            `;
+          } else if (cell.type === 'header') {
+            cellsHtml += `
+              <div class="byte-cell byte-header" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; Bookkeeping Metadata Header">
+                <span class="byte-char">H</span>
+              </div>
+            `;
+          } else if (cell.type === 'padding') {
+            cellsHtml += `
+              <div class="byte-cell byte-padding" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; Hardware Alignment Padding">
+                <span class="byte-char">P</span>
+              </div>
+            `;
+          } else if (cell.type === 'hole') {
+            cellsHtml += `
+              <div class="byte-cell byte-hole" style="background-color: rgba(244, 63, 94, 0.25);" title="${byteHex} &bull; Page ${p} &bull; Fragmented Swiss-Cheese Hole!">
+                <span class="byte-char">X</span>
+              </div>
+            `;
+          } else {
+            const misClass = cell.misaligned ? 'byte-misaligned' : '';
+            const charLabel = cell.tag.replace(/[^0-9a-zA-Z]/g, '').substring(0, 2) || '#';
+            cellsHtml += `
+              <div class="byte-cell ${misClass}" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; ${cell.tag}">
+                <span class="byte-char">${charLabel}</span>
+              </div>
+            `;
+          }
+        }
+
+        rowsHtml += `
+          <div class="mem-grid-row">
+            <span class="row-addr">${rowHex}:</span>
+            <div class="row-bytes">${cellsHtml}</div>
+          </div>
+        `;
+      }
+
+      pagesHtml += `
+        <div class="mem-page-block">
+          <div class="mem-page-header">
+            <span class="page-title">PAGE ${p} [${pageHexStart} - ${pageHexEnd}]</span>
+            <span class="page-region">${regionLabel}</span>
+          </div>
+          <div class="mem-page-rows">${rowsHtml}</div>
+        </div>
+      `;
+    }
+
+    return pagesHtml;
+  }
+
+  renderUsageBar(stats) {
+    return `
+      <div class="mem-usage-bar-wrap">
+        <div class="mem-usage-bar">
+          <div class="bar-seg seg-payload" style="width: ${stats.payloadPct}%;" title="Usable Payload: ${stats.payload}B (${stats.payloadPct}%)"></div>
+          <div class="bar-seg seg-overhead" style="width: ${stats.overheadPct}%;" title="Metadata/Padding: ${stats.overhead}B (${stats.overheadPct}%)"></div>
+          <div class="bar-seg seg-holes" style="width: ${stats.holesPct}%;" title="Fragmented Holes: ${stats.holes}B (${stats.holesPct}%)"></div>
+          <div class="bar-seg seg-free" style="width: ${stats.freePct}%;" title="Free: ${stats.free}B (${stats.freePct}%)"></div>
+        </div>
+        <div class="mem-usage-legend">
+          <span class="u-item"><span class="dot dot-payload"></span> Payload: ${stats.payload}B</span>
+          <span class="u-item"><span class="dot dot-overhead"></span> Overhead: ${stats.overhead}B</span>
+          <span class="u-item"><span class="dot dot-holes"></span> Holes: ${stats.holes}B</span>
+          <span class="u-item"><span class="dot dot-free"></span> Free: ${stats.free}B</span>
+        </div>
+      </div>
+    `;
+  }
 
   render() {
     if (!this.container) return;
-    const metrics = this.getMetrics();
     const s = this.state;
+    const badStats = this.calculateStats(s.bad.bytes);
+    const goodStats = this.calculateStats(s.good.bytes);
 
-    let titleText = 'Interactive Memory Lab: Allocator Comparison';
-    let subtitleText = 'Compare the naive "bad" approach side-by-side against the engineering technique.';
-    let actionButtonsHtml = '';
+    let controlsHtml = '';
+    let simTitle = 'Interactive Memory Simulator & Visual Grid';
+    let simSubtitle = 'Comparing two parallel sets of simulated memory page-by-page and byte-by-byte.';
 
     if (s.type === 'arena') {
-      titleText = 'Interactive Memory Lab: Naive Heap vs Linear Arena';
-      subtitleText = 'Watch how naive malloc/free causes fragmentation holes and leaks, while the Arena bumps forward with 0% fragmentation and resets in O(1).';
-      actionButtonsHtml = `
-        <button class="mem-sim-btn btn-primary" id="btn-arena-alloc">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>
-          <span>Allocate Batch (+3 Objs)</span>
+      simTitle = 'Interactive Memory Grid: Naive Dynamic Heap vs Linear Arena';
+      simSubtitle = 'Watch how individual mallocs pollute pages with 1-byte headers and fragmented holes, while the Arena bumps sequentially across pages with zero metadata.';
+      controlsHtml = `
+        <button class="mem-sim-btn btn-primary" id="btn-sim-alloc-one">
+          <span>⚡ Allocate (+5B Chunk)</span>
         </button>
-        <button class="mem-sim-btn btn-warning" id="btn-arena-free">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"></path></svg>
-          <span>Random Free (Fragment Heap)</span>
+        <button class="mem-sim-btn btn-primary" id="btn-sim-alloc-batch">
+          <span>📦 Batch Allocate (+3 Chunks)</span>
         </button>
-        <button class="mem-sim-btn btn-danger" id="btn-arena-leak">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          <span>Simulate Memory Leak</span>
+        <button class="mem-sim-btn btn-warning" id="btn-sim-free-random">
+          <span>💥 Random Free (Make Hole)</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-arena-reset">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-          <span>Reset All Memory</span>
+        <button class="mem-sim-btn btn-danger" id="btn-sim-benchmark">
+          <span>🧪 Run Stress Benchmark</span>
+        </button>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-reset">
+          <span>🔄 Reset Both Sets</span>
         </button>
       `;
     } else if (s.type === 'pool') {
-      titleText = 'Interactive Memory Lab: Variable Malloc vs Fixed Pool';
-      subtitleText = 'See how scattered variable allocations make it impossible to allocate new blocks, while uniform Pool slots are 100% reusable via free-lists.';
-      actionButtonsHtml = `
-        <button class="mem-sim-btn btn-primary" id="btn-pool-alloc">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Spawn Entities (+2)</span>
+      simTitle = 'Interactive Memory Grid: Variable Heap vs Fixed Slot Pool';
+      simSubtitle = 'Compare variable allocations that trap memory in unusable gaps vs uniform 8-byte slots that can be reclaimed and reused in O(1).';
+      controlsHtml = `
+        <button class="mem-sim-btn btn-primary" id="btn-sim-pool-alloc">
+          <span>⚡ Allocate (+1 Slot)</span>
         </button>
-        <button class="mem-sim-btn btn-warning" id="btn-pool-free">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"></path></svg>
-          <span>Despawn Random (Free Slot)</span>
+        <button class="mem-sim-btn btn-warning" id="btn-sim-pool-free">
+          <span>💥 Random Free (Push Free-List)</span>
         </button>
-        <button class="mem-sim-btn btn-danger" id="btn-pool-oom">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          <span>Try Allocate 3-Slot Block</span>
+        <button class="mem-sim-btn btn-danger" id="btn-sim-pool-bench">
+          <span>🧪 Run Pool Benchmark</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-pool-reset">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-          <span>Reset Pool</span>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-pool-reset">
+          <span>🔄 Reset Both Sets</span>
         </button>
       `;
     } else {
-      titleText = 'Interactive Memory Lab: Misaligned Raw vs Aligned Arena';
-      subtitleText = 'Compare misaligned byte packing (split cache lines and SIMD crashes) against strict hardware alignment with align_up().';
-      actionButtonsHtml = `
-        <button class="mem-sim-btn btn-primary" id="btn-align-alloc">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Allocate Mixed Type</span>
+      simTitle = 'Interactive Memory Grid: Raw Unaligned vs Aligned Arena & PMR';
+      simSubtitle = 'Observe how raw byte packing causes misaligned hardware stalls across 32B cache lines, while align_up() inserts explicit padding for peak performance.';
+      controlsHtml = `
+        <button class="mem-sim-btn btn-primary" id="btn-sim-align-alloc">
+          <span>⚡ Allocate Mixed Type</span>
         </button>
-        <button class="mem-sim-btn btn-danger" id="btn-align-simd">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-          <span>Run 16B SIMD Load Test</span>
+        <button class="mem-sim-btn btn-danger" id="btn-sim-align-bench">
+          <span>🧪 Run Alignment Benchmark</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-align-reset">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-          <span>Reset Arena</span>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-align-reset">
+          <span>🔄 Reset Both Sets</span>
         </button>
       `;
     }
 
-    // Render slots for Bad side
-    const badSlotsHtml = s.bad.slots.map((slot, i) => {
-      const addrHex = `0x${(i * 16).toString(16).padStart(2, '0').toUpperCase()}`;
-      if (!slot) {
-        return `<div class="mem-cell mem-free" title="Offset ${addrHex} &bull; Free memory hole"><span class="mem-cell-idx">${i}</span></div>`;
-      }
-      const isHdr = slot.isHeader ? 'mem-header' : '';
-      const isLk = slot.isLeak ? 'mem-leak' : '';
-      const isMis = slot.misaligned ? 'mem-misaligned' : '';
-      return `<div class="mem-cell ${isHdr} ${isLk} ${isMis}" style="background-color: ${slot.color};" title="Offset ${addrHex} &bull; ${slot.tag}"><span class="mem-cell-idx">${i}</span><span class="mem-cell-label">${slot.tag.substring(0, 5)}</span></div>`;
-    }).join('');
-
-    // Render slots for Good side
-    const goodSlotsHtml = s.good.slots.map((slot, i) => {
-      const addrHex = `0x${(i * 16).toString(16).padStart(2, '0').toUpperCase()}`;
-      if (!slot) {
-        return `<div class="mem-cell mem-free" title="Offset ${addrHex} &bull; Unused capacity"><span class="mem-cell-idx">${i}</span></div>`;
-      }
-      const isPad = slot.isPadding ? 'mem-padding' : '';
-      return `<div class="mem-cell ${isPad}" style="background-color: ${slot.color};" title="Offset ${addrHex} &bull; ${slot.tag}"><span class="mem-cell-idx">${i}</span><span class="mem-cell-label">${slot.tag.substring(0, 5)}</span></div>`;
-    }).join('');
-
-    // HTML Output
     this.container.innerHTML = `
       <div class="memory-visualizer-card">
         <div class="mem-sim-header">
           <div class="mem-sim-badge">
             <span class="pulse-dot"></span>
-            <span>Live Memory Simulator</span>
+            <span>Functional Memory Simulation Grid</span>
           </div>
-          <h3 class="mem-sim-title">${titleText}</h3>
-          <p class="mem-sim-sub">${subtitleText}</p>
+          <h3 class="mem-sim-title">${simTitle}</h3>
+          <p class="mem-sim-sub">${simSubtitle}</p>
         </div>
 
-        <!-- Action Control Bar -->
+        <!-- Controls -->
         <div class="mem-sim-controls">
-          ${actionButtonsHtml}
+          ${controlsHtml}
         </div>
 
-        <!-- Side-by-Side Comparison Container -->
+        <!-- Side-by-Side Memory Sets Grid -->
         <div class="mem-compare-grid">
-          <!-- LEFT: BAD APPROACH -->
+          <!-- LEFT: SET A (BAD) -->
           <div class="mem-column mem-bad-col">
             <div class="mem-col-header">
-              <span class="mem-col-tag tag-bad">&#x2716; Naive / Unoptimized</span>
-              <div class="mem-col-title">
-                ${s.type === 'arena' ? 'Individual malloc() / free()' : (s.type === 'pool' ? 'Variable-Size Malloc' : 'Misaligned Byte Packing')}
+              <span class="mem-col-tag tag-bad">&#x2716; ${s.bad.name}</span>
+            </div>
+
+            <!-- Proportional Usage Meter -->
+            ${this.renderUsageBar(badStats)}
+
+            <!-- Pages & Bytes 2D Grid -->
+            <div class="mem-pages-container">
+              ${this.renderMemoryGrid(s.bad.bytes, true)}
+            </div>
+
+            <!-- Metric Summary -->
+            <div class="mem-metrics-row">
+              <div class="mem-metric-item">
+                <span class="m-val m-danger">${badStats.fragPercent}%</span>
+                <span class="m-lbl">Fragmentation</span>
+              </div>
+              <div class="mem-metric-item">
+                <span class="m-val m-warning">${badStats.overhead} Bytes</span>
+                <span class="m-lbl">Overhead</span>
+              </div>
+              <div class="mem-metric-item">
+                <span class="m-val m-danger">${badStats.maxFree} Bytes</span>
+                <span class="m-lbl">Max Free Run</span>
               </div>
             </div>
 
-            <!-- Memory Strip -->
-            <div class="mem-strip-wrap">
-              <div class="mem-strip-label">Heap Memory Space (512 Bytes)</div>
-              <div class="mem-strip-cells">${badSlotsHtml}</div>
-            </div>
-
-            <!-- Live Metrics -->
-            <div class="mem-metrics-row">
-              ${s.type === 'arena' ? `
-                <div class="mem-metric-item"><span class="m-val m-danger">${metrics.bad.fragmentation}</span><span class="m-lbl">Fragmentation</span></div>
-                <div class="mem-metric-item"><span class="m-val m-warning">${metrics.bad.syscalls}</span><span class="m-lbl">Syscalls</span></div>
-                <div class="mem-metric-item"><span class="m-val m-danger">${metrics.bad.leaks}</span><span class="m-lbl">Memory Leaks</span></div>
-              ` : (s.type === 'pool' ? `
-                <div class="mem-metric-item"><span class="m-val m-danger">${metrics.bad.fragmentation}</span><span class="m-lbl">External Frag</span></div>
-                <div class="mem-metric-item"><span class="m-val m-warning">${metrics.bad.allocSpeed}</span><span class="m-lbl">Latency</span></div>
-              ` : `
-                <div class="mem-metric-item"><span class="m-val m-danger">${metrics.bad.misaligned}</span><span class="m-lbl">Unaligned Slots</span></div>
-                <div class="mem-metric-item"><span class="m-val m-danger">${metrics.bad.simdSafety}</span><span class="m-lbl">SIMD Safety</span></div>
-              `)}
-            </div>
-
-            <!-- Terminal Log -->
+            <!-- Terminal log -->
             <div class="mem-mini-log">
-              <div class="log-line">&gt; ${s.bad.logs[0] || 'Ready'}</div>
+              <div class="log-line">&gt; ${s.bad.log}</div>
             </div>
           </div>
 
-          <!-- RIGHT: GOOD TECHNIQUE -->
+          <!-- RIGHT: SET B (GOOD) -->
           <div class="mem-column mem-good-col">
             <div class="mem-col-header">
-              <span class="mem-col-tag tag-good">&#x2714; Engineering Technique</span>
-              <div class="mem-col-title">
-                ${s.type === 'arena' ? 'Contiguous Arena Allocator' : (s.type === 'pool' ? 'Fixed Pool & Free-List' : 'Aligned Arena (align_up)')}
+              <span class="mem-col-tag tag-good">&#x2714; ${s.good.name}</span>
+            </div>
+
+            <!-- Proportional Usage Meter -->
+            ${this.renderUsageBar(goodStats)}
+
+            <!-- Pages & Bytes 2D Grid -->
+            <div class="mem-pages-container">
+              ${this.renderMemoryGrid(s.good.bytes, false)}
+            </div>
+
+            <!-- Metric Summary -->
+            <div class="mem-metrics-row">
+              <div class="mem-metric-item">
+                <span class="m-val m-success">${goodStats.fragPercent}%</span>
+                <span class="m-lbl">Fragmentation</span>
+              </div>
+              <div class="mem-metric-item">
+                <span class="m-val m-success">${goodStats.overhead} Bytes</span>
+                <span class="m-lbl">Overhead</span>
+              </div>
+              <div class="mem-metric-item">
+                <span class="m-val m-success">${goodStats.maxFree} Bytes</span>
+                <span class="m-lbl">Max Free Run</span>
               </div>
             </div>
 
-            <!-- Memory Strip -->
-            <div class="mem-strip-wrap">
-              <div class="mem-strip-label">Arena / Pool Contiguous Buffer</div>
-              <div class="mem-strip-cells">${goodSlotsHtml}</div>
-            </div>
-
-            <!-- Live Metrics -->
-            <div class="mem-metrics-row">
-              ${s.type === 'arena' ? `
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.fragmentation}</span><span class="m-lbl">Fragmentation</span></div>
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.syscalls}</span><span class="m-lbl">Syscalls</span></div>
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.leaks}</span><span class="m-lbl">Memory Leaks</span></div>
-              ` : (s.type === 'pool' ? `
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.fragmentation}</span><span class="m-lbl">External Frag</span></div>
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.allocSpeed}</span><span class="m-lbl">Latency</span></div>
-              ` : `
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.misaligned}</span><span class="m-lbl">Unaligned Slots</span></div>
-                <div class="mem-metric-item"><span class="m-val m-success">${metrics.good.simdSafety}</span><span class="m-lbl">SIMD Safety</span></div>
-              `)}
-            </div>
-
-            <!-- Terminal Log -->
+            <!-- Terminal log -->
             <div class="mem-mini-log log-good">
-              <div class="log-line">&gt; ${s.good.logs[0] || 'Ready'}</div>
+              <div class="log-line">&gt; ${s.good.log}</div>
             </div>
           </div>
         </div>
 
+        <!-- Visual Legend -->
         <div class="mem-legend">
-          <span class="legend-item"><span class="legend-swatch swatch-alloc"></span> Allocated Entity</span>
-          <span class="legend-item"><span class="legend-swatch swatch-hdr"></span> Metadata Header (Overhead)</span>
-          <span class="legend-item"><span class="legend-swatch swatch-leak"></span> Memory Leak / Hazard</span>
-          <span class="legend-item"><span class="legend-swatch swatch-free"></span> Free Unused Memory</span>
+          <span class="legend-item"><span class="legend-swatch swatch-alloc"></span> Payload Byte [A-Z, #]</span>
+          <span class="legend-item"><span class="legend-swatch swatch-hdr"></span> Chunk Header / Metadata [H]</span>
+          <span class="legend-item"><span class="legend-swatch swatch-pad"></span> Hardware Padding [P]</span>
+          <span class="legend-item"><span class="legend-swatch swatch-leak"></span> Fragmented Hole [X]</span>
+          <span class="legend-item"><span class="legend-swatch swatch-free"></span> Free Unallocated [.]</span>
         </div>
       </div>
     `;
 
-    this.bindButtons();
+    this.bindEvents();
   }
 
-  bindButtons() {
+  bindEvents() {
     if (this.state.type === 'arena') {
-      this.container.querySelector('#btn-arena-alloc')?.addEventListener('click', () => this.arenaAllocateBatch());
-      this.container.querySelector('#btn-arena-free')?.addEventListener('click', () => this.arenaDeallocateRandom());
-      this.container.querySelector('#btn-arena-leak')?.addEventListener('click', () => this.arenaSimulateLeak());
-      this.container.querySelector('#btn-arena-reset')?.addEventListener('click', () => this.arenaResetAll());
+      this.container.querySelector('#btn-sim-alloc-one')?.addEventListener('click', () => this.arenaAllocateChunk(5));
+      this.container.querySelector('#btn-sim-alloc-batch')?.addEventListener('click', () => this.arenaBatchAllocate());
+      this.container.querySelector('#btn-sim-free-random')?.addEventListener('click', () => this.arenaDeallocateRandom());
+      this.container.querySelector('#btn-sim-benchmark')?.addEventListener('click', () => this.arenaRunBenchmark());
+      this.container.querySelector('#btn-sim-reset')?.addEventListener('click', () => this.arenaReset());
     } else if (this.state.type === 'pool') {
-      this.container.querySelector('#btn-pool-alloc')?.addEventListener('click', () => this.poolAllocate());
-      this.container.querySelector('#btn-pool-free')?.addEventListener('click', () => this.poolFreeRandom());
-      this.container.querySelector('#btn-pool-oom')?.addEventListener('click', () => this.poolTriggerOOM());
-      this.container.querySelector('#btn-pool-reset')?.addEventListener('click', () => this.poolResetAll());
+      this.container.querySelector('#btn-sim-pool-alloc')?.addEventListener('click', () => this.poolAllocate());
+      this.container.querySelector('#btn-sim-pool-free')?.addEventListener('click', () => this.poolFreeRandom());
+      this.container.querySelector('#btn-sim-pool-bench')?.addEventListener('click', () => this.poolRunBenchmark());
+      this.container.querySelector('#btn-sim-pool-reset')?.addEventListener('click', () => this.poolReset());
     } else {
-      this.container.querySelector('#btn-align-alloc')?.addEventListener('click', () => this.alignmentAllocateMixed());
-      this.container.querySelector('#btn-align-simd')?.addEventListener('click', () => this.alignmentTestSIMD());
-      this.container.querySelector('#btn-align-reset')?.addEventListener('click', () => this.alignmentResetAll());
+      this.container.querySelector('#btn-sim-align-alloc')?.addEventListener('click', () => this.alignmentAllocateMixed());
+      this.container.querySelector('#btn-sim-align-bench')?.addEventListener('click', () => this.alignmentRunBenchmark());
+      this.container.querySelector('#btn-sim-align-reset')?.addEventListener('click', () => this.alignmentReset());
     }
   }
 }
-

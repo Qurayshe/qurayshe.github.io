@@ -76,7 +76,8 @@ export const SYSTEMS_CURRICULUM = [
         mdPath: 'cprog1/05_dynamic_memory/05_dynamic_allocation_and_custom_allocators.md',
         codeFiles: [
           { name: '05_heap_memory.c', path: 'cprog1/05_dynamic_memory/05_heap_memory.c', lang: 'c' },
-          { name: '05_simple_arena.c', path: 'cprog1/05_dynamic_memory/05_simple_arena.c', lang: 'c' }
+          { name: '05_simple_arena.c', path: 'cprog1/05_dynamic_memory/05_simple_arena.c', lang: 'c' },
+          { name: '05_memory_simulation_compare.c', path: 'cprog1/05_dynamic_memory/05_memory_simulation_compare.c', lang: 'c' }
         ],
         tags: ['Heap', 'malloc', 'Arena Allocator', 'Memory Safety']
       },

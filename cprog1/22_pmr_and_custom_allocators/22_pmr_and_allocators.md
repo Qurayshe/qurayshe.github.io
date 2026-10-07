@@ -89,19 +89,11 @@ double* pDbl = arena.alloc<double>(); // Offset 8:  8-byte aligned (with 4B padd
 auto* pVec = arena.alloc<__m128>();   // Offset 16: 16-byte aligned for flawless AVX/SSE! (●'◡'●)
 ```
 
-#### Live Memory Layout Comparison
+#### Interactive Memory Simulation Grid: Misaligned Raw vs Aligned Arena
 
-```
-BAD: Misaligned Raw Memory (Crosses 64-Byte Cache Line Boundary)
-[ 1B ][  4B int  ][     8B double      ][   16B SIMD Vector (CROSSES CACHE LINE!)   ]
-  ^        ^               ^                            ^
-Off 0    Off 1           Off 5                        Off 13 (Hardware Fault!)
-
-GOOD: Aligned Arena (Strict Hardware Alignment with Padding)
-[ 1B ][ 3B Pad ][  4B int  ][     8B double      ][   16B SIMD Vector (Aligned)   ]
-  ^                ^               ^                            ^
-Off 0            Off 4           Off 8                        Off 16 (Peak Performance!)
-```
+The interactive simulator below models 64 bytes of memory divided into four 16-byte virtual pages (`Page 0` to `Page 3`), testing arbitrary raw byte packing against power-of-two hardware alignment:
+- **Set A (Raw Unaligned Packing):** Demonstrates packing variables directly at sequential offsets without alignment. Notice how types land on unaligned offsets (e.g. 4-byte integers at offset 1, 8-byte doubles at offset 5), crossing cache boundaries and causing CPU bus stall penalties or SIMD instruction faults.
+- **Set B (Aligned Arena & Stack PMR):** Demonstrates strict `align_up()` on a local stack buffer. Explicit padding bytes (`P`) ensure every struct and SIMD vector starts on a hardware-valid boundary for maximum silicon throughput.
 
 <div class="memory-interactive-sim" data-sim="alignment"></div>
 

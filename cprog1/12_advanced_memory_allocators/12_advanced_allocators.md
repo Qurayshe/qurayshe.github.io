@@ -55,19 +55,11 @@ pool_free(&pool, p1);         // Pushes p1 to free list in O(1)
 void *p3 = pool_alloc(&pool); // Instantly reuses slot p1! (●'◡'●)
 ```
 
-### Live Memory Layout Comparison
+### Interactive Memory Simulation Grid: Variable Heap vs Fixed Slot Pool
 
-```
-BAD: Naive Dynamic Heap (External Fragmentation Holes)
-[ 16B Alloc ][ 64B Free Hole ][ 16B Alloc ][ 32B Free Hole ][ 64B Alloc ]
-                     ^
-       Cannot fit a new 128B object despite 96B free!
-
-GOOD: Fixed-Size Slot Pool (100% Reusable Uniform Slots)
-[ Slot 0: Used ][ Slot 1: Free (Next->3) ][ Slot 2: Used ][ Slot 3: Free (Next->NULL) ]
-                     ^
-         Guaranteed to fit any new entity in O(1)!
-```
+The interactive simulator below models 64 bytes of memory divided into four 16-byte virtual pages (`Page 0` to `Page 3`), testing variable dynamic allocations against uniform 8-byte slots:
+- **Set A (Variable-Size Heap):** Demonstrates heterogeneous allocations (4B, 12B). When objects are freed, they leave scattered gaps where subsequent allocations fail (OOM) even though total free bytes are sufficient.
+- **Set B (Fixed-Size Slot Pool):** Demonstrates 8 uniform slots managed by an embedded free-list stack. Any freed slot is 100% guaranteed reusable by any subsequent entity in $O(1)$ time with zero searching.
 
 <div class="memory-interactive-sim" data-sim="pool"></div>
 

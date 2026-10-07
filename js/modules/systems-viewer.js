@@ -6,6 +6,7 @@
 import { SYSTEMS_CURRICULUM } from '../data/manifest.js';
 import { fetchFile, renderMarkdown, highlightCode, copyToClipboard, escapeHtml } from '../utils/helpers.js';
 import { MemoryVisualizer } from './memory-visualizer.js';
+import { WasmMemoryEngine } from './wasm-memory-engine.js';
 
 export class SystemsViewer {
   constructor(container) {
@@ -14,6 +15,7 @@ export class SystemsViewer {
     this.activeTab = 'lesson'; // 'lesson', 'code', 'concepts'
     this.searchQuery = '';
     this.selectedCodeFileIndex = 0;
+    this.wasmEngine = null;
 
     // Flatten all modules for easy index lookup
     this.allModules = [];
@@ -100,12 +102,31 @@ export class SystemsViewer {
                   <div class="code-file-tabs" id="systems-code-file-tabs">
                     <!-- Dynamic File Tabs -->
                   </div>
-                  <button class="btn-copy" id="btn-systems-copy-code">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span>Copy Code</span>
-                  </button>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="btn-wasm-run" id="btn-systems-run-wasm" style="display: none;" title="Execute simulation in WebAssembly linear memory">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span>Run in WebAssembly</span>
+                    </button>
+                    <button class="btn-copy" id="btn-systems-copy-code">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      <span>Copy Code</span>
+                    </button>
+                  </div>
                 </div>
                 <pre class="code-block line-numbers"><code id="systems-code-content" class="language-c">// Loading code...</code></pre>
+                <div class="wasm-terminal-container" id="systems-wasm-terminal" style="display: none;">
+                  <div class="wasm-terminal-header">
+                    <div class="wasm-term-badge">
+                      <span class="pulse-dot"></span>
+                      <span>WebAssembly Linear Memory Execution</span>
+                    </div>
+                    <div class="wasm-term-actions">
+                      <button class="wasm-term-btn" id="btn-wasm-term-clear">Clear</button>
+                      <button class="wasm-term-btn" id="btn-wasm-term-close">Close</button>
+                    </div>
+                  </div>
+                  <pre class="wasm-terminal-output" id="systems-wasm-output">// Ready to execute WebAssembly simulation...</pre>
+                </div>
               </div>
             </div>
 
@@ -339,6 +360,18 @@ export class SystemsViewer {
     const codeContent = document.getElementById('systems-code-content');
     if (!codeContent) return;
 
+    // Show WASM runner button when inspecting 05_memory_simulation_compare.c
+    const wasmRunBtn = document.getElementById('btn-systems-run-wasm');
+    const wasmTerminal = document.getElementById('systems-wasm-terminal');
+    if (wasmRunBtn) {
+      if (file && file.name === '05_memory_simulation_compare.c') {
+        wasmRunBtn.style.display = 'inline-flex';
+      } else {
+        wasmRunBtn.style.display = 'none';
+        if (wasmTerminal) wasmTerminal.style.display = 'none';
+      }
+    }
+
     codeContent.className = `language-${file.lang || 'c'}`;
     codeContent.textContent = 'Loading source code...';
 
@@ -452,6 +485,44 @@ export class SystemsViewer {
         if (codeContent) {
           copyToClipboard(codeContent.textContent, copyBtn);
         }
+      });
+    }
+
+    // WebAssembly Execution in Code Tab
+    const runWasmBtn = document.getElementById('btn-systems-run-wasm');
+    const wasmTerminal = document.getElementById('systems-wasm-terminal');
+    const wasmOutput = document.getElementById('systems-wasm-output');
+    const clearWasmBtn = document.getElementById('btn-wasm-term-clear');
+    const closeWasmBtn = document.getElementById('btn-wasm-term-close');
+
+    if (runWasmBtn && wasmTerminal && wasmOutput) {
+      runWasmBtn.addEventListener('click', async () => {
+        wasmTerminal.style.display = 'block';
+        wasmOutput.textContent = 'Initializing WebAssembly memory runtime...';
+
+        if (!this.wasmEngine) {
+          this.wasmEngine = new WasmMemoryEngine();
+          await this.wasmEngine.init();
+        }
+
+        wasmOutput.textContent = 'Executing benchmark simulation inside WebAssembly linear memory...';
+        setTimeout(() => {
+          const results = this.wasmEngine.runFullBenchmark();
+          wasmOutput.textContent = results;
+          wasmTerminal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      });
+    }
+
+    if (clearWasmBtn && wasmOutput) {
+      clearWasmBtn.addEventListener('click', () => {
+        wasmOutput.textContent = '// Terminal cleared. Click "Run in WebAssembly" to execute simulation again.';
+      });
+    }
+
+    if (closeWasmBtn && wasmTerminal) {
+      closeWasmBtn.addEventListener('click', () => {
+        wasmTerminal.style.display = 'none';
       });
     }
 
