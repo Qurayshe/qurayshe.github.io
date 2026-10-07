@@ -387,18 +387,6 @@ export class SystemsViewer {
         </div>
       </div>
 
-      <div class="concept-card memory-model-card">
-        <h3 class="concept-title">Memory Layout Model</h3>
-        <div class="memory-layout-diagram">
-          <div class="mem-tier mem-kernel">Kernel Space (0xFFFFFFFF... OS Reserved)</div>
-          <div class="mem-tier mem-stack">Stack (Grows Downward &bull; Fast LIFO &bull; Local Variables &bull; Frame Pointers)</div>
-          <div class="mem-arrow">&darr; &uarr;</div>
-          <div class="mem-tier mem-heap">Heap (Grows Upward &bull; Dynamic Allocation &bull; Arenas &bull; Free Lists)</div>
-          <div class="mem-tier mem-bss">.bss / .data (Global / Static Variables)</div>
-          <div class="mem-tier mem-text">.text / .rodata (Executable Machine Instructions & String Literals)</div>
-        </div>
-      </div>
-
       <div class="concept-card">
         <h3 class="concept-title">Key Takeaways</h3>
         <ul class="concept-checklist">

@@ -5050,6 +5050,18 @@ code[class*="language-"] {
   backdrop-filter: blur(10px);
 }
 
+.markdown-body .concept-card {
+  margin: 1.6rem 0;
+  border: 1px solid rgba(168, 85, 247, 0.22);
+  background: rgba(18, 14, 28, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.markdown-body .concept-card h3.concept-title {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+}
+
 .preview-canvas-box {
   background: #080c10;
   border: 2px solid rgba(16, 185, 129, 0.35);
