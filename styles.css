@@ -5342,5 +5342,357 @@ code[class*="language-"] {
   background: rgba(16, 185, 129, 0.04);
 }
 
+/* ==========================================================================
+   Interactive Memory Management Visualizer & Simulator
+   ========================================================================== */
+.memory-visualizer-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-md, 8px);
+  padding: 1.4rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
 
+.mem-sim-header {
+  margin-bottom: 1.1rem;
+}
 
+.mem-sim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-cyan, #38bdf8);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  margin-bottom: 0.45rem;
+}
+
+.mem-sim-badge .pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulse-ring 2s infinite ease-out;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
+
+.mem-sim-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0.2rem 0 0.35rem 0;
+}
+
+.mem-sim-sub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.mem-sim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mem-sim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-sans, sans-serif);
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.mem-sim-btn.btn-primary {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.mem-sim-btn.btn-primary:hover {
+  background: rgba(56, 189, 248, 0.28);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.mem-sim-btn.btn-warning {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+.mem-sim-btn.btn-warning:hover {
+  background: rgba(245, 158, 11, 0.28);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+}
+
+.mem-sim-btn.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.mem-sim-btn.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+}
+
+.mem-sim-btn.btn-secondary {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+.mem-sim-btn.btn-secondary:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.mem-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .mem-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mem-column {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.mem-bad-col {
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%);
+}
+
+.mem-good-col {
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%);
+}
+
+.mem-col-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mem-col-tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.mem-col-tag.tag-bad {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+}
+
+.mem-col-tag.tag-good {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.mem-col-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.mem-strip-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mem-strip-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.mem-strip-cells {
+  display: flex;
+  gap: 2px;
+  background: #090d16;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.mem-cell {
+  flex: 1 1 0;
+  min-width: 14px;
+  height: 30px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.58rem;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  cursor: default;
+  transition: transform 0.12s ease;
+  position: relative;
+}
+
+.mem-cell:hover {
+  transform: translateY(-2px);
+  z-index: 2;
+}
+
+.mem-cell-idx {
+  font-size: 0.5rem;
+  opacity: 0.6;
+}
+
+.mem-cell-label {
+  font-size: 0.52rem;
+  line-height: 1;
+}
+
+.mem-cell.mem-free {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: #475569;
+}
+
+.mem-cell.mem-header {
+  border: 1px solid #c084fc;
+}
+
+.mem-cell.mem-leak {
+  border: 1px solid #f87171;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  animation: pulse-ring 1.5s infinite;
+}
+
+.mem-cell.mem-misaligned {
+  border: 1px solid #f43f5e;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.5);
+}
+
+.mem-cell.mem-padding {
+  border: 1px dotted #94a3b8;
+  color: #94a3b8;
+}
+
+.mem-metrics-row {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0.65rem;
+  border-radius: 5px;
+}
+
+.mem-metric-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.mem-metric-item .m-val {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.mem-metric-item .m-val.m-success { color: #10b981; }
+.mem-metric-item .m-val.m-danger  { color: #f43f5e; }
+.mem-metric-item .m-val.m-warning { color: #fbbf24; }
+
+.mem-metric-item .m-lbl {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.mem-mini-log {
+  background: #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 2px solid #f43f5e;
+  border-radius: 4px;
+  padding: 0.45rem 0.65rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: #fca5a5;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.mem-mini-log.log-good {
+  border-left-color: #10b981;
+  color: #6ee7b7;
+}
+
+.mem-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.73rem;
+  color: #94a3b8;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.swatch-alloc { background: #38bdf8; }
+.swatch-hdr   { background: #a855f7; }
+.swatch-leak  { background: #ef4444; }
+.swatch-free  { background: rgba(255, 255, 255, 0.08); border: 1px dashed rgba(255, 255, 255, 0.2); }

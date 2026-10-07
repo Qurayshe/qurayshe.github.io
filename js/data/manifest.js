@@ -379,13 +379,14 @@ export const SYSTEMS_CURRICULUM = [
       {
         id: '22_pmr_and_custom_allocators',
         num: '22',
-        title: 'Polymorphic Allocators (PMR)',
-        desc: 'std::pmr::monotonic_buffer_resource, Stack-backed vector allocation, Zero-heap containers in hot loops.',
-        mdPath: 'cprog1/22_pmr_and_custom_allocators/22_pmr_arena.cpp',
+        title: 'Custom Arenas & PMR Allocators',
+        desc: 'Production arena upgrades (Aligned, Chunked, Thread-Safe), and C++17 std::pmr monotonic buffer resources.',
+        mdPath: 'cprog1/22_pmr_and_custom_allocators/22_pmr_and_allocators.md',
         codeFiles: [
+          { name: '22_arena_upgrades.cpp', path: 'cprog1/22_pmr_and_custom_allocators/22_arena_upgrades.cpp', lang: 'cpp' },
           { name: '22_pmr_arena.cpp', path: 'cprog1/22_pmr_and_custom_allocators/22_pmr_arena.cpp', lang: 'cpp' }
         ],
-        tags: ['PMR', 'Polymorphic Allocators', 'Zero Heap', 'Stack Buffers']
+        tags: ['PMR', 'Arena Allocator', 'Alignment', 'Thread-Safe', 'Custom Allocators']
       },
       {
         id: '23_cache_alignment_and_false_sharing',

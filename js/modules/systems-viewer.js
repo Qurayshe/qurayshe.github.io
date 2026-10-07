@@ -5,6 +5,7 @@
 
 import { SYSTEMS_CURRICULUM } from '../data/manifest.js';
 import { fetchFile, renderMarkdown, highlightCode, copyToClipboard, escapeHtml } from '../utils/helpers.js';
+import { MemoryVisualizer } from './memory-visualizer.js';
 
 export class SystemsViewer {
   constructor(container) {
@@ -245,6 +246,12 @@ export class SystemsViewer {
       if (mdContent) {
         markdownView.innerHTML = renderMarkdown(mdContent);
         highlightCode(markdownView);
+
+        // Mount interactive memory visualizers embedded in markdown lessons
+        markdownView.querySelectorAll('.memory-interactive-sim').forEach((el) => {
+          const simType = el.dataset.sim || 'arena';
+          new MemoryVisualizer(el, simType);
+        });
       } else {
         markdownView.innerHTML = `
           <div class="error-notice">
@@ -354,7 +361,19 @@ export class SystemsViewer {
       .map((t) => `<span class="concept-tag">${escapeHtml(t)}</span>`)
       .join(' ');
 
+    let memorySimType = null;
+    if (module.id === '05_dynamic_memory') memorySimType = 'arena';
+    else if (module.id === '12_advanced_memory_allocators') memorySimType = 'pool';
+    else if (module.id === '22_pmr_and_custom_allocators') memorySimType = 'alignment';
+
+    let memVisualizerHtml = '';
+    if (memorySimType) {
+      memVisualizerHtml = `<div id="concepts-memory-visualizer" style="margin-bottom: 1.5rem;"></div>`;
+    }
+
     pane.innerHTML = `
+      ${memVisualizerHtml}
+
       <div class="concept-card">
         <h3 class="concept-title">Module Objective</h3>
         <p class="concept-desc">${module.desc}</p>
@@ -384,6 +403,13 @@ export class SystemsViewer {
         </ul>
       </div>
     `;
+
+    if (memorySimType) {
+      const simTarget = document.getElementById('concepts-memory-visualizer');
+      if (simTarget) {
+        new MemoryVisualizer(simTarget, memorySimType);
+      }
+    }
   }
 
   bindEvents() {
