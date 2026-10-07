@@ -254,21 +254,37 @@ export class MemoryVisualizer {
     this.render();
   }
 
-  arenaReset() {
+  arenaReclaimOnly() {
     const s = this.state;
     s.good.bytes.fill(null);
     s.good.chunks = {};
     s.good.offset = 0;
     s.good.nextId = 1;
-    s.good.log = 'Arena instant reset (offset = 0x00). All memory reclaimed in 0 ns.';
+    s.good.log = 'arena_reset(&arena) executed! Bump pointer reset to 0x00. All memory reclaimed in 0 ns!';
+    s.bad.log = 'Notice: Set A (Naive Heap) is UNCHANGED! Its chunks & fragmented holes still linger until manual free() sweeps.';
+    this.render();
+  }
+
+  arenaHardReset() {
+    const s = this.state;
+    s.good.bytes.fill(null);
+    s.good.chunks = {};
+    s.good.offset = 0;
+    s.good.nextId = 1;
+    s.good.syscalls = 1;
+    s.good.log = 'Arena pre-allocated 64B contiguous buffer in 1 syscall. Offset = 0x00.';
 
     s.bad.bytes.fill(null);
     s.bad.chunks = {};
     s.bad.nextId = 1;
     s.bad.syscalls = 0;
     s.bad.leaksCount = 0;
-    s.bad.log = 'Heap reset after sweeping all chunks.';
+    s.bad.log = 'Hard reset: Heap completely cleared. All allocation failures and holes wiped.';
     this.render();
+  }
+
+  arenaReset() {
+    this.arenaHardReset();
   }
 
   // =========================================================================
@@ -376,15 +392,31 @@ export class MemoryVisualizer {
     this.render();
   }
 
-  poolReset() {
+  poolReclaimOnly() {
     const s = this.state;
     s.good.bytes.fill(null);
     s.good.freeList = Array.from({ length: s.numSlots }, (_, i) => i);
-    s.good.log = 'Pool reset. All 8 slots returned to free-list.';
+    s.good.nextId = 1;
+    s.good.log = 'Pool reclaimed in O(1)! All 8 uniform slots returned to free-list stack.';
+    s.bad.log = 'Notice: Variable heap still has fragmented gaps. Each allocation must still be freed individually.';
+    this.render();
+  }
+
+  poolHardReset() {
+    const s = this.state;
+    s.good.bytes.fill(null);
+    s.good.freeList = Array.from({ length: s.numSlots }, (_, i) => i);
+    s.good.nextId = 1;
+    s.good.log = 'Pool initialized: 8 uniform slots of 8 bytes (O(1) free list).';
     s.bad.bytes.fill(null);
     s.bad.chunks = {};
-    s.bad.log = 'Variable heap cleared.';
+    s.bad.nextId = 1;
+    s.bad.log = 'Hard reset: Variable heap cleared. All allocation failures wiped.';
     this.render();
+  }
+
+  poolReset() {
+    this.poolHardReset();
   }
 
   // =========================================================================
@@ -465,19 +497,33 @@ export class MemoryVisualizer {
     this.render();
   }
 
-  alignmentReset() {
+  alignmentReclaimOnly() {
+    const s = this.state;
+    s.good.bytes.fill(null);
+    s.good.currentByte = 0;
+    s.good.paddingBytes = 0;
+    s.good.log = 'Aligned arena offset reset to 0x00! Local stack buffer reclaimed in 0 ns.';
+    s.bad.log = 'Notice: Raw unaligned packing buffer remains untouched with hardware penalties.';
+    this.render();
+  }
+
+  alignmentHardReset() {
     const s = this.state;
     s.bad.bytes.fill(null);
     s.bad.currentByte = 0;
     s.bad.misalignedCount = 0;
     s.bad.cacheLineSplits = 0;
-    s.bad.log = 'Raw buffer reset.';
+    s.bad.log = 'Hard reset: Raw buffer cleared.';
 
     s.good.bytes.fill(null);
     s.good.currentByte = 0;
     s.good.paddingBytes = 0;
-    s.good.log = 'Aligned arena reset to offset 0.';
+    s.good.log = 'Hard reset: Aligned arena reset to offset 0.';
     this.render();
+  }
+
+  alignmentReset() {
+    this.alignmentHardReset();
   }
 
   // =========================================================================
@@ -570,33 +616,38 @@ export class MemoryVisualizer {
           if (!cell) {
             cellsHtml += `
               <div class="byte-cell byte-free" title="${byteHex} &bull; Page ${p} &bull; Free Unallocated (0x00)">
-                <span class="byte-char">.</span>
+                <span class="byte-cell-addr">${byteHex}</span>
+                <span class="byte-cell-char">.</span>
               </div>
             `;
           } else if (cell.type === 'header') {
             cellsHtml += `
               <div class="byte-cell byte-header" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; Bookkeeping Metadata Header">
-                <span class="byte-char">H</span>
+                <span class="byte-cell-addr">${byteHex}</span>
+                <span class="byte-cell-char">H</span>
               </div>
             `;
           } else if (cell.type === 'padding') {
             cellsHtml += `
               <div class="byte-cell byte-padding" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; Hardware Alignment Padding">
-                <span class="byte-char">P</span>
+                <span class="byte-cell-addr">${byteHex}</span>
+                <span class="byte-cell-char">P</span>
               </div>
             `;
           } else if (cell.type === 'hole') {
             cellsHtml += `
               <div class="byte-cell byte-hole" style="background-color: rgba(244, 63, 94, 0.25);" title="${byteHex} &bull; Page ${p} &bull; Fragmented Swiss-Cheese Hole!">
-                <span class="byte-char">X</span>
+                <span class="byte-cell-addr">${byteHex}</span>
+                <span class="byte-cell-char">X</span>
               </div>
             `;
           } else {
             const misClass = cell.misaligned ? 'byte-misaligned' : '';
-            const charLabel = cell.tag.replace(/[^0-9a-zA-Z]/g, '').substring(0, 2) || '#';
+            const charLabel = cell.tag.replace(/[^0-9a-zA-Z#]/g, '').substring(0, 3) || '#';
             cellsHtml += `
               <div class="byte-cell ${misClass}" style="background-color: ${cell.color};" title="${byteHex} &bull; Page ${p} &bull; ${cell.tag}">
-                <span class="byte-char">${charLabel}</span>
+                <span class="byte-cell-addr">${byteHex}</span>
+                <span class="byte-cell-char">${charLabel}</span>
               </div>
             `;
           }
@@ -669,8 +720,11 @@ export class MemoryVisualizer {
         <button class="mem-sim-btn btn-danger" id="btn-sim-benchmark">
           <span>🧪 Run Stress Benchmark</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-sim-reset">
-          <span>🔄 Reset Both Sets</span>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-arena-reclaim" title="Demonstrate O(1) bulk reclaim of Set B only">
+          <span>🔄 Reclaim Arena (offset = 0)</span>
+        </button>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-hard-reset" title="Fully reset all memory state for both sets">
+          <span>♻️ Hard Reset (Both Sets)</span>
         </button>
       `;
     } else if (s.type === 'pool') {
@@ -686,8 +740,11 @@ export class MemoryVisualizer {
         <button class="mem-sim-btn btn-danger" id="btn-sim-pool-bench">
           <span>🧪 Run Pool Benchmark</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-sim-pool-reset">
-          <span>🔄 Reset Both Sets</span>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-pool-reclaim" title="Reclaim Set B pool slots in O(1)">
+          <span>🔄 Reclaim Pool Slots</span>
+        </button>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-pool-hard-reset" title="Fully reset all memory state for both sets">
+          <span>♻️ Hard Reset (Both Sets)</span>
         </button>
       `;
     } else {
@@ -700,8 +757,11 @@ export class MemoryVisualizer {
         <button class="mem-sim-btn btn-danger" id="btn-sim-align-bench">
           <span>🧪 Run Alignment Benchmark</span>
         </button>
-        <button class="mem-sim-btn btn-secondary" id="btn-sim-align-reset">
-          <span>🔄 Reset Both Sets</span>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-align-reclaim" title="Reclaim Set B stack offset to 0">
+          <span>🔄 Reclaim Aligned Arena</span>
+        </button>
+        <button class="mem-sim-btn btn-secondary" id="btn-sim-align-hard-reset" title="Fully reset all memory state for both sets">
+          <span>♻️ Hard Reset (Both Sets)</span>
         </button>
       `;
     }
@@ -709,10 +769,6 @@ export class MemoryVisualizer {
     this.container.innerHTML = `
       <div class="memory-visualizer-card">
         <div class="mem-sim-header">
-          <div class="mem-sim-badge">
-            <span class="pulse-dot"></span>
-            <span>Functional Memory Simulation Grid</span>
-          </div>
           <h3 class="mem-sim-title">${simTitle}</h3>
           <p class="mem-sim-sub">${simSubtitle}</p>
         </div>
@@ -722,9 +778,9 @@ export class MemoryVisualizer {
           ${controlsHtml}
         </div>
 
-        <!-- Side-by-Side Memory Sets Grid -->
+        <!-- Above & Below Memory Sets Grid (Stacked Vertically for Maximum Width) -->
         <div class="mem-compare-grid">
-          <!-- LEFT: SET A (BAD) -->
+          <!-- TOP: SET A (BAD) -->
           <div class="mem-column mem-bad-col">
             <div class="mem-col-header">
               <span class="mem-col-tag tag-bad">&#x2716; ${s.bad.name}</span>
@@ -760,7 +816,7 @@ export class MemoryVisualizer {
             </div>
           </div>
 
-          <!-- RIGHT: SET B (GOOD) -->
+          <!-- BOTTOM: SET B (GOOD) -->
           <div class="mem-column mem-good-col">
             <div class="mem-col-header">
               <span class="mem-col-tag tag-good">&#x2714; ${s.good.name}</span>
@@ -817,16 +873,22 @@ export class MemoryVisualizer {
       this.container.querySelector('#btn-sim-alloc-batch')?.addEventListener('click', () => this.arenaBatchAllocate());
       this.container.querySelector('#btn-sim-free-random')?.addEventListener('click', () => this.arenaDeallocateRandom());
       this.container.querySelector('#btn-sim-benchmark')?.addEventListener('click', () => this.arenaRunBenchmark());
-      this.container.querySelector('#btn-sim-reset')?.addEventListener('click', () => this.arenaReset());
+      this.container.querySelector('#btn-sim-arena-reclaim')?.addEventListener('click', () => this.arenaReclaimOnly());
+      this.container.querySelector('#btn-sim-hard-reset')?.addEventListener('click', () => this.arenaHardReset());
+      this.container.querySelector('#btn-sim-reset')?.addEventListener('click', () => this.arenaHardReset());
     } else if (this.state.type === 'pool') {
       this.container.querySelector('#btn-sim-pool-alloc')?.addEventListener('click', () => this.poolAllocate());
       this.container.querySelector('#btn-sim-pool-free')?.addEventListener('click', () => this.poolFreeRandom());
       this.container.querySelector('#btn-sim-pool-bench')?.addEventListener('click', () => this.poolRunBenchmark());
-      this.container.querySelector('#btn-sim-pool-reset')?.addEventListener('click', () => this.poolReset());
+      this.container.querySelector('#btn-sim-pool-reclaim')?.addEventListener('click', () => this.poolReclaimOnly());
+      this.container.querySelector('#btn-sim-pool-hard-reset')?.addEventListener('click', () => this.poolHardReset());
+      this.container.querySelector('#btn-sim-pool-reset')?.addEventListener('click', () => this.poolHardReset());
     } else {
       this.container.querySelector('#btn-sim-align-alloc')?.addEventListener('click', () => this.alignmentAllocateMixed());
       this.container.querySelector('#btn-sim-align-bench')?.addEventListener('click', () => this.alignmentRunBenchmark());
-      this.container.querySelector('#btn-sim-align-reset')?.addEventListener('click', () => this.alignmentReset());
+      this.container.querySelector('#btn-sim-align-reclaim')?.addEventListener('click', () => this.alignmentReclaimOnly());
+      this.container.querySelector('#btn-sim-align-hard-reset')?.addEventListener('click', () => this.alignmentHardReset());
+      this.container.querySelector('#btn-sim-align-reset')?.addEventListener('click', () => this.alignmentHardReset());
     }
   }
 }
