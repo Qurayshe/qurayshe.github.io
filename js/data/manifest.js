@@ -1280,6 +1280,38 @@ export const GRAPHICS_CURRICULUM = [
         tags: ['Shaders', 'BRDF', 'Diffuse', 'Phong', 'Blinn-Phong', 'Cook-Torrance', 'GGX', 'PBR', 'Radiometry']
       }
     ]
+  },
+
+  // Part 3: Advanced Frame Pipelines & GPU Profiling
+  {
+    part: 3,
+    partTitle: 'Part 3: Advanced Pipelines & GPU Profiling',
+    partDesc: 'Visibility buffers, floating-point Reverse-Z, motion vector pre-passes, quad helper lane overdraw, and profiling with NVIDIA Nsight, RenderDoc, and AMD RGP.',
+    badge: 'Pipelines & Profiling',
+    modules: [
+      {
+        id: '10_visibility_buffer_and_advanced_pipelines',
+        num: '10',
+        title: 'Visibility Buffers, Reverse-Z & Modern Pipelines',
+        desc: 'Decoupling geometry from material shading via 64-bit Visibility Buffers; eliminating Z-fighting with Reverse-Z; handling alpha-test prepass hazards and deferred MSAA.',
+        mdPath: 'graphicslab/10_visibility_buffer_and_advanced_pipelines/10_visibility_buffer_and_advanced_pipelines.md',
+        codeFiles: [
+          { name: '10_visibility_buffer_shader.glsl', path: 'graphicslab/10_visibility_buffer_and_advanced_pipelines/10_visibility_buffer_shader.glsl', lang: 'c' }
+        ],
+        tags: ['Visibility Buffer', 'Reverse-Z', 'Nanite', 'Velocity Buffer', 'MSAA', 'Alpha-Test']
+      },
+      {
+        id: '11_gpu_debugging_and_profiling',
+        num: '11',
+        title: 'GPU Profiling & Debugging (Nsight, RenderDoc, RGP)',
+        desc: 'Analyzing 2x2 quad helper thread overdraw; interpreting NVIDIA Nsight Graphics SOL and GPU traces; RenderDoc G-buffer inspection; AMD RGP wavefront occupancy.',
+        mdPath: 'graphicslab/11_gpu_debugging_and_profiling/11_gpu_debugging_and_profiling.md',
+        codeFiles: [
+          { name: '11_quad_overdraw_simulator.cpp', path: 'graphicslab/11_gpu_debugging_and_profiling/11_quad_overdraw_simulator.cpp', lang: 'cpp' }
+        ],
+        tags: ['Nsight', 'RenderDoc', 'RGP', 'Quad Overdraw', 'Wavefronts', 'Profiling', 'Early-Z']
+      }
+    ]
   }
 ];
 

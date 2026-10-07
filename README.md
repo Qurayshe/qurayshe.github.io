@@ -15,7 +15,7 @@
 static site on github pages containing code examples and interactive demos
 
 - **cprog1**: 33x systems c99->c11->cpp20->cpp26 (basicish sys arch, CPL/C-style vs Google vs ISO '26)
-- **graphicslab**: 9x computer graphics (CPU framebuffers, Bresenham, triangles, Z-buffer, raytracer, Vulkan vs OpenGL vs WebGPU)
+- **graphicslab**: 11x computer graphics (CPU framebuffers, rasterization, Z-buffer, raytracer, Vulkan/WebGPU, PBR, Visibility Buffers, Nsight/RenderDoc profiling)
 - **qutest2**: 11x threejs animations (frontendslop)
 - **rustserver**: 6x rust+golang servers (backend stuff)
 - **ailab**: 16x machine learning & ai fundamentals (math -> perceptrons -> transformers -> sota)
@@ -48,6 +48,8 @@ runs in browser w/o build
 | **7. gpu architecture & passes** | SIMT warps, complete hardware pipeline (IA to ROP), clipping/blending math, multi-pass engine architecture (G-Buffer MRT, Shadows, SSAO, Clustered Shading, Frame Graphs) | `07_multipass_deferred_shaders.glsl`<br/>`07_pipeline_shaders.glsl`<br/>`07_simt_pipeline_emulator.cpp` |
 | **8. modern api comparison** | Vulkan 1.3 explicit PSOs & queues vs OpenGL 4.5+ state machine vs WebGPU WGSL | `08_vulkan_triangle.cpp`<br/>`08_opengl_triangle.cpp`<br/>`08_webgpu_triangle.js` |
 | **9. pbr, diffuse & brdf** | Full Radiometry, Rendering Equation, Lambert vs Oren-Nayar rough diffuse, Classical Phong vs Blinn-Phong specular, Cook-Torrance GGX microfacet BRDF & IBL in GLSL & WGSL | `09_shading_comparison_models.glsl`<br/>`09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
+| **10. visibility buffers & modern pipelines** | 64-bit Visibility Buffer (InstanceID + PrimitiveID), software attribute pulling, Reverse-Z depth precision, partial alpha-tested pre-pass, motion vectors | `10_visibility_buffer_shader.glsl` |
+| **11. gpu debugging & profiling** | 2x2 quad overdraw heatmaps, helper lane waste, NVIDIA Nsight Graphics SOL & GPU trace, RenderDoc G-buffer inspection, AMD RGP wavefront occupancy | `11_quad_overdraw_simulator.cpp` |
 
 ### 3. 3d web motion & graphics (`qutest2`)
 

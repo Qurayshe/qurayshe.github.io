@@ -52,7 +52,7 @@ export class GraphicsViewer {
             <div class="lab-sidebar-title">
               <span>Graphics Lab</span>
             </div>
-            <div class="lab-sidebar-sub">9 Modules &middot; Scratch to Vulkan</div>
+            <div class="lab-sidebar-sub">11 Modules &middot; Scratch to Visibility Buffer &amp; Nsight</div>
           </div>
 
           <div class="lab-search-wrap">
@@ -430,6 +430,18 @@ export class GraphicsViewer {
         if (techPill) techPill.textContent = 'Cook-Torrance BRDF';
         if (titlePill) titlePill.textContent = 'Physically Based Material Shading';
         this.initPbrPreview(container);
+        break;
+
+      case '10_visibility_buffer_and_advanced_pipelines':
+        if (techPill) techPill.textContent = 'Visibility Buffer (64-bit)';
+        if (titlePill) titlePill.textContent = 'Reverse-Z & 8-Byte Geometry Buffer';
+        this.initVisibilityBufferPreview(container);
+        break;
+
+      case '11_gpu_debugging_and_profiling':
+        if (techPill) techPill.textContent = 'Nsight & RGP Profiler';
+        if (titlePill) titlePill.textContent = '2x2 Quad Overdraw & Helper Lanes';
+        this.initProfilingPreview(container);
         break;
 
       default:
@@ -2236,4 +2248,343 @@ export class GraphicsViewer {
       });
     });
   }
+
+  // ==========================================================================
+  // MODULE 10: VISIBILITY BUFFER & REVERSE-Z INTERACTIVE PREVIEW
+  // ==========================================================================
+  initVisibilityBufferPreview(container) {
+    container.innerHTML = `
+      <div class="preview-toolbar">
+        <div class="preview-chips-row">
+          <button class="mode-chip active" id="vb-chip-vis">Visibility Buffer (8B)</button>
+          <button class="mode-chip" id="vb-chip-recon">Reconstructed PBR</button>
+          <button class="mode-chip" id="vb-chip-gbuffer">Fat G-Buffer (64B)</button>
+          <button class="mode-chip" id="vb-chip-revz">Reverse-Z vs Standard</button>
+        </div>
+      </div>
+
+      <div class="preview-canvas-box">
+        <canvas id="vb-preview-canvas" width="180" height="180" style="width:320px;height:320px;image-rendering:pixelated;"></canvas>
+      </div>
+
+      <div class="preview-controls-grid">
+        <div class="preview-control-row">
+          <span>Camera Distance / Zoom Depth:</span>
+          <input type="range" id="vb-slider-depth" min="1.0" max="100.0" step="1.0" value="25.0" />
+        </div>
+        <div class="preview-control-row" style="font-family:monospace;font-size:0.75rem;">
+          <span>VRAM Bandwidth (4K 60FPS):</span>
+          <span id="vb-bandwidth-label" style="color:#10b981;font-weight:bold;">7.9 GB/s (8x Bandwidth Reduction!)</span>
+        </div>
+      </div>
+
+      <div class="preview-info-box" id="vb-info-box">
+        <!-- Dynamic explanation injected below -->
+      </div>
+    `;
+
+    const canvas = document.getElementById('vb-preview-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = 180, H = 180;
+    const imgData = ctx.createImageData(W, H);
+    const buf32 = new Uint32Array(imgData.data.buffer);
+
+    let mode = 'vis';
+    let zoomDepth = 25.0;
+    let animTime = 0.0;
+
+    const infoBox = document.getElementById('vb-info-box');
+    const bwLabel = document.getElementById('vb-bandwidth-label');
+
+    const descriptions = {
+      vis: '<strong>64-bit Visibility Buffer (8 Bytes / Pixel):</strong><br/>Packed: Component X = InstanceID (16 bits) + MeshletID (16 bits); Component Y = PrimitiveID (16 bits) + Barycentrics.<br/>VRAM Bandwidth: ~7.9 GB/s at 4K (8x memory reduction compared to standard 64-byte G-Buffers!).',
+      recon: '<strong>Compute Material Reconstruction Pass:</strong><br/>Single fullscreen compute dispatch pulls 3 triangle vertices from VRAM using PrimitiveID, evaluates software barycentric interpolation, and samples only required textures.',
+      gbuffer: '<strong>Traditional Deferred G-Buffer (64 Bytes / Pixel):</strong><br/>Normal XYZ (16F), Roughness (16F), Albedo RGB (8U), Metallic (8U), Depth (32F), Emissive (16F).<br/>VRAM Bandwidth: ~63.7 GB/s at 4K 60FPS (severe memory wall on mobile/TBDR).',
+      revz: '<strong>Reverse-Z Depth Precision vs Standard-Z:</strong><br/>Standard Z (0.0 &rarr; 1.0) maps 99% of float precision to the first 2 meters, creating severe Z-fighting on distant geometry (simulated on left).<br/>Reverse-Z (1.0 &rarr; 0.0) distributes floating-point exponents evenly across 50 kilometers (rock-solid on right)!'
+    };
+
+    if (infoBox) infoBox.innerHTML = descriptions[mode];
+
+    const render = () => {
+      animTime += 0.03;
+
+      for (let y = 0; y < H; ++y) {
+        for (let x = 0; x < W; ++x) {
+          const idx = y * W + x;
+
+          // Simple 3D scene: ground terrain + two overlapping mountain/building layers
+          const nx = (x - W / 2) / (W / 2);
+          const ny = (y - H / 2) / (H / 2);
+
+          if (mode === 'vis') {
+            // Visualize 64-bit Visibility Buffer IDs
+            if (ny > 0.1) {
+              // Ground instance: InstanceID = 1, PrimitiveID varies by tile
+              const primID = ((Math.floor(x / 8) + Math.floor(y / 8)) * 13) % 255;
+              buf32[idx] = (255 << 24) | (primID << 16) | (80 << 8) | 20;
+            } else if (Math.abs(nx) < 0.6 && ny > -0.5) {
+              // Cube/Building instance: InstanceID = 2
+              const triID = ((Math.floor(x / 6) ^ Math.floor(y / 6)) * 47) % 255;
+              buf32[idx] = (255 << 24) | (180 << 16) | (triID << 8) | 220;
+            } else {
+              buf32[idx] = 0xff080c14; // Background InstanceID = 0
+            }
+
+          } else if (mode === 'recon') {
+            // Reconstructed PBR lighting
+            if (ny > 0.1) {
+              const check = ((Math.floor(x / 12) ^ Math.floor(y / 12)) & 1);
+              const c = check ? 180 : 120;
+              buf32[idx] = (255 << 24) | (c << 16) | (c << 8) | c;
+            } else if (Math.abs(nx) < 0.6 && ny > -0.5) {
+              buf32[idx] = (255 << 24) | (30 << 16) | (180 << 8) | 240; // Amber Gold PBR
+            } else {
+              buf32[idx] = 0xff101520;
+            }
+
+          } else if (mode === 'gbuffer') {
+            // Fat G-Buffer Normals
+            if (ny > 0.1) {
+              buf32[idx] = (255 << 24) | (128 << 16) | (255 << 8) | 128; // Up Normal
+            } else if (Math.abs(nx) < 0.6 && ny > -0.5) {
+              const r = Math.floor((nx * 0.5 + 0.5) * 255);
+              const g = Math.floor((-ny * 0.5 + 0.5) * 255);
+              buf32[idx] = (255 << 24) | (220 << 16) | (g << 8) | r;
+            } else {
+              buf32[idx] = 0xff050810;
+            }
+
+          } else {
+            // Reverse-Z vs Standard-Z comparison split screen
+            const isLeft = x < W / 2;
+            if (isLeft) {
+              // Left side: Standard Z (0 -> 1) with simulated Z-fighting noise on distant planes
+              const zFightNoise = Math.sin(x * 12.3 + y * 45.6 + animTime * 15.0) > 0.0 ? 255 : 40;
+              const col = Math.floor(zFightNoise);
+              buf32[idx] = (255 << 24) | (40 << 16) | (col << 8) | col;
+            } else {
+              // Right side: Reverse-Z (1 -> 0) rock solid precision
+              buf32[idx] = (255 << 24) | (220 << 16) | (180 << 8) | 16; // Clean solid gold
+            }
+
+            // Split line
+            if (Math.abs(x - W / 2) <= 1) buf32[idx] = 0xffffffff;
+          }
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      this.previewAnimId = requestAnimationFrame(render);
+    };
+
+    this.previewAnimId = requestAnimationFrame(render);
+
+    const setMode = (m) => {
+      mode = m;
+      ['vb-chip-vis', 'vb-chip-recon', 'vb-chip-gbuffer', 'vb-chip-revz'].forEach((id) => {
+        document.getElementById(id)?.classList.toggle('active', id === `vb-chip-${m}`);
+      });
+      if (infoBox) infoBox.innerHTML = descriptions[m] || '';
+      if (bwLabel) {
+        if (m === 'gbuffer') {
+          bwLabel.textContent = '63.7 GB/s (Fat G-Buffer VRAM Wall)';
+          bwLabel.style.color = '#ef4444';
+        } else {
+          bwLabel.textContent = '7.9 GB/s (8x Bandwidth Reduction!)';
+          bwLabel.style.color = '#10b981';
+        }
+      }
+    };
+
+    document.getElementById('vb-chip-vis')?.addEventListener('click', () => setMode('vis'));
+    document.getElementById('vb-chip-recon')?.addEventListener('click', () => setMode('recon'));
+    document.getElementById('vb-chip-gbuffer')?.addEventListener('click', () => setMode('gbuffer'));
+    document.getElementById('vb-chip-revz')?.addEventListener('click', () => setMode('revz'));
+
+    document.getElementById('vb-slider-depth')?.addEventListener('input', (e) => {
+      zoomDepth = parseFloat(e.target.value);
+    });
+  }
+
+  // ==========================================================================
+  // MODULE 11: GPU PROFILING & 2x2 QUAD OVERDRAW HEATMAP SIMULATOR
+  // ==========================================================================
+  initProfilingPreview(container) {
+    container.innerHTML = `
+      <div class="preview-toolbar">
+        <div class="preview-chips-row">
+          <span class="toolbar-label">Heatmap View:</span>
+          <button class="mode-chip active" id="prof-chip-overdraw">Nsight Quad Overdraw</button>
+          <button class="mode-chip" id="prof-chip-helpers">Helper Lanes Waste</button>
+          <button class="mode-chip" id="prof-chip-normal">Normal Render</button>
+        </div>
+      </div>
+
+      <div class="preview-canvas-box">
+        <canvas id="prof-preview-canvas" width="180" height="180" style="width:320px;height:320px;image-rendering:pixelated;"></canvas>
+      </div>
+
+      <div class="preview-controls-grid">
+        <div class="preview-control-row">
+          <span>Micro-Triangle Density (Sub-Pixel LOD):</span>
+          <input type="range" id="prof-slider-density" min="1" max="12" step="1" value="7" />
+        </div>
+        <div class="preview-control-row" style="font-family:monospace;font-size:0.75rem;">
+          <span>Hardware Quad Efficiency:</span>
+          <span id="prof-metric-eff" style="color:#f59e0b;font-weight:bold;">38.4% (61.6% Helper Waste)</span>
+        </div>
+        <div class="preview-control-row" style="font-family:monospace;font-size:0.75rem;">
+          <span>Early-Z Rejection Rate:</span>
+          <span style="color:#10b981;font-weight:bold;">91.8% Culling Optimal</span>
+        </div>
+      </div>
+
+      <div class="preview-info-box" id="prof-info-box">
+        <strong>NVIDIA Nsight Quad Overdraw Heatmap:</strong><br/>
+        🟢 Green = 1x Optimal (1 quad / 4 pixels) &middot; 🟡 Yellow = 2x &middot; 🟠 Orange = 3x-4x &middot; 🔴 Crimson = 8x+ severe micro-triangle helper waste!
+      </div>
+    `;
+
+    const canvas = document.getElementById('prof-preview-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = 180, H = 180;
+    const imgData = ctx.createImageData(W, H);
+    const buf32 = new Uint32Array(imgData.data.buffer);
+
+    let viewMode = 'overdraw';
+    let density = 7;
+
+    const infoBox = document.getElementById('prof-info-box');
+    const effMetric = document.getElementById('prof-metric-eff');
+
+    const descriptions = {
+      overdraw: '<strong>NVIDIA Nsight Quad Overdraw Heatmap:</strong><br/>🟢 Green = 1x Optimal (1 quad / 4 pixels) &middot; 🟡 Yellow = 2x &middot; 🟠 Orange = 3x-4x &middot; 🔴 Crimson = 8x+ severe micro-triangle helper waste!',
+      helpers: '<strong>Helper Lane Invocations Waste:</strong><br/>White = Active covered fragment.<br/>Crimson = Helper lane thread (executed full shader code to provide dFdx/dFdy derivatives, then discarded)!',
+      normal: '<strong>Unprofiled Scene Shading:</strong><br/>Shows standard shaded geometry without profiler diagnostic overlays.'
+    };
+
+    const render = () => {
+      buf32.fill(0xff080c10);
+
+      let totalQuads = 0;
+      let usefulPixels = 0;
+      let helperPixels = 0;
+
+      // Rasterize grid of triangles in 2x2 quads
+      const quadMap = new Uint8Array(W * H);
+      const helperMap = new Uint8Array(W * H);
+
+      // Large background base mesh (efficient 1x)
+      for (let y = 20; y < 160; y += 2) {
+        for (let x = 20; x < 90; x += 2) {
+          totalQuads++;
+          usefulPixels += 4;
+          for (let dy = 0; dy < 2; ++dy) {
+            for (let dx = 0; dx < 2; ++dx) {
+              const idx = (y + dy) * W + (x + dx);
+              quadMap[idx] = 1;
+            }
+          }
+        }
+      }
+
+      // Micro-triangle cluster on the right side
+      const microCount = density * 22;
+      for (let i = 0; i < microCount; ++i) {
+        const qx = Math.floor(100 + (i % 12) * 5.5);
+        const qy = Math.floor(30 + Math.floor(i / 12) * 6.5);
+
+        if (qx < W - 2 && qy < H - 2) {
+          totalQuads++;
+          // Tiny triangle covers only 1 pixel in this 2x2 quad!
+          usefulPixels += 1;
+          helperPixels += 3;
+
+          for (let dy = 0; dy < 2; ++dy) {
+            for (let dx = 0; dx < 2; ++dx) {
+              const idx = (qy + dy) * W + (qx + dx);
+              quadMap[idx] = Math.min(10, quadMap[idx] + 1);
+              if (dx === 0 && dy === 0) {
+                helperMap[idx] = 1; // Covered
+              } else {
+                helperMap[idx] = 2; // Helper lane
+              }
+            }
+          }
+        }
+      }
+
+      // Calculate efficiency
+      const totalInvocations = totalQuads * 4;
+      const efficiency = totalInvocations > 0 ? ((usefulPixels / totalInvocations) * 100).toFixed(1) : 100;
+      const waste = (100 - efficiency).toFixed(1);
+      if (effMetric) {
+        effMetric.textContent = `${efficiency}% (${waste}% Helper Waste)`;
+        effMetric.style.color = efficiency < 50 ? '#ef4444' : (efficiency < 75 ? '#f59e0b' : '#10b981');
+      }
+
+      // Draw Viewport Pixels
+      for (let y = 0; y < H; ++y) {
+        for (let x = 0; x < W; ++x) {
+          const idx = y * W + x;
+          const count = quadMap[idx];
+
+          if (viewMode === 'overdraw') {
+            // Nsight Color Ramp
+            if (count === 0) {
+              buf32[idx] = 0xff080c10;
+            } else if (count === 1) {
+              buf32[idx] = (255 << 24) | (129 << 16) | (185 << 8) | 16; // Green 1x
+            } else if (count === 2) {
+              buf32[idx] = (255 << 24) | (8 << 16) | (179 << 8) | 234;  // Yellow 2x
+            } else if (count <= 4) {
+              buf32[idx] = (255 << 24) | (22 << 16) | (115 << 8) | 249; // Orange 3-4x
+            } else {
+              buf32[idx] = (255 << 24) | (68 << 16) | (68 << 8) | 239;  // Crimson 8x+
+            }
+          } else if (viewMode === 'helpers') {
+            const hStatus = helperMap[idx];
+            if (hStatus === 1) {
+              buf32[idx] = 0xffffffff; // Covered pixel
+            } else if (hStatus === 2) {
+              buf32[idx] = (255 << 24) | (68 << 16) | (68 << 8) | 239; // Wasted helper thread
+            } else if (count > 0) {
+              buf32[idx] = 0xffa0a0a0;
+            }
+          } else {
+            // Normal Render
+            if (count > 0) {
+              const shade = Math.min(240, 100 + count * 20);
+              buf32[idx] = (255 << 24) | (shade << 16) | (shade << 8) | shade;
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    };
+
+    render();
+
+    const setView = (v) => {
+      viewMode = v;
+      ['prof-chip-overdraw', 'prof-chip-helpers', 'prof-chip-normal'].forEach((id) => {
+        document.getElementById(id)?.classList.toggle('active', id === `prof-chip-${v}`);
+      });
+      if (infoBox) infoBox.innerHTML = descriptions[v] || '';
+      render();
+    };
+
+    document.getElementById('prof-chip-overdraw')?.addEventListener('click', () => setView('overdraw'));
+    document.getElementById('prof-chip-helpers')?.addEventListener('click', () => setView('helpers'));
+    document.getElementById('prof-chip-normal')?.addEventListener('click', () => setView('normal'));
+
+    document.getElementById('prof-slider-density')?.addEventListener('input', (e) => {
+      density = parseInt(e.target.value, 10);
+      render();
+    });
+  }
 }
+
