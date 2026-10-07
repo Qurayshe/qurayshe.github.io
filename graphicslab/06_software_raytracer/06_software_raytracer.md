@@ -66,21 +66,32 @@ $$\vec{N} = \frac{\vec{P} - \vec{C}}{r}$$
 
 ---
 
-## 3. Shading Models: Lambertian Diffuse & Blinn-Phong Specular
+## 3. Shading Models: Lambertian Diffuse, Classical Phong & Blinn-Phong
 
-At hit point $\vec{P}$ with surface normal $\vec{N}$ and light direction $\vec{L} = \text{normalize}(\vec{P}_{\text{light}} - \vec{P})$:
+At hit point $\vec{P}$ with surface normal $\vec{N}$, view vector $\vec{V} = \text{normalize}(\vec{O} - \vec{P})$, and light direction $\vec{L} = \text{normalize}(\vec{P}_{\text{light}} - \vec{P})$:
 
 ### 1. Lambertian Diffuse:
-Brightness is proportional to the cosine of the angle between surface normal and light:
-$$I_{\text{diffuse}} = \max(0, \vec{N} \cdot \vec{L})$$
+An ideal diffuse reflector radiates incoming light uniformly across the hemisphere:
+$$I_{\text{diffuse}} = k_d \cdot \frac{\text{color}}{\pi} \cdot \max(0, \vec{N} \cdot \vec{L})$$
 
-### 2. Blinn-Phong Specular Highlight:
-Given view direction $\vec{V} = \text{normalize}(\vec{O} - \vec{P})$, compute the half-way vector:
-$$\vec{H} = \text{normalize}(\vec{L} + \vec{V})$$
-$$I_{\text{specular}} = (\max(0, \vec{N} \cdot \vec{H}))^{\text{shininess}}$$
+### 2. Classical Phong vs Blinn-Phong Specular:
+- **Classical Phong (1975)**: Reflects light ray $\vec{L}$ across normal $\vec{N}$ and tests alignment with eye vector $\vec{V}$:
+  $$\vec{R} = 2(\vec{N} \cdot \vec{L})\vec{N} - \vec{L}$$
+  $$I_{\text{spec, Phong}} = k_s \cdot \left( \frac{n + 2}{2\pi} \right) \cdot \left( \max(0, \vec{R} \cdot \vec{V}) \right)^n$$
+- **Blinn-Phong (1977)**: Computes the halfway vector $\vec{H} = \text{normalize}(\vec{L} + \vec{V})$, avoiding per-ray reflection vector calculation:
+  $$I_{\text{spec, Blinn}} = k_s \cdot \left( \frac{m + 8}{8\pi} \right) \cdot \left( \max(0, \vec{N} \cdot \vec{H}) \right)^m$$
+  *(Note: Setting Blinn exponent $m \approx 4n$ matches the visual highlight width of Phong exponent $n$).*
 
-### 3. Shadow Rays:
-Cast a new ray from $\vec{P} + \epsilon \vec{N}$ toward the light. If any object blocks the path before the light, $I_{\text{diffuse}} = 0$ (point is in shadow!).
-*(Note: $\epsilon \approx 0.001$ offsets the shadow ray to prevent self-intersection acne).*
+### 3. Recursive Mirror Reflection Rays & Fresnel Equations:
+For shiny reflective spheres, cast a secondary recursive ray in the ideal mirror direction $\vec{R}_{\text{view}}$:
+$$\vec{R}_{\text{view}} = \vec{V} - 2(\vec{V} \cdot \vec{N})\vec{N}$$
+The fraction of reflected light is governed by **Schlick's Fresnel Approximation**:
+$$F = F_0 + (1 - F_0)(1 - \max(0, \vec{N} \cdot \vec{V}))^5$$
+$$I_{\text{total}} = (1 - F) \cdot I_{\text{diffuse}} + I_{\text{specular}} + F \cdot I_{\text{recursive\_reflection}}$$
+
+### 4. Shadow Rays & Ray Bias:
+Cast a new shadow ray from origin $\vec{P}_{\text{shadow}} = \vec{P} + \epsilon \vec{N}$ toward $\vec{P}_{\text{light}}$:
+- If an intersection occurs at distance $t < \|\vec{P}_{\text{light}} - \vec{P}\|$, the hit point is in shadow ($I_{\text{diffuse}} = 0, I_{\text{specular}} = 0$).
+- The small bias $\epsilon \approx 10^{-4}$ prevents **Shadow Acne** (where numerical floating-point inaccuracies cause the surface to self-shadow itself).
 
 Open [`06_software_raytracer.cpp`](#graphics/06_software_raytracer) to inspect the complete C++ raytracer that renders 3D shaded spheres with shadows and reflective floor planes!

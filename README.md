@@ -45,9 +45,9 @@ runs in browser w/o build
 | **4. z-buffer & depth testing** | hidden surface removal, perspective-correct 1/z depth interpolation | `04_zbuffer_rasterizer.cpp` |
 | **5. 3d math (mvp)** | homogeneous 4D coordinates, LookAt camera view matrix, perspective frustum | `05_mvp_transform_math.cpp` |
 | **6. software raytracer** | ray-sphere algebra, Lambertian diffuse, Blinn-Phong specular, shadow & reflection rays | `06_software_raytracer.cpp` |
-| **7. gpu architecture** | SIMT warps/wavefronts, programmable pipeline, Host vs Device VRAM staging | `07_gpu_architecture_and_pipeline.md` |
+| **7. gpu architecture & passes** | SIMT warps, complete hardware pipeline (IA to ROP), clipping/blending math, multi-pass engine architecture (G-Buffer MRT, Shadows, SSAO, Clustered Shading, Frame Graphs) | `07_multipass_deferred_shaders.glsl`<br/>`07_pipeline_shaders.glsl`<br/>`07_simt_pipeline_emulator.cpp` |
 | **8. modern api comparison** | Vulkan 1.3 explicit PSOs & queues vs OpenGL 4.5+ state machine vs WebGPU WGSL | `08_vulkan_triangle.cpp`<br/>`08_opengl_triangle.cpp`<br/>`08_webgpu_triangle.js` |
-| **9. pbr & shaders** | Cook-Torrance microfacet BRDF, GGX normal distribution, Schlick Fresnel in GLSL & WGSL | `09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
+| **9. pbr, diffuse & brdf** | Full Radiometry, Rendering Equation, Lambert vs Oren-Nayar rough diffuse, Classical Phong vs Blinn-Phong specular, Cook-Torrance GGX microfacet BRDF & IBL in GLSL & WGSL | `09_shading_comparison_models.glsl`<br/>`09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
 
 ### 3. 3d web motion & graphics (`qutest2`)
 

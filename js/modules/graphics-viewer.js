@@ -1276,55 +1276,102 @@ export class GraphicsViewer {
   }
 
   // ==========================================================================
-  // MODULE 07: GPU HARDWARE PIPELINE & SIMT WARP PREVIEW
+  // MODULE 07: GPU HARDWARE PIPELINE & ENGINE MULTI-PASS ARCHITECTURE
   // ==========================================================================
   initPipelinePreview(container) {
     container.innerHTML = `
-      <div class="pipeline-diagram">
-        <button class="pipeline-stage-btn active" data-stage="vs">
-          <span>1. Vertex Shader (SIMT Warp)</span>
-          <span style="color:#10b981;">32 Threads / Lane</span>
-        </button>
-        <button class="pipeline-stage-btn" data-stage="pa">
-          <span>2. Primitive Assembly &amp; Clip</span>
-          <span style="color:#fbbf24;">Triangle Setup</span>
-        </button>
-        <button class="pipeline-stage-btn" data-stage="ras">
-          <span>3. Hardware Rasterizer</span>
-          <span style="color:#38bdf8;">Fragment Generation</span>
-        </button>
-        <button class="pipeline-stage-btn" data-stage="fs">
-          <span>4. Fragment Shader (Pixel Warp)</span>
-          <span style="color:#f43f5e;">PBR &amp; Texture Filter</span>
-        </button>
-        <button class="pipeline-stage-btn" data-stage="rop">
-          <span>5. ROP &amp; Blending to VRAM</span>
-          <span style="color:#a855f7;">FrameBuffer Output</span>
-        </button>
+      <div class="preview-toolbar">
+        <div class="preview-chips-row">
+          <button class="mode-chip active" id="pipe-tab-stages">Hardware Stages (IA → ROP)</button>
+          <button class="mode-chip" id="pipe-tab-passes">Render Passes (Frame Graph)</button>
+        </div>
+      </div>
+
+      <div class="pipeline-diagram" id="pipeline-stages-container">
+        <!-- Injected dynamically by renderPipelineView() -->
       </div>
 
       <div class="preview-info-box" id="pipeline-stage-desc">
-        <strong>Stage 1: Vertex Shader</strong><br/>
-        Executes per-vertex in 32-wide SIMT warps. Evaluates MVP transformation matrix and outputs Homogeneous clip coordinates.
+        <!-- Detailed breakdown injected dynamically -->
       </div>
     `;
 
+    let currentMode = 'stages';
+    const stagesContainer = document.getElementById('pipeline-stages-container');
     const descBox = document.getElementById('pipeline-stage-desc');
-    const descriptions = {
-      vs: '<strong>Stage 1: Vertex Shader (SIMT)</strong><br/>Executes per-vertex in lockstep 32-wide warps. Evaluates MVP transform and normal vectors without branch divergence.',
-      pa: '<strong>Stage 2: Primitive Assembly</strong><br/>Groups incoming transformed vertices into triangles, performs view-frustum clipping, and executes backface culling.',
-      ras: '<strong>Stage 3: Hardware Rasterizer</strong><br/>Interpolates vertex attributes across screen space using fixed-function hardware barycentric units. Emits pixel fragment packets.',
-      fs: '<strong>Stage 4: Fragment Shader</strong><br/>Executes per-fragment shading (PBR lighting, textures, normal maps). Evaluates derivative instructions (dFdx/dFdy) for mipmapping.',
-      rop: '<strong>Stage 5: Raster Operations (ROP)</strong><br/>Performs Z-depth testing, stencil masking, and Porter-Duff alpha blending directly before writing to high-speed VRAM.'
+
+    const hardwareStages = [
+      { id: 'ia', label: '1. Input Assembler (IA)', sub: 'VBO / IBO / Strides', col: '#94a3b8',
+        desc: '<strong>1. Input Assembler (Fixed Function)</strong><br/>Fetches raw vertex indices and attribute streams (positions, normals, UVs) from Device VRAM over high-bandwidth buses. Prepares primitives (triangles, strips, lines) without CPU intervention.' },
+      { id: 'vs', label: '2. Vertex Shader (SIMT)', sub: 'MVP Matrix & TBN Frame', col: '#10b981',
+        desc: '<strong>2. Vertex Shader Stage (Programmable)</strong><br/>Executes per-vertex in lockstep 32-wide SIMT warps. Multiplies local coords by MVP matrix (P · V · M · p) into 4D Clip Space and computes orthonormal TBN tangent space bases.' },
+      { id: 'tess', label: '3. Tessellation & Mesh/Geom', sub: 'Adaptive LOD & Patches', col: '#a78bfa',
+        desc: '<strong>3. Tessellation / Mesh Shader (Programmable)</strong><br/>Hull/TCS and Domain/TES stages dynamically subdivide low-poly base geometry into dense surface patches based on distance camera metrics. Mesh Shaders replace fixed vertex fetching with tasklet cooperative amplification.' },
+      { id: 'clip', label: '4. Primitive Assembly & 4D Clip', sub: 'Sutherland-Hodgman & NDC', col: '#fbbf24',
+        desc: '<strong>4. Primitive Assembly, Frustum Clipping & Viewport Transform</strong><br/>Clips primitives against 4D frustum planes (-w ≤ x, y, z ≤ w) in homogeneous space before perspective divide to prevent division-by-zero singularities. Projects NDC [-1, 1] onto screen coordinates [0, W] × [0, H].' },
+      { id: 'ras', label: '5. Hardware Rasterizer', sub: 'Pineda Edge Equations', col: '#38bdf8',
+        desc: '<strong>5. Hardware Rasterizer (Fixed Function ASIC)</strong><br/>Parallel fixed-function evaluation of 2D Pineda oriented edge functions across bounding boxes. Interpolates vertex attributes using hardware barycentrics and computes sub-pixel MSAA coverage masks.' },
+      { id: 'hiz', label: '6. Early-Z & Hierarchical-Z', sub: 'Zero-Cost Depth Culling', col: '#34d399',
+        desc: '<strong>6. Early-Z & Hi-Z Culling (Hardware Optimization)</strong><br/>Compares incoming triangle depths against on-chip Hi-Z tile depth caches BEFORE running the fragment shader! Discards occluded pixels at zero ALU cost. (Disabled if shader calls discard or writes to gl_FragDepth).' },
+      { id: 'fs', label: '7. Fragment Shader (Pixel Warp)', sub: '2x2 Quads & dFdx/dFdy', col: '#f43f5e',
+        desc: '<strong>7. Fragment / Pixel Shader (Programmable)</strong><br/>Executes in 2x2 pixel quads on SIMT cores. Evaluates Cook-Torrance BRDF, texture filters, and shadow maps. Finite difference derivatives (dFdx, dFdy) across quads drive automatic anisotropic mipmap level selection.' },
+      { id: 'rop', label: '8. ROP & Alpha Blending', sub: 'Universal Porter-Duff Math', col: '#e879f9',
+        desc: '<strong>8. Raster Operations (ROP) & Output Merger</strong><br/>Performs final late depth/stencil tests and applies the universal blend equation C_out = (C_src · F_src) ⊙ (C_dst · F_dst). Writes result directly into GDDR6X/HBM3 VRAM color attachments.' }
+    ];
+
+    const renderPasses = [
+      { id: 'pass-z', label: 'Pass 1: Depth Pre-Pass (Z-Prepass)', sub: 'Color Writes = 0', col: '#34d399',
+        desc: '<strong>Pass 1: Depth Pre-Pass (Early-Z Population)</strong><br/>Renders entire scene geometry with color writes disabled. Populates depth buffer so that subsequent heavy PBR fragment passes execute with 0% overdraw waste.' },
+      { id: 'pass-shadow', label: 'Pass 2: Cascaded Shadow Maps (CSM)', sub: 'Light Space & PCF', col: '#fbbf24',
+        desc: '<strong>Pass 2: Cascaded Shadow Mapping Pass</strong><br/>Renders depth from sun viewpoint across 4 view-frustum cascades. Evaluates 3x3 Percentage-Closer-Filtering (PCF) kernels with slope-scaled depth bias to eliminate acne and render soft shadow borders.' },
+      { id: 'pass-gbuffer', label: 'Pass 3: Geometry Pass (G-Buffer MRT)', sub: 'Normal, Albedo, Depth, AO', col: '#38bdf8',
+        desc: '<strong>Pass 3: Geometry Pass (Multiple Render Targets MRT)</strong><br/>Renders opaque meshes into high-precision G-Buffer textures in a single draw call: GBufferA (Normal XYZ, Roughness W), GBufferB (Albedo RGB, Metallic A), GBufferC (Linear Depth), GBufferD (Emissive, AO).' },
+      { id: 'pass-ssao', label: 'Pass 4: Screen Space Ambient Occlusion', sub: '64-Sample Hemisphere', col: '#a78bfa',
+        desc: '<strong>Pass 4: SSAO Ambient Occlusion Pass</strong><br/>Full-screen pass raymarching against view-space depth in a 64-sample cosine hemisphere oriented along surface normal. Computes contact shadows in crevices and folds.' },
+      { id: 'pass-clustered', label: 'Pass 5: Clustered Light Culling', sub: 'Compute 3D Frustum Binning', col: '#10b981',
+        desc: '<strong>Pass 5: Clustered Light Culling (Compute Shader)</strong><br/>Dispatches a 3D compute grid dividing camera frustum into 16×9×24 spatial clusters. Intersects thousands of dynamic point lights with cluster AABBs, populating light index lists in GPU SSBOs.' },
+      { id: 'pass-lighting', label: 'Pass 6: Deferred Lighting Accumulation', sub: 'PBR BRDF & IBL Radiance', col: '#f43f5e',
+        desc: '<strong>Pass 6: Deferred Lighting Pass</strong><br/>Full-screen pass sampling G-Buffer attachments. Evaluates Cook-Torrance specular BRDF, Split-Sum Image-Based Lighting (IBL), and shadow maps for all lights intersecting the pixel, accumulating linear HDR radiance.' },
+      { id: 'pass-post', label: 'Pass 7: Post-Processing & Tone Mapping', sub: 'ACES Filmic & Gamma 2.2', col: '#e879f9',
+        desc: '<strong>Pass 7: Post-Processing & Display Color Grading</strong><br/>Extracts bright HDR threshold for Dual-Kawase Bloom blur pyramid, evaluates ACES Filmic Tone Mapping curve f(x) = (x(2.51x+0.03))/(x(2.43x+0.59)+0.14), and applies sRGB gamma 2.2 for monitor display.' }
+    ];
+
+    const renderItems = () => {
+      const items = currentMode === 'stages' ? hardwareStages : renderPasses;
+      if (!stagesContainer) return;
+      stagesContainer.innerHTML = items.map((item, idx) => `
+        <button class="pipeline-stage-btn ${idx === 0 ? 'active' : ''}" data-stage="${item.id}">
+          <span>${item.label}</span>
+          <span style="color:${item.col};">${item.sub}</span>
+        </button>
+      `).join('');
+
+      if (descBox) descBox.innerHTML = items[0].desc;
+
+      stagesContainer.querySelectorAll('.pipeline-stage-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          stagesContainer.querySelectorAll('.pipeline-stage-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          const found = items.find((it) => it.id === btn.dataset.stage);
+          if (found && descBox) descBox.innerHTML = found.desc;
+        });
+      });
     };
 
-    container.querySelectorAll('.pipeline-stage-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        container.querySelectorAll('.pipeline-stage-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        const stage = btn.dataset.stage;
-        if (descBox) descBox.innerHTML = descriptions[stage] || '';
-      });
+    renderItems();
+
+    document.getElementById('pipe-tab-stages')?.addEventListener('click', () => {
+      currentMode = 'stages';
+      document.getElementById('pipe-tab-stages')?.classList.add('active');
+      document.getElementById('pipe-tab-passes')?.classList.remove('active');
+      renderItems();
+    });
+
+    document.getElementById('pipe-tab-passes')?.addEventListener('click', () => {
+      currentMode = 'passes';
+      document.getElementById('pipe-tab-passes')?.classList.add('active');
+      document.getElementById('pipe-tab-stages')?.classList.remove('active');
+      renderItems();
     });
   }
 
@@ -1410,17 +1457,26 @@ export class GraphicsViewer {
   }
 
   // ==========================================================================
-  // MODULE 09: PHYSICALLY BASED RENDERING (PBR) & COOK-TORRANCE BRDF PREVIEW
+  // ==========================================================================
+  // MODULE 09: SHADING MODELS COMPARISON & PHYSICALLY BASED RENDERING (PBR)
   // ==========================================================================
   initPbrPreview(container) {
     container.innerHTML = `
       <div class="preview-toolbar">
+        <div class="preview-chips-row" style="margin-bottom:0.4rem;">
+          <button class="mode-chip active" id="sm-chip-pbr">Cook-Torrance PBR</button>
+          <button class="mode-chip" id="sm-chip-blinn">Blinn-Phong</button>
+          <button class="mode-chip" id="sm-chip-phong">Classical Phong</button>
+          <button class="mode-chip" id="sm-chip-lambert">Lambert Diffuse</button>
+          <button class="mode-chip" id="sm-chip-orennayar">Oren-Nayar</button>
+        </div>
         <div class="color-chips-row">
           <span class="toolbar-label">Preset:</span>
           <div class="pbr-color-chip active" style="background:#eab308;" data-r="234" data-g="179" data-b="8" data-rough="0.18" data-metal="0.95" title="Gold"></div>
           <div class="pbr-color-chip" style="background:#f97316;" data-r="249" data-g="115" data-b="22" data-rough="0.25" data-metal="0.9" title="Copper"></div>
           <div class="pbr-color-chip" style="background:#10b981;" data-r="16" data-g="185" data-b="129" data-rough="0.3" data-metal="0.0" title="Emerald Plastic"></div>
           <div class="pbr-color-chip" style="background:#e2e8f0;" data-r="226" data-g="232" data-b="240" data-rough="0.1" data-metal="1.0" title="Titanium"></div>
+          <div class="pbr-color-chip" style="background:#cbd5e1;" data-r="200" data-g="200" data-b="200" data-rough="0.8" data-metal="0.0" title="Rough Chalk / Plaster"></div>
         </div>
       </div>
 
@@ -1429,18 +1485,27 @@ export class GraphicsViewer {
       </div>
 
       <div class="preview-controls-grid">
-        <div class="preview-control-row">
+        <div class="preview-control-row" id="row-slider-rough">
           <span>Roughness (&alpha;):</span>
           <input type="range" id="pbr-slider-rough" min="0.05" max="1.0" step="0.02" value="0.18" />
         </div>
-        <div class="preview-control-row">
+        <div class="preview-control-row" id="row-slider-metal">
           <span>Metallic (m):</span>
           <input type="range" id="pbr-slider-metal" min="0.0" max="1.0" step="0.02" value="0.95" />
+        </div>
+        <div class="preview-control-row" id="row-slider-shininess" style="display:none;">
+          <span>Shininess Exponent (s):</span>
+          <input type="range" id="pbr-slider-shininess" min="4" max="256" step="4" value="64" />
+        </div>
+        <div class="preview-control-row">
+          <span>Light Direction X:</span>
+          <input type="range" id="pbr-slider-lightx" min="-1.5" max="1.5" step="0.1" value="0.6" />
         </div>
       </div>
 
       <div class="preview-info-box" id="pbr-info-box">
-        Cook-Torrance Specular BRDF: f<sub>r</sub> = (D &times; F &times; G) / (4 &times; (n&middot;l)(n&middot;v))
+        <strong>Cook-Torrance Specular BRDF:</strong><br/>
+        f<sub>spec</sub> = (D<sub>GGX</sub> &times; F<sub>Schlick</sub> &times; G<sub>Smith</sub>) / (4(n&middot;l)(n&middot;v)) + (1 - F)(1 - m) &times; (albedo / &pi;)
       </div>
     `;
 
@@ -1451,13 +1516,29 @@ export class GraphicsViewer {
     const imgData = ctx.createImageData(width, height);
     const buf32 = new Uint32Array(imgData.data.buffer);
 
+    let activeModel = 'pbr';
     let roughness = 0.18;
     let metallic = 0.95;
+    let shininess = 64;
+    let lightX = 0.6;
     let baseColor = [234, 179, 8]; // Gold
+
+    const infoBox = document.getElementById('pbr-info-box');
+    const modelDescriptions = {
+      pbr: '<strong>Cook-Torrance Microfacet PBR:</strong><br/>f<sub>spec</sub> = (D<sub>GGX</sub> &times; F<sub>Schlick</sub> &times; G<sub>Smith</sub>) / (4(n&middot;l)(n&middot;v))<br/>Conserves energy: k<sub>d</sub> = (1 - F)(1 - m). Metals have zero diffuse reflection!',
+      blinn: '<strong>Blinn-Phong Specular (Jim Blinn, 1977):</strong><br/>Halfway vector H = normalize(L + V). I<sub>spec</sub> = ((s + 8) / 8&pi;) &times; (n&middot;H)<sup>s</sup><br/>Computationally superior to Phong: H is constant for directional light!',
+      phong: '<strong>Classical Phong Reflection (1975):</strong><br/>Reflection vector R = 2(n&middot;l)n - l. I<sub>spec</sub> = ((n + 2) / 2&pi;) &times; (R&middot;V)<sup>n</sup><br/>Empirical plastic highlight; produces harsh cut-offs when R&middot;V &le; 0.',
+      lambert: '<strong>Lambertian Diffuse (Johann Lambert, 1760):</strong><br/>f<sub>diffuse</sub> = albedo / &pi;. Radiates with equal brightness in all viewing directions.<br/>Division by &pi; is derived from integrating cos(&theta;) over the hemisphere.',
+      orennayar: '<strong>Oren-Nayar Rough Diffuse (1994):</strong><br/>f<sub>r</sub> = (albedo / &pi;)[A + B max(0, cos(&Delta;&phi;)) sin&alpha; tan&beta;]<br/>Models V-cavity micro-roughness: generates retro-reflection on clay, moon dust, and stone.'
+    };
 
     const render = () => {
       const radius = 80;
-      const lx = 0.577, ly = 0.577, lz = 0.577; // Normalized directional light
+      // Normalized directional light
+      const lLen = Math.sqrt(lightX * lightX + 0.6 * 0.6 + 0.8 * 0.8);
+      const lx = lightX / lLen, ly = 0.6 / lLen, lz = 0.8 / lLen;
+
+      const PI = Math.PI;
 
       for (let y = 0; y < height; y++) {
         const py = (height / 2 - y);
@@ -1472,54 +1553,129 @@ export class GraphicsViewer {
 
             // View direction V = (0, 0, 1)
             const nDotL = Math.max(0, nx * lx + ny * ly + nz * lz);
-            const nDotV = nz; // since V = (0, 0, 1)
+            const nDotV = Math.max(0.001, nz);
 
-            // Halfway vector H
-            const hx = lx, hy = ly, hz = lz + 1.0;
-            const hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
-            const nhx = hx / hLen, nhy = hy / hLen, nhz = hz / hLen;
+            let outR = 0, outG = 0, outB = 0;
+            const albR = baseColor[0] / 255;
+            const albG = baseColor[1] / 255;
+            const albB = baseColor[2] / 255;
 
-            const nDotH = Math.max(0, nx * nhx + ny * nhy + nz * nhz);
-            const vDotH = Math.max(0, nhz);
+            if (activeModel === 'pbr') {
+              // Halfway vector H
+              const hx = lx, hy = ly, hz = lz + 1.0;
+              const hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
+              const nhx = hx / hLen, nhy = hy / hLen, nhz = hz / hLen;
 
-            // 1. Normal Distribution D (GGX)
-            const a = roughness * roughness;
-            const a2 = a * a;
-            const denomD = (nDotH * nDotH * (a2 - 1.0) + 1.0);
-            const D = a2 / (Math.PI * denomD * denomD);
+              const nDotH = Math.max(0, nx * nhx + ny * nhy + nz * nhz);
+              const vDotH = Math.max(0, nhz);
 
-            // 2. Fresnel F (Schlick)
-            // Dielectric F0 = 0.04, Metallic F0 = baseColor
-            const f0R = (1.0 - metallic) * 0.04 + metallic * (baseColor[0] / 255);
-            const f0G = (1.0 - metallic) * 0.04 + metallic * (baseColor[1] / 255);
-            const f0B = (1.0 - metallic) * 0.04 + metallic * (baseColor[2] / 255);
+              // 1. Normal Distribution D (GGX)
+              const a = roughness * roughness;
+              const a2 = a * a;
+              const denomD = (nDotH * nDotH * (a2 - 1.0) + 1.0);
+              const D = a2 / (PI * denomD * denomD);
 
-            const fresnelFactor = Math.pow(1.0 - vDotH, 5.0);
-            const FR = f0R + (1.0 - f0R) * fresnelFactor;
-            const FG = f0G + (1.0 - f0G) * fresnelFactor;
-            const FB = f0B + (1.0 - f0B) * fresnelFactor;
+              // 2. Fresnel F (Schlick)
+              const f0R = (1.0 - metallic) * 0.04 + metallic * albR;
+              const f0G = (1.0 - metallic) * 0.04 + metallic * albG;
+              const f0B = (1.0 - metallic) * 0.04 + metallic * albB;
 
-            // 3. Geometry G (Smith GGX)
-            const k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
-            const g1L = nDotL / (nDotL * (1.0 - k) + k);
-            const g1V = nDotV / (nDotV * (1.0 - k) + k);
-            const G = g1L * g1V;
+              const fresnelFactor = Math.pow(1.0 - vDotH, 5.0);
+              const FR = f0R + (1.0 - f0R) * fresnelFactor;
+              const FG = f0G + (1.0 - f0G) * fresnelFactor;
+              const FB = f0B + (1.0 - f0B) * fresnelFactor;
 
-            // Specular Cook-Torrance
-            const specDenom = Math.max(0.001, 4.0 * nDotL * nDotV);
-            const specR = (D * FR * G) / specDenom;
-            const specG = (D * FG * G) / specDenom;
-            const specB = (D * FB * G) / specDenom;
+              // 3. Geometry G (Smith GGX)
+              const k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+              const g1L = nDotL / (nDotL * (1.0 - k) + k);
+              const g1V = nDotV / (nDotV * (1.0 - k) + k);
+              const G = g1L * g1V;
 
-            // Diffuse component (Lambert)
-            const kd = (1.0 - metallic) * (1.0 - (FR + FG + FB) / 3.0);
-            const diffR = kd * (baseColor[0] / 255) / Math.PI;
-            const diffG = kd * (baseColor[1] / 255) / Math.PI;
-            const diffB = kd * (baseColor[2] / 255) / Math.PI;
+              // Cook-Torrance Specular
+              const specDenom = Math.max(0.001, 4.0 * nDotL * nDotV);
+              const specR = (D * FR * G) / specDenom;
+              const specG = (D * FG * G) / specDenom;
+              const specB = (D * FB * G) / specDenom;
 
-            const finalR = Math.min(255, Math.floor((diffR + specR) * nDotL * 255 * 3.14 + 10));
-            const finalG = Math.min(255, Math.floor((diffG + specG) * nDotL * 255 * 3.14 + 10));
-            const finalB = Math.min(255, Math.floor((diffB + specB) * nDotL * 255 * 3.14 + 10));
+              // Diffuse component (Lambert)
+              const kd = (1.0 - metallic) * (1.0 - (FR + FG + FB) / 3.0);
+              const diffR = kd * albR / PI;
+              const diffG = kd * albG / PI;
+              const diffB = kd * albB / PI;
+
+              outR = (diffR + specR) * nDotL * 3.14 + albR * 0.03;
+              outG = (diffG + specG) * nDotL * 3.14 + albG * 0.03;
+              outB = (diffB + specB) * nDotL * 3.14 + albB * 0.03;
+
+            } else if (activeModel === 'blinn') {
+              // Blinn-Phong Specular with Halfway Vector H
+              const hx = lx, hy = ly, hz = lz + 1.0;
+              const hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
+              const nDotH = Math.max(0, (nx * hx + ny * hy + nz * hz) / hLen);
+
+              const normSpec = (shininess + 8.0) / (8.0 * PI);
+              const spec = normSpec * Math.pow(nDotH, shininess);
+              const diff = (albR * nDotL) / PI;
+
+              outR = diff * 3.14 + spec * 0.8 + albR * 0.05;
+              outG = (albG * nDotL) + spec * 0.8 + albG * 0.05;
+              outB = (albB * nDotL) + spec * 0.8 + albB * 0.05;
+
+            } else if (activeModel === 'phong') {
+              // Classical Phong Reflection Vector R = 2(N.L)N - L
+              const rx = 2.0 * (nx * lx + ny * ly + nz * lz) * nx - lx;
+              const ry = 2.0 * (nx * lx + ny * ly + nz * lz) * ny - ly;
+              const rz = 2.0 * (nx * lx + ny * ly + nz * lz) * nz - lz;
+
+              // View Vector V = (0, 0, 1) -> R.V = rz
+              const rDotV = Math.max(0, rz);
+              const pShin = Math.max(2, shininess / 4);
+              const normSpec = (pShin + 2.0) / (2.0 * PI);
+              const spec = normSpec * Math.pow(rDotV, pShin);
+
+              outR = albR * nDotL + spec * 0.8 + albR * 0.05;
+              outG = albG * nDotL + spec * 0.8 + albG * 0.05;
+              outB = albB * nDotL + spec * 0.8 + albB * 0.05;
+
+            } else if (activeModel === 'lambert') {
+              // Pure Lambertian Diffuse (No Specular)
+              outR = albR * (nDotL / PI) * 3.14 + albR * 0.05;
+              outG = albG * (nDotL / PI) * 3.14 + albG * 0.05;
+              outB = albB * (nDotL / PI) * 3.14 + albB * 0.05;
+
+            } else if (activeModel === 'orennayar') {
+              // Oren-Nayar Rough Diffuse
+              const sigma = roughness;
+              const sigma2 = sigma * sigma;
+              const A = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
+              const B = 0.45 * (sigma2 / (sigma2 + 0.09));
+
+              const thetaI = Math.acos(Math.min(1.0, Math.max(-1.0, nDotL)));
+              const thetaR = Math.acos(Math.min(1.0, Math.max(-1.0, nDotV)));
+              const alpha = Math.max(thetaI, thetaR);
+              const beta  = Math.min(thetaI, thetaR);
+
+              // Projected vectors for azimuthal difference
+              const projLx = lx - nx * nDotL;
+              const projLy = ly - ny * nDotL;
+              const pLLen = Math.sqrt(projLx * projLx + projLy * projLy) || 1;
+              const projVx = -nx * nDotV;
+              const projVy = -ny * nDotV;
+              const pVLen = Math.sqrt(projVx * projVx + projVy * projVy) || 1;
+              const cosPhiDiff = Math.max(0, (projLx * projVx + projLy * projVy) / (pLLen * pVLen));
+
+              const orenFactor = A + (B * cosPhiDiff * Math.sin(alpha) * Math.tan(beta));
+              const diff = (orenFactor * nDotL) / PI;
+
+              outR = albR * diff * 3.14 + albR * 0.05;
+              outG = albG * diff * 3.14 + albG * 0.05;
+              outB = albB * diff * 3.14 + albB * 0.05;
+            }
+
+            // Reinhard Tone Mapping + sRGB Gamma (2.2)
+            const finalR = Math.min(255, Math.floor(Math.pow(outR / (outR + 1.0), 1.0 / 2.2) * 255));
+            const finalG = Math.min(255, Math.floor(Math.pow(outG / (outG + 1.0), 1.0 / 2.2) * 255));
+            const finalB = Math.min(255, Math.floor(Math.pow(outB / (outB + 1.0), 1.0 / 2.2) * 255));
 
             buf32[idx] = (255 << 24) | (finalB << 16) | (finalG << 8) | finalR;
           } else {
@@ -1533,6 +1689,45 @@ export class GraphicsViewer {
 
     render();
 
+    // Event listeners
+    const setModel = (model) => {
+      activeModel = model;
+      ['pbr', 'blinn', 'phong', 'lambert', 'orennayar'].forEach((m) => {
+        document.getElementById(`sm-chip-${m}`)?.classList.toggle('active', m === model);
+      });
+
+      const roughRow = document.getElementById('row-slider-rough');
+      const metalRow = document.getElementById('row-slider-metal');
+      const shinRow = document.getElementById('row-slider-shininess');
+
+      if (model === 'pbr') {
+        if (roughRow) roughRow.style.display = 'flex';
+        if (metalRow) metalRow.style.display = 'flex';
+        if (shinRow) shinRow.style.display = 'none';
+      } else if (model === 'blinn' || model === 'phong') {
+        if (roughRow) roughRow.style.display = 'none';
+        if (metalRow) metalRow.style.display = 'none';
+        if (shinRow) shinRow.style.display = 'flex';
+      } else if (model === 'orennayar') {
+        if (roughRow) roughRow.style.display = 'flex';
+        if (metalRow) metalRow.style.display = 'none';
+        if (shinRow) shinRow.style.display = 'none';
+      } else {
+        if (roughRow) roughRow.style.display = 'none';
+        if (metalRow) metalRow.style.display = 'none';
+        if (shinRow) shinRow.style.display = 'none';
+      }
+
+      if (infoBox) infoBox.innerHTML = modelDescriptions[model];
+      render();
+    };
+
+    document.getElementById('sm-chip-pbr')?.addEventListener('click', () => setModel('pbr'));
+    document.getElementById('sm-chip-blinn')?.addEventListener('click', () => setModel('blinn'));
+    document.getElementById('sm-chip-phong')?.addEventListener('click', () => setModel('phong'));
+    document.getElementById('sm-chip-lambert')?.addEventListener('click', () => setModel('lambert'));
+    document.getElementById('sm-chip-orennayar')?.addEventListener('click', () => setModel('orennayar'));
+
     document.getElementById('pbr-slider-rough')?.addEventListener('input', (e) => {
       roughness = parseFloat(e.target.value);
       render();
@@ -1540,6 +1735,16 @@ export class GraphicsViewer {
 
     document.getElementById('pbr-slider-metal')?.addEventListener('input', (e) => {
       metallic = parseFloat(e.target.value);
+      render();
+    });
+
+    document.getElementById('pbr-slider-shininess')?.addEventListener('input', (e) => {
+      shininess = parseFloat(e.target.value);
+      render();
+    });
+
+    document.getElementById('pbr-slider-lightx')?.addEventListener('input', (e) => {
+      lightX = parseFloat(e.target.value);
       render();
     });
 

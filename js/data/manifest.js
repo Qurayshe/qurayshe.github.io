@@ -1242,14 +1242,15 @@ export const GRAPHICS_CURRICULUM = [
       {
         id: '07_gpu_architecture_and_pipeline',
         num: '07',
-        title: 'GPU Architecture & Programmable Pipeline',
-        desc: 'CPU latency cores vs GPU throughput SIMT execution warps; programmable vertex/fragment stages; Host vs Device VRAM staging.',
+        title: 'GPU Architecture, Complete Pipeline & Render Passes',
+        desc: 'Hardware SIMT execution warps, complete fixed/programmable pipeline stages (IA to ROP), clipping/blending math, and modern multi-pass engine architecture (G-Buffer MRT, Shadows, SSAO, Clustered Shading, Frame Graphs).',
         mdPath: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md',
         codeFiles: [
-          { name: '07_simt_pipeline_emulator.cpp', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_simt_pipeline_emulator.cpp', lang: 'cpp' },
-          { name: '07_pipeline_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_pipeline_shaders.glsl', lang: 'c' }
+          { name: '07_multipass_deferred_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_multipass_deferred_shaders.glsl', lang: 'c' },
+          { name: '07_pipeline_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_pipeline_shaders.glsl', lang: 'c' },
+          { name: '07_simt_pipeline_emulator.cpp', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_simt_pipeline_emulator.cpp', lang: 'cpp' }
         ],
-        tags: ['GPU Architecture', 'SIMT', 'Programmable Pipeline', 'Vertex Shader', 'VRAM']
+        tags: ['Graphics Pipeline', 'Render Passes', 'Deferred Shading', 'G-Buffer', 'SIMT', 'SSAO', 'Shadows', 'Frame Graph']
       },
       {
         id: '08_vulkan_opengl_webgpu_comparison',
@@ -1267,14 +1268,15 @@ export const GRAPHICS_CURRICULUM = [
       {
         id: '09_shaders_and_pbr',
         num: '09',
-        title: 'Modern Shaders & Physically Based Rendering',
-        desc: 'From empirical Blinn-Phong to energy-conserving Cook-Torrance microfacet specular BRDF; writing GLSL and WGSL shaders.',
+        title: 'Modern Shaders, Diffuse, Phong & Physically Based Rendering (PBR)',
+        desc: 'Rigorous radiometry, the Rendering Equation, Lambertian vs Oren-Nayar rough diffuse, Classical Phong vs Blinn-Phong specular, Cook-Torrance microfacet BRDF (GGX, Schlick, Smith, Height-Correlated Visibility), and Split-Sum IBL.',
         mdPath: 'graphicslab/09_shaders_and_pbr/09_shaders_and_pbr.md',
         codeFiles: [
+          { name: '09_shading_comparison_models.glsl', path: 'graphicslab/09_shaders_and_pbr/09_shading_comparison_models.glsl', lang: 'c' },
           { name: '09_pbr_shader.glsl', path: 'graphicslab/09_shaders_and_pbr/09_pbr_shader.glsl', lang: 'c' },
           { name: '09_pbr_shader.wgsl', path: 'graphicslab/09_shaders_and_pbr/09_pbr_shader.wgsl', lang: 'rust' }
         ],
-        tags: ['GLSL', 'WGSL', 'PBR', 'BRDF', 'Microfacet', 'Shaders', 'Cook-Torrance']
+        tags: ['Shaders', 'BRDF', 'Diffuse', 'Phong', 'Blinn-Phong', 'Cook-Torrance', 'GGX', 'PBR', 'Radiometry']
       }
     ]
   }
