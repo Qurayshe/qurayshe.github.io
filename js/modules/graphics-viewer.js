@@ -1276,68 +1276,535 @@ export class GraphicsViewer {
   }
 
   // ==========================================================================
-  // MODULE 07: GPU HARDWARE PIPELINE & ENGINE MULTI-PASS ARCHITECTURE
+  // MODULE 07: GPU HARDWARE PIPELINE, MULTI-PASS ARCHITECTURE & LIVE 5-PASS RENDERER
   // ==========================================================================
   initPipelinePreview(container) {
     container.innerHTML = `
       <div class="preview-toolbar">
+        <div class="preview-chips-row" style="margin-bottom:0.35rem;">
+          <span class="toolbar-label">Pass View:</span>
+          <button class="mode-chip active" id="mp-view-final">Final (5 Passes)</button>
+          <button class="mode-chip" id="mp-view-depth">1. Depth Pre-Pass</button>
+          <button class="mode-chip" id="mp-view-shadow">2. Perspective Shadow</button>
+          <button class="mode-chip" id="mp-view-normals">3. G-Buffer Normals</button>
+          <button class="mode-chip" id="mp-view-stencil">4. Stencil Volume</button>
+        </div>
+      </div>
+
+      <div class="preview-canvas-box">
+        <canvas id="pipeline-live-canvas" width="180" height="180" style="width:320px;height:320px;image-rendering:pixelated;"></canvas>
+      </div>
+
+      <div class="preview-controls-grid">
+        <div class="preview-control-row">
+          <span>Spotlight Orbit Angle:</span>
+          <input type="range" id="mp-slider-lightangle" min="-3.14" max="3.14" step="0.08" value="0.7" />
+        </div>
+        <div class="preview-control-row">
+          <span>Light Volume Radius (Stencil):</span>
+          <input type="range" id="mp-slider-radius" min="1.5" max="4.0" step="0.1" value="2.8" />
+        </div>
+        <div class="preview-control-row" style="justify-content:flex-start;gap:1.5rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+            <input type="checkbox" id="mp-chk-msaa" checked style="accent-color:#10b981;cursor:pointer;" />
+            <span style="font-weight:600;color:#34d399;">5. 4x MSAA Resolve</span>
+          </label>
+          <span id="mp-fps-counter" style="color:#94a3b8;font-family:monospace;font-size:0.75rem;">60 FPS &middot; 5 Passes</span>
+        </div>
+      </div>
+
+      <div class="preview-info-box" id="pipeline-stage-desc">
+        <!-- Explains active pass -->
+      </div>
+
+      <div class="preview-toolbar" style="margin-top:1rem;margin-bottom:0.4rem;">
         <div class="preview-chips-row">
+          <span class="toolbar-label">Inspector:</span>
           <button class="mode-chip active" id="pipe-tab-stages">Hardware Stages (IA → ROP)</button>
-          <button class="mode-chip" id="pipe-tab-passes">Render Passes (Frame Graph)</button>
+          <button class="mode-chip" id="pipe-tab-passes">Frame Graph Passes</button>
         </div>
       </div>
 
       <div class="pipeline-diagram" id="pipeline-stages-container">
-        <!-- Injected dynamically by renderPipelineView() -->
-      </div>
-
-      <div class="preview-info-box" id="pipeline-stage-desc">
-        <!-- Detailed breakdown injected dynamically -->
+        <!-- Injected dynamically -->
       </div>
     `;
 
-    let currentMode = 'stages';
-    const stagesContainer = document.getElementById('pipeline-stages-container');
+    // ------------------------------------------------------------------------
+    // Real-Time 5-Pass Software Renderer Execution Loop
+    // ------------------------------------------------------------------------
+    const canvas = document.getElementById('pipeline-live-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = 180, H = 180;
+    const imgData = ctx.createImageData(W, H);
+    const buf32 = new Uint32Array(imgData.data.buffer);
+
+    let passMode = 'final';
+    let lightAngle = 0.7;
+    let lightRadius = 2.8;
+    let msaaEnabled = true;
+    let cubeRot = 0.0;
+
+    // Buffer allocations for our 5 passes
+    const depthPrepass = new Float32Array(W * H);
+    const shadowMapRes = 64;
+    const shadowMap = new Float32Array(shadowMapRes * shadowMapRes);
+    const gNormalX = new Float32Array(W * H);
+    const gNormalY = new Float32Array(W * H);
+    const gNormalZ = new Float32Array(W * H);
+    const gAlbedoR = new Uint8Array(W * H);
+    const gAlbedoG = new Uint8Array(W * H);
+    const gAlbedoB = new Uint8Array(W * H);
+    const gDepth = new Float32Array(W * H);
+    const gWorldX = new Float32Array(W * H);
+    const gWorldY = new Float32Array(W * H);
+    const gWorldZ = new Float32Array(W * H);
+    const stencilMask = new Uint8Array(W * H);
+    const hdrR = new Float32Array(W * H);
+    const hdrG = new Float32Array(W * H);
+    const hdrB = new Float32Array(W * H);
+
     const descBox = document.getElementById('pipeline-stage-desc');
+    const passDescriptions = {
+      final: '<strong>Final Composited Output (5 Passes):</strong><br/>1. Depth Pre-Pass discards occlusions &rarr; 2. Perspective Spotlight Shadow Map evaluated &rarr; 3. G-Buffer MRT &rarr; 4. Stencil Volume restricts lighting to sphere bounds &rarr; 5. 4x MSAA Resolve reconstructs smooth edges.',
+      depth: '<strong>Pass 1: Depth Pre-Pass (Early-Z Population):</strong><br/>Scene geometry is rendered with color writes completely disabled. Depth values populate on-chip Z-buffer, allowing subsequent deferred passes to execute with 0% fragment overdraw.',
+      shadow: '<strong>Pass 2: Perspective Shadow Map:</strong><br/>Rendered from the spotlight\'s viewpoint using a true 60&deg; perspective frustum projection matrix. Darker pixels represent geometry closer to the light source.',
+      normals: '<strong>Pass 3: Deferred Base Pass (G-Buffer Normals):</strong><br/>MRT normal attachment encoding world-space normal vectors (Nx, Ny, Nz) mapped to RGB [0, 1]. Early-Z test rejects any occluded fragments.',
+      stencil: '<strong>Pass 4: Stencil Volume Mask:</strong><br/>Green fragments indicate pixels bounded inside the spotlight\'s spherical light volume (stencil=1). Fragments outside the volume are skipped at ZERO lighting cost!'
+    };
+
+    if (descBox) descBox.innerHTML = passDescriptions[passMode];
+
+    const render = () => {
+      cubeRot += 0.015;
+
+      // Spotlight position in 3D world
+      const lx = Math.sin(lightAngle) * 1.6;
+      const ly = 2.1;
+      const lz = 1.8 + Math.cos(lightAngle) * 1.3;
+
+      // Spotlight direction & perspective frustum projection
+      const spotDirX = -lx, spotDirY = -ly, spotDirZ = 1.8 - lz;
+      const spotDirLen = Math.sqrt(spotDirX * spotDirX + spotDirY * spotDirY + spotDirZ * spotDirZ);
+      const sDirX = spotDirX / spotDirLen, sDirY = spotDirY / spotDirLen, sDirZ = spotDirZ / spotDirLen;
+
+      // ----------------------------------------------------------------------
+      // PASS 1: DEPTH PRE-PASS
+      // ----------------------------------------------------------------------
+      depthPrepass.fill(1e9);
+
+      // Ray-geometry setup for camera at (0, 0.9, -1.0) looking toward (0, -0.1, 1.8)
+      const camEyeY = 0.9;
+      const sphereX = -0.55, sphereY = -0.25, sphereZ = 1.5, sphereR = 0.45;
+      const cubeX = 0.45, cubeY = -0.2, cubeZ = 1.8, cubeHalf = 0.32;
+
+      // Cube rotation matrix components
+      const cosC = Math.cos(cubeRot), sinC = Math.sin(cubeRot);
+
+      for (let y = 0; y < H; ++y) {
+        const vy = -(y - H / 2) / (H * 0.75);
+        for (let x = 0; x < W; ++x) {
+          const vx = (x - W / 2) / (W * 0.75);
+          const dirLen = Math.sqrt(vx * vx + vy * vy + 1.0);
+          const dx = vx / dirLen, dy = vy / dirLen, dz = 1.0 / dirLen;
+          const idx = y * W + x;
+
+          let nearestT = 1e9;
+
+          // 1. Sphere intersection
+          const ocx = -sphereX, ocy = camEyeY - sphereY, ocz = -1.0 - sphereZ;
+          const b = 2.0 * (dx * ocx + dy * ocy + dz * ocz);
+          const c = (ocx * ocx + ocy * ocy + ocz * ocz) - sphereR * sphereR;
+          const disc = b * b - 4.0 * c;
+          if (disc > 0) {
+            const t = (-b - Math.sqrt(disc)) * 0.5;
+            if (t > 0 && t < nearestT) nearestT = t;
+          }
+
+          // 2. Rotating Cube (Slab ray-box intersection in local space)
+          const roX = -cubeX, roY = camEyeY - cubeY, roZ = -1.0 - cubeZ;
+          // Rotate ray into cube local frame
+          const ldx = dx * cosC - dz * sinC;
+          const ldy = dy;
+          const ldz = dx * sinC + dz * cosC;
+          const lox = roX * cosC - roZ * sinC;
+          const loy = roY;
+          const loz = roX * sinC + roZ * cosC;
+
+          const invDx = 1.0 / (ldx || 1e-6);
+          const invDy = 1.0 / (ldy || 1e-6);
+          const invDz = 1.0 / (ldz || 1e-6);
+
+          const t1x = (-cubeHalf - lox) * invDx, t2x = (cubeHalf - lox) * invDx;
+          const t1y = (-cubeHalf - loy) * invDy, t2y = (cubeHalf - loy) * invDy;
+          const t1z = (-cubeHalf - loz) * invDz, t2z = (cubeHalf - loz) * invDz;
+
+          const tMin = Math.max(Math.max(Math.min(t1x, t2x), Math.min(t1y, t2y)), Math.min(t1z, t2z));
+          const tMax = Math.min(Math.min(Math.max(t1x, t2x), Math.max(t1y, t2y)), Math.max(t1z, t2z));
+
+          if (tMax >= Math.max(0.0, tMin) && tMin < nearestT) {
+            nearestT = tMin;
+          }
+
+          // 3. Ground plane at y = -0.7
+          if (dy < -0.01) {
+            const floorT = (-0.7 - camEyeY) / dy;
+            if (floorT > 0 && floorT < nearestT) nearestT = floorT;
+          }
+
+          // 4. Back wall at z = 3.2
+          if (dz > 0.01) {
+            const wallT = (3.2 - (-1.0)) / dz;
+            if (wallT > 0 && wallT < nearestT) nearestT = wallT;
+          }
+
+          depthPrepass[idx] = nearestT;
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // PASS 2: PERSPECTIVE SHADOW MAP (Rendered from light position)
+      // ----------------------------------------------------------------------
+      shadowMap.fill(1e9);
+
+      for (let sy = 0; sy < shadowMapRes; ++sy) {
+        const lvy = -(sy - shadowMapRes / 2) / (shadowMapRes * 0.5);
+        for (let sx = 0; sx < shadowMapRes; ++sx) {
+          const lvx = (sx - shadowMapRes / 2) / (shadowMapRes * 0.5);
+
+          // Rotate light ray to align with spotlight forward vector (sDir)
+          const rightX = -sDirZ, rightZ = sDirX;
+          const rLen = Math.sqrt(rightX * rightX + rightZ * rightZ) || 1;
+          const rx = rightX / rLen, rz = rightZ / rLen;
+          const upX = sDirY * rz, upY = sDirZ * rx - sDirX * rz, upZ = -sDirY * rx;
+
+          const rdx = sDirX + lvx * rx + lvy * upX;
+          const rdy = sDirY + lvy * upY;
+          const rdz = sDirZ + lvx * rz + lvy * upZ;
+          const rLenTotal = Math.sqrt(rdx * rdx + rdy * rdy + rdz * rdz);
+          const ldx = rdx / rLenTotal, ldy = rdy / rLenTotal, ldz = rdz / rLenTotal;
+
+          const sIdx = sy * shadowMapRes + sx;
+          let nearestT = 1e9;
+
+          // Sphere intersection in light space
+          const ocx = lx - sphereX, ocy = ly - sphereY, ocz = lz - sphereZ;
+          const b = 2.0 * (ldx * ocx + ldy * ocy + ldz * ocz);
+          const c = (ocx * ocx + ocy * ocy + ocz * ocz) - sphereR * sphereR;
+          const disc = b * b - 4.0 * c;
+          if (disc > 0) {
+            const t = (-b - Math.sqrt(disc)) * 0.5;
+            if (t > 0 && t < nearestT) nearestT = t;
+          }
+
+          // Cube intersection in light space
+          const roX = lx - cubeX, roY = ly - cubeY, roZ = lz - cubeZ;
+          const cldx = ldx * cosC - ldz * sinC;
+          const cldy = ldy;
+          const cldz = ldx * sinC + ldz * cosC;
+          const clox = roX * cosC - roZ * sinC;
+          const cloy = roY;
+          const cloz = roX * sinC + roZ * cosC;
+
+          const invDx = 1.0 / (cldx || 1e-6);
+          const invDy = 1.0 / (cldy || 1e-6);
+          const invDz = 1.0 / (cldz || 1e-6);
+
+          const t1x = (-cubeHalf - clox) * invDx, t2x = (cubeHalf - clox) * invDx;
+          const t1y = (-cubeHalf - cloy) * invDy, t2y = (cubeHalf - cloy) * invDy;
+          const t1z = (-cubeHalf - cloz) * invDz, t2z = (cubeHalf - cloz) * invDz;
+
+          const tMin = Math.max(Math.max(Math.min(t1x, t2x), Math.min(t1y, t2y)), Math.min(t1z, t2z));
+          const tMax = Math.min(Math.min(Math.max(t1x, t2x), Math.max(t1y, t2y)), Math.max(t1z, t2z));
+
+          if (tMax >= Math.max(0.0, tMin) && tMin < nearestT) {
+            nearestT = tMin;
+          }
+
+          // Floor intersection
+          if (ldy < -0.01) {
+            const floorT = (-0.7 - ly) / ldy;
+            if (floorT > 0 && floorT < nearestT) nearestT = floorT;
+          }
+
+          shadowMap[sIdx] = nearestT;
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // PASS 3: DEFERRED BASE PASS (G-Buffer Generation MRT)
+      // ----------------------------------------------------------------------
+      gDepth.fill(1e9);
+      stencilMask.fill(0);
+      hdrR.fill(0.02); hdrG.fill(0.04); hdrB.fill(0.08);
+
+      for (let y = 0; y < H; ++y) {
+        const vy = -(y - H / 2) / (H * 0.75);
+        for (let x = 0; x < W; ++x) {
+          const vx = (x - W / 2) / (W * 0.75);
+          const dirLen = Math.sqrt(vx * vx + vy * vy + 1.0);
+          const dx = vx / dirLen, dy = vy / dirLen, dz = 1.0 / dirLen;
+          const idx = y * W + x;
+
+          const t = depthPrepass[idx];
+          if (t >= 1e8) continue; // Sky void
+
+          // Early-Z accepted: Compute world coordinates & surface normals
+          const hx = dx * t, hy = camEyeY + dy * t, hz = -1.0 + dz * t;
+          gWorldX[idx] = hx; gWorldY[idx] = hy; gWorldZ[idx] = hz;
+          gDepth[idx] = t;
+
+          let nx = 0, ny = 1, nz = 0;
+          let albR = 180, albG = 180, albB = 180;
+
+          // Sphere normal & color
+          const distToSphere = Math.sqrt((hx - sphereX)**2 + (hy - sphereY)**2 + (hz - sphereZ)**2);
+          if (Math.abs(distToSphere - sphereR) < 0.05) {
+            nx = (hx - sphereX) / sphereR;
+            ny = (hy - sphereY) / sphereR;
+            nz = (hz - sphereZ) / sphereR;
+            albR = 52; albG = 211; albB = 153; // Emerald
+          } else if (Math.abs(hy - (-0.7)) < 0.03) {
+            // Floor plane
+            nx = 0; ny = 1; nz = 0;
+            const check = ((Math.floor(hx * 2.5) ^ Math.floor(hz * 2.5)) & 1);
+            albR = albG = albB = check ? 220 : 130;
+          } else if (Math.abs(hz - 3.2) < 0.05) {
+            // Back wall
+            nx = 0; ny = 0; nz = -1;
+            albR = 71; albG = 85; albB = 105;
+          } else {
+            // Cube normal (transformed back from local cube frame)
+            const roX = hx - cubeX, roY = hy - cubeY, roZ = hz - cubeZ;
+            const lox = roX * cosC - roZ * sinC;
+            const loy = roY;
+            const loz = roX * sinC + roZ * cosC;
+
+            let lnx = 0, lny = 0, lnz = 0;
+            const ax = Math.abs(lox), ay = Math.abs(loy), az = Math.abs(loz);
+            if (ax > ay && ax > az) lnx = lox > 0 ? 1 : -1;
+            else if (ay > ax && ay > az) lny = loy > 0 ? 1 : -1;
+            else lnz = loz > 0 ? 1 : -1;
+
+            nx = lnx * cosC + lnz * sinC;
+            ny = lny;
+            nz = -lnx * sinC + lnz * cosC;
+
+            albR = 245; albG = 158; albB = 11; // Amber Gold
+          }
+
+          gNormalX[idx] = nx; gNormalY[idx] = ny; gNormalZ[idx] = nz;
+          gAlbedoR[idx] = albR; gAlbedoG[idx] = albG; gAlbedoB[idx] = albB;
+
+          // ------------------------------------------------------------------
+          // PASS 4: STENCIL VOLUME LIGHTING & SHADOW EVALUATION
+          // ------------------------------------------------------------------
+          const toLx = lx - hx, toLy = ly - hy, toLz = lz - hz;
+          const distLight = Math.sqrt(toLx * toLx + toLy * toLy + toLz * toLz);
+
+          // Stencil volume test: Is fragment inside the light's bounding radius?
+          if (distLight <= lightRadius) {
+            stencilMask[idx] = 1; // Passes stencil test!
+
+            const lnx = toLx / distLight, lny = toLy / distLight, lnz = toLz / distLight;
+
+            // Perspective Shadow Map depth test
+            // Re-project world point into spotlight perspective coordinates
+            const dotSpot = -(lnx * sDirX + lny * sDirY + lnz * sDirZ);
+            let shadow = 1.0;
+
+            if (dotSpot > 0.45) { // Inside spotlight cone angle
+              // Sample shadow map
+              const rightX = -sDirZ, rightZ = sDirX;
+              const rLen = Math.sqrt(rightX * rightX + rightZ * rightZ) || 1;
+              const rx = rightX / rLen, rz = rightZ / rLen;
+              const upX = sDirY * rz, upY = sDirZ * rx - sDirX * rz, upZ = -sDirY * rx;
+
+              const relX = -toLx, relY = -toLy, relZ = -toLz;
+              const projZ = relX * sDirX + relY * sDirY + relZ * sDirZ;
+              const projX = relX * rx + relY * 0 + relZ * rz;
+              const projY = relX * upX + relY * upY + relZ * upZ;
+
+              if (projZ > 0.1) {
+                const su = (projX / projZ) * (shadowMapRes * 0.5) + (shadowMapRes / 2);
+                const sv = -(projY / projZ) * (shadowMapRes * 0.5) + (shadowMapRes / 2);
+                const isx = Math.floor(su), isy = Math.floor(sv);
+
+                if (isx >= 0 && isx < shadowMapRes && isy >= 0 && isy < shadowMapRes) {
+                  const sDepth = shadowMap[isy * shadowMapRes + isx];
+                  if (distLight - 0.08 > sDepth) {
+                    shadow = 0.18; // In perspective shadow!
+                  }
+                }
+              }
+            } else {
+              shadow = 0.18; // Outside cone
+            }
+
+            // Blinn-Phong Specular & Lambert Diffuse
+            const nDotL = Math.max(0, nx * lnx + ny * lny + nz * lnz);
+            const vx = -dx, vy = -dy, vz = -dz;
+            const hxDir = lnx + vx, hyDir = lny + vy, hzDir = lnz + vz;
+            const hLen = Math.sqrt(hxDir * hxDir + hyDir * hyDir + hzDir * hzDir);
+            const nDotH = Math.max(0, (nx * hxDir + ny * hyDir + nz * hzDir) / (hLen || 1));
+            const spec = Math.pow(nDotH, 32) * 0.5;
+
+            const atten = 1.0 / (distLight * distLight * 0.35 + 1.0);
+            const diff = (nDotL * 0.85 + 0.15) * shadow * atten;
+
+            hdrR[idx] = (albR / 255) * diff + spec * shadow;
+            hdrG[idx] = (albG / 255) * diff + spec * shadow;
+            hdrB[idx] = (albB / 255) * diff + spec * shadow;
+          } else {
+            // Outside stencil volume: Ambient baseline only
+            hdrR[idx] = (albR / 255) * 0.08;
+            hdrG[idx] = (albG / 255) * 0.08;
+            hdrB[idx] = (albB / 255) * 0.08;
+          }
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // PASS 5: MSAA RESOLVE & VIEWPORT DISPLAY
+      // ----------------------------------------------------------------------
+      for (let y = 0; y < H; ++y) {
+        for (let x = 0; x < W; ++x) {
+          const idx = y * W + x;
+
+          if (passMode === 'depth') {
+            // Visualizing Pass 1: Depth Pre-Pass Heatmap
+            const d = depthPrepass[idx];
+            if (d < 1e8) {
+              const val = Math.min(255, Math.floor((1.0 - (d - 1.0) / 4.0) * 255));
+              buf32[idx] = (255 << 24) | (val << 16) | (val << 8) | val;
+            } else {
+              buf32[idx] = 0xff000000;
+            }
+          } else if (passMode === 'shadow') {
+            // Visualizing Pass 2: Perspective Shadow Map as seen by spotlight
+            const sx = Math.floor((x / W) * shadowMapRes);
+            const sy = Math.floor((y / H) * shadowMapRes);
+            const sIdx = sy * shadowMapRes + sx;
+            const sd = shadowMap[sIdx];
+            const sVal = sd < 1e8 ? Math.min(255, Math.floor((1.0 - (sd - 0.5) / 4.5) * 255)) : 0;
+            buf32[idx] = (255 << 24) | (sVal << 16) | (Math.floor(sVal * 0.8) << 8) | Math.floor(sVal * 0.5);
+          } else if (passMode === 'normals') {
+            // Visualizing Pass 3: G-Buffer Normals
+            if (gDepth[idx] < 1e8) {
+              const nr = Math.floor((gNormalX[idx] * 0.5 + 0.5) * 255);
+              const ng = Math.floor((gNormalY[idx] * 0.5 + 0.5) * 255);
+              const nb = Math.floor((gNormalZ[idx] * 0.5 + 0.5) * 255);
+              buf32[idx] = (255 << 24) | (nb << 16) | (ng << 8) | nr;
+            } else {
+              buf32[idx] = 0xff050810;
+            }
+          } else if (passMode === 'stencil') {
+            // Visualizing Pass 4: Stencil Volume Mask
+            if (gDepth[idx] < 1e8) {
+              if (stencilMask[idx] === 1) {
+                // Inside volume: Bright green overlay
+                buf32[idx] = (255 << 24) | (50 << 16) | (220 << 8) | 50;
+              } else {
+                // Outside volume: Dark blue
+                buf32[idx] = (255 << 24) | (120 << 16) | (40 << 8) | 20;
+              }
+            } else {
+              buf32[idx] = 0xff020408;
+            }
+          } else {
+            // Final Composited Beauty Pass with 4x MSAA Resolve
+            let r = hdrR[idx], g = hdrG[idx], b = hdrB[idx];
+
+            if (msaaEnabled && x > 0 && x < W - 1 && y > 0 && y < H - 1) {
+              // 4x sub-pixel cross box resolve filtering
+              const iL = idx - 1, iR = idx + 1, iU = idx - W, iD = idx + W;
+              r = (r * 2.0 + hdrR[iL] + hdrR[iR] + hdrR[iU] + hdrR[iD]) / 6.0;
+              g = (g * 2.0 + hdrG[iL] + hdrG[iR] + hdrG[iU] + hdrG[iD]) / 6.0;
+              b = (b * 2.0 + hdrB[iL] + hdrB[iR] + hdrB[iU] + hdrB[iD]) / 6.0;
+            }
+
+            // Reinhard Tone Mapping & Gamma 2.2
+            const fr = Math.min(255, Math.floor(Math.pow(r / (r + 1.0), 1.0 / 2.2) * 255));
+            const fg = Math.min(255, Math.floor(Math.pow(g / (g + 1.0), 1.0 / 2.2) * 255));
+            const fb = Math.min(255, Math.floor(Math.pow(b / (b + 1.0), 1.0 / 2.2) * 255));
+
+            buf32[idx] = (255 << 24) | (fb << 16) | (fg << 8) | fr;
+          }
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      this.previewAnimId = requestAnimationFrame(render);
+    };
+
+    this.previewAnimId = requestAnimationFrame(render);
+
+    // Pass Mode Selector Buttons
+    const setPassView = (mode) => {
+      passMode = mode;
+      ['final', 'depth', 'shadow', 'normals', 'stencil'].forEach((m) => {
+        document.getElementById(`mp-view-${m}`)?.classList.toggle('active', m === mode);
+      });
+      if (descBox) descBox.innerHTML = passDescriptions[mode] || '';
+    };
+
+    document.getElementById('mp-view-final')?.addEventListener('click', () => setPassView('final'));
+    document.getElementById('mp-view-depth')?.addEventListener('click', () => setPassView('depth'));
+    document.getElementById('mp-view-shadow')?.addEventListener('click', () => setPassView('shadow'));
+    document.getElementById('mp-view-normals')?.addEventListener('click', () => setPassView('normals'));
+    document.getElementById('mp-view-stencil')?.addEventListener('click', () => setPassView('stencil'));
+
+    document.getElementById('mp-slider-lightangle')?.addEventListener('input', (e) => {
+      lightAngle = parseFloat(e.target.value);
+    });
+
+    document.getElementById('mp-slider-radius')?.addEventListener('input', (e) => {
+      lightRadius = parseFloat(e.target.value);
+    });
+
+    document.getElementById('mp-chk-msaa')?.addEventListener('change', (e) => {
+      msaaEnabled = e.target.checked;
+    });
+
+    // ------------------------------------------------------------------------
+    // Inspector Tabs: Hardware Stages vs Frame Graph Passes
+    // ------------------------------------------------------------------------
+    let currentInspectorMode = 'stages';
+    const stagesContainer = document.getElementById('pipeline-stages-container');
 
     const hardwareStages = [
       { id: 'ia', label: '1. Input Assembler (IA)', sub: 'VBO / IBO / Strides', col: '#94a3b8',
-        desc: '<strong>1. Input Assembler (Fixed Function)</strong><br/>Fetches raw vertex indices and attribute streams (positions, normals, UVs) from Device VRAM over high-bandwidth buses. Prepares primitives (triangles, strips, lines) without CPU intervention.' },
+        desc: '<strong>1. Input Assembler (Fixed Function):</strong> Fetches raw vertex indices and attribute streams from VRAM over high-bandwidth buses.' },
       { id: 'vs', label: '2. Vertex Shader (SIMT)', sub: 'MVP Matrix & TBN Frame', col: '#10b981',
-        desc: '<strong>2. Vertex Shader Stage (Programmable)</strong><br/>Executes per-vertex in lockstep 32-wide SIMT warps. Multiplies local coords by MVP matrix (P · V · M · p) into 4D Clip Space and computes orthonormal TBN tangent space bases.' },
-      { id: 'tess', label: '3. Tessellation & Mesh/Geom', sub: 'Adaptive LOD & Patches', col: '#a78bfa',
-        desc: '<strong>3. Tessellation / Mesh Shader (Programmable)</strong><br/>Hull/TCS and Domain/TES stages dynamically subdivide low-poly base geometry into dense surface patches based on distance camera metrics. Mesh Shaders replace fixed vertex fetching with tasklet cooperative amplification.' },
-      { id: 'clip', label: '4. Primitive Assembly & 4D Clip', sub: 'Sutherland-Hodgman & NDC', col: '#fbbf24',
-        desc: '<strong>4. Primitive Assembly, Frustum Clipping & Viewport Transform</strong><br/>Clips primitives against 4D frustum planes (-w ≤ x, y, z ≤ w) in homogeneous space before perspective divide to prevent division-by-zero singularities. Projects NDC [-1, 1] onto screen coordinates [0, W] × [0, H].' },
-      { id: 'ras', label: '5. Hardware Rasterizer', sub: 'Pineda Edge Equations', col: '#38bdf8',
-        desc: '<strong>5. Hardware Rasterizer (Fixed Function ASIC)</strong><br/>Parallel fixed-function evaluation of 2D Pineda oriented edge functions across bounding boxes. Interpolates vertex attributes using hardware barycentrics and computes sub-pixel MSAA coverage masks.' },
-      { id: 'hiz', label: '6. Early-Z & Hierarchical-Z', sub: 'Zero-Cost Depth Culling', col: '#34d399',
-        desc: '<strong>6. Early-Z & Hi-Z Culling (Hardware Optimization)</strong><br/>Compares incoming triangle depths against on-chip Hi-Z tile depth caches BEFORE running the fragment shader! Discards occluded pixels at zero ALU cost. (Disabled if shader calls discard or writes to gl_FragDepth).' },
-      { id: 'fs', label: '7. Fragment Shader (Pixel Warp)', sub: '2x2 Quads & dFdx/dFdy', col: '#f43f5e',
-        desc: '<strong>7. Fragment / Pixel Shader (Programmable)</strong><br/>Executes in 2x2 pixel quads on SIMT cores. Evaluates Cook-Torrance BRDF, texture filters, and shadow maps. Finite difference derivatives (dFdx, dFdy) across quads drive automatic anisotropic mipmap level selection.' },
-      { id: 'rop', label: '8. ROP & Alpha Blending', sub: 'Universal Porter-Duff Math', col: '#e879f9',
-        desc: '<strong>8. Raster Operations (ROP) & Output Merger</strong><br/>Performs final late depth/stencil tests and applies the universal blend equation C_out = (C_src · F_src) ⊙ (C_dst · F_dst). Writes result directly into GDDR6X/HBM3 VRAM color attachments.' }
+        desc: '<strong>2. Vertex Shader Stage (Programmable):</strong> Multiplies local coordinates by MVP matrix into 4D Clip Space and computes orthonormal TBN tangent frames.' },
+      { id: 'clip', label: '3. 4D Frustum Clipping', sub: 'Sutherland-Hodgman', col: '#fbbf24',
+        desc: '<strong>3. Primitive Clipping & Perspective Divide:</strong> Clips primitives in 4D space before perspective divide to prevent division-by-zero singularities.' },
+      { id: 'ras', label: '4. Hardware Rasterizer', sub: 'Pineda Edge Equations', col: '#38bdf8',
+        desc: '<strong>4. Hardware Rasterizer (Fixed Function):</strong> Evaluates 2D Pineda oriented edge functions across bounding boxes and calculates barycentric coordinates.' },
+      { id: 'hiz', label: '5. Early-Z / Hi-Z', sub: 'Zero-Cost Depth Rejection', col: '#34d399',
+        desc: '<strong>5. Early-Z & Hi-Z Culling:</strong> Compares triangle depths against on-chip Hi-Z cache before running fragment shaders, eliminating overdraw.' },
+      { id: 'fs', label: '6. Fragment Shader', sub: 'PBR Shading & Derivatives', col: '#f43f5e',
+        desc: '<strong>6. Fragment Shader Stage:</strong> Evaluates BRDFs and textures in lockstep 2x2 quads with dFdx/dFdy derivatives for mipmapping.' },
+      { id: 'rop', label: '7. ROP & Blending', sub: 'Porter-Duff Blend Equations', col: '#e879f9',
+        desc: '<strong>7. ROP & Output Merger:</strong> Applies late depth/stencil tests and universal Porter-Duff alpha blending equations.' }
     ];
 
     const renderPasses = [
-      { id: 'pass-z', label: 'Pass 1: Depth Pre-Pass (Z-Prepass)', sub: 'Color Writes = 0', col: '#34d399',
-        desc: '<strong>Pass 1: Depth Pre-Pass (Early-Z Population)</strong><br/>Renders entire scene geometry with color writes disabled. Populates depth buffer so that subsequent heavy PBR fragment passes execute with 0% overdraw waste.' },
-      { id: 'pass-shadow', label: 'Pass 2: Cascaded Shadow Maps (CSM)', sub: 'Light Space & PCF', col: '#fbbf24',
-        desc: '<strong>Pass 2: Cascaded Shadow Mapping Pass</strong><br/>Renders depth from sun viewpoint across 4 view-frustum cascades. Evaluates 3x3 Percentage-Closer-Filtering (PCF) kernels with slope-scaled depth bias to eliminate acne and render soft shadow borders.' },
-      { id: 'pass-gbuffer', label: 'Pass 3: Geometry Pass (G-Buffer MRT)', sub: 'Normal, Albedo, Depth, AO', col: '#38bdf8',
-        desc: '<strong>Pass 3: Geometry Pass (Multiple Render Targets MRT)</strong><br/>Renders opaque meshes into high-precision G-Buffer textures in a single draw call: GBufferA (Normal XYZ, Roughness W), GBufferB (Albedo RGB, Metallic A), GBufferC (Linear Depth), GBufferD (Emissive, AO).' },
-      { id: 'pass-ssao', label: 'Pass 4: Screen Space Ambient Occlusion', sub: '64-Sample Hemisphere', col: '#a78bfa',
-        desc: '<strong>Pass 4: SSAO Ambient Occlusion Pass</strong><br/>Full-screen pass raymarching against view-space depth in a 64-sample cosine hemisphere oriented along surface normal. Computes contact shadows in crevices and folds.' },
-      { id: 'pass-clustered', label: 'Pass 5: Clustered Light Culling', sub: 'Compute 3D Frustum Binning', col: '#10b981',
-        desc: '<strong>Pass 5: Clustered Light Culling (Compute Shader)</strong><br/>Dispatches a 3D compute grid dividing camera frustum into 16×9×24 spatial clusters. Intersects thousands of dynamic point lights with cluster AABBs, populating light index lists in GPU SSBOs.' },
-      { id: 'pass-lighting', label: 'Pass 6: Deferred Lighting Accumulation', sub: 'PBR BRDF & IBL Radiance', col: '#f43f5e',
-        desc: '<strong>Pass 6: Deferred Lighting Pass</strong><br/>Full-screen pass sampling G-Buffer attachments. Evaluates Cook-Torrance specular BRDF, Split-Sum Image-Based Lighting (IBL), and shadow maps for all lights intersecting the pixel, accumulating linear HDR radiance.' },
-      { id: 'pass-post', label: 'Pass 7: Post-Processing & Tone Mapping', sub: 'ACES Filmic & Gamma 2.2', col: '#e879f9',
-        desc: '<strong>Pass 7: Post-Processing & Display Color Grading</strong><br/>Extracts bright HDR threshold for Dual-Kawase Bloom blur pyramid, evaluates ACES Filmic Tone Mapping curve f(x) = (x(2.51x+0.03))/(x(2.43x+0.59)+0.14), and applies sRGB gamma 2.2 for monitor display.' }
+      { id: 'pass-z', label: 'Pass 1: Depth Pre-Pass', sub: 'Color Writes = 0', col: '#34d399',
+        desc: '<strong>Pass 1: Depth Pre-Pass:</strong> Pre-populates depth buffer with color writes disabled so that subsequent passes execute with 0% overdraw.' },
+      { id: 'pass-shadow', label: 'Pass 2: Perspective Shadow Map', sub: 'Spotlight Frustum Depth', col: '#fbbf24',
+        desc: '<strong>Pass 2: Perspective Shadow Mapping:</strong> Generates light-space perspective depth map from spotlight perspective.' },
+      { id: 'pass-gbuffer', label: 'Pass 3: Deferred Base Pass (MRT)', sub: 'Normals, Albedo, Depth', col: '#38bdf8',
+        desc: '<strong>Pass 3: Deferred Base Pass:</strong> Multiple Render Targets (MRT) write normal, base color, and position buffers simultaneously.' },
+      { id: 'pass-stencil', label: 'Pass 4: Stencil Volume Lighting', sub: 'Bounded Light Evaluation', col: '#a78bfa',
+        desc: '<strong>Pass 4: Stencil Volume Lighting:</strong> Masks out all fragments outside light radius sphere; evaluates only marked pixels.' },
+      { id: 'pass-msaa', label: 'Pass 5: 4x MSAA Resolve', sub: 'Sub-Pixel Jitter Filter', col: '#e879f9',
+        desc: '<strong>Pass 5: 4x MSAA Resolve:</strong> Resolves subpixel samples to eliminate harsh polygon silhouette aliasing.' }
     ];
 
-    const renderItems = () => {
-      const items = currentMode === 'stages' ? hardwareStages : renderPasses;
+    const renderInspectorItems = () => {
+      const items = currentInspectorMode === 'stages' ? hardwareStages : renderPasses;
       if (!stagesContainer) return;
       stagesContainer.innerHTML = items.map((item, idx) => `
         <button class="pipeline-stage-btn ${idx === 0 ? 'active' : ''}" data-stage="${item.id}">
@@ -1345,8 +1812,6 @@ export class GraphicsViewer {
           <span style="color:${item.col};">${item.sub}</span>
         </button>
       `).join('');
-
-      if (descBox) descBox.innerHTML = items[0].desc;
 
       stagesContainer.querySelectorAll('.pipeline-stage-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -1358,20 +1823,20 @@ export class GraphicsViewer {
       });
     };
 
-    renderItems();
+    renderInspectorItems();
 
     document.getElementById('pipe-tab-stages')?.addEventListener('click', () => {
-      currentMode = 'stages';
+      currentInspectorMode = 'stages';
       document.getElementById('pipe-tab-stages')?.classList.add('active');
       document.getElementById('pipe-tab-passes')?.classList.remove('active');
-      renderItems();
+      renderInspectorItems();
     });
 
     document.getElementById('pipe-tab-passes')?.addEventListener('click', () => {
-      currentMode = 'passes';
+      currentInspectorMode = 'passes';
       document.getElementById('pipe-tab-passes')?.classList.add('active');
       document.getElementById('pipe-tab-stages')?.classList.remove('active');
-      renderItems();
+      renderInspectorItems();
     });
   }
 

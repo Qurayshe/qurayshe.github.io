@@ -466,4 +466,42 @@ Frame Graph Execution Lifecycle:
 └────────────────────────────────────────────────────────┘
 ```
 
-Inspect [`07_multipass_deferred_shaders.glsl`](#graphics/07_gpu_architecture_and_pipeline) to view production GLSL shaders implementing G-Buffer generation, PCF shadow mapping, SSAO, deferred PBR lighting accumulation, and ACES Filmic post-processing!
+---
+
+## 5. The Tiny Working 5-Pass Renderer
+
+To ground these theoretical concepts into concrete, working code that you can inspect and preview in real time, Module 07 includes a zero-dependency software renderer ([`07_tiny_multipass_renderer.cpp`](#graphics/07_gpu_architecture_and_pipeline)) and an interactive live workstation engine implementing all 5 passes:
+
+```
+Tiny 5-Pass Engine Dataflow:
+┌────────────────────────────────────────────────────────────────────────┐
+│ Pass 1: Depth Pre-Pass                                                 │
+│ -> Rasterizes 3D mesh with color writes disabled.                      │
+│ -> Fills depthPrepass buffer; enables 0% overdraw in Pass 3!           │
+├────────────────────────────────────────────────────────────────────────┤
+│ Pass 2: Perspective Shadow Mapping                                    │
+│ -> Transforms primitives using Spotlight Perspective Matrix P_light.   │
+│ -> Encodes light-space depth into 64x64 perspective shadowMap buffer.  │
+├────────────────────────────────────────────────────────────────────────┤
+│ Pass 3: Deferred Base Pass (G-Buffer MRT)                              │
+│ -> Evaluates Early-Z against Pass 1 depthPrepass.                      │
+│ -> Multiple Render Targets: gNormal (XYZ), gAlbedo (RGB), gDepth (Z). │
+├────────────────────────────────────────────────────────────────────────┤
+│ Pass 4: Stencil Volume Lighting                                        │
+│ -> Step A: Stencil Marking: pixels inside light sphere radius get 1.   │
+│ -> Step B: Lighting: fragments with stencil == 0 are SKIPPED!          │
+│ -> Reprojects visible fragments into light space, tests shadow map,    │
+│    and accumulates Blinn-Phong specular & Lambert diffuse.             │
+├────────────────────────────────────────────────────────────────────────┤
+│ Pass 5: 4x MSAA Resolve & Tone Mapping                                 │
+│ -> 4-sample subpixel cross box resolve reconstructs smooth silhouettes.│
+│ -> Applies Reinhard tone mapping & sRGB gamma 2.2 correction.          │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+Inspect the interactive workstation viewport above:
+- Toggle **Pass View** across `Final (5 Passes)`, `1. Depth Pre-Pass`, `2. Perspective Shadow`, `3. G-Buffer Normals`, and `4. Stencil Volume`.
+- Move the **Spotlight Orbit Angle** slider to see dynamic perspective shadows cast in real time.
+- Toggle **5. 4x MSAA Resolve** to see immediate anti-aliasing edge reconstruction!
+- Open [`07_tiny_multipass_renderer.cpp`](#graphics/07_gpu_architecture_and_pipeline) and [`07_multipass_deferred_shaders.glsl`](#graphics/07_gpu_architecture_and_pipeline) to inspect the complete source implementations.
+

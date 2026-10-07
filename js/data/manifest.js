@@ -1246,11 +1246,12 @@ export const GRAPHICS_CURRICULUM = [
         desc: 'Hardware SIMT execution warps, complete fixed/programmable pipeline stages (IA to ROP), clipping/blending math, and modern multi-pass engine architecture (G-Buffer MRT, Shadows, SSAO, Clustered Shading, Frame Graphs).',
         mdPath: 'graphicslab/07_gpu_architecture_and_pipeline/07_gpu_architecture_and_pipeline.md',
         codeFiles: [
+          { name: '07_tiny_multipass_renderer.cpp', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_tiny_multipass_renderer.cpp', lang: 'cpp' },
           { name: '07_multipass_deferred_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_multipass_deferred_shaders.glsl', lang: 'c' },
           { name: '07_pipeline_shaders.glsl', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_pipeline_shaders.glsl', lang: 'c' },
           { name: '07_simt_pipeline_emulator.cpp', path: 'graphicslab/07_gpu_architecture_and_pipeline/07_simt_pipeline_emulator.cpp', lang: 'cpp' }
         ],
-        tags: ['Graphics Pipeline', 'Render Passes', 'Deferred Shading', 'G-Buffer', 'SIMT', 'SSAO', 'Shadows', 'Frame Graph']
+        tags: ['Graphics Pipeline', 'Render Passes', 'Deferred Shading', 'Shadow Maps', 'Stencil Lighting', 'MSAA', 'SIMT']
       },
       {
         id: '08_vulkan_opengl_webgpu_comparison',
