@@ -2698,7 +2698,7 @@ export class GraphicsViewer {
 
     const statsDescriptions = {
       taa: '<strong>Modern TAA:</strong> Subpixel jitter (-0.5..+0.5) with motion reprojection & YCoCg variance clipping. Resolves both geometric aliasing and specular shimmer. <em>VRAM: +1 History Buffer (16MB) | Cost: ~0.65 ms</em>',
-      msaa: '<strong>Primitive 4x MSAA:</strong> 4 coverage sub-samples per pixel. Sharp polygon silhouettes, but fails completely on deferred lighting specular specular highlights and alpha-test geometry. <em>VRAM: 4x G-Buffer Multiplier (+128MB) | Cost: ~1.85 ms</em>',
+      msaa: '<strong>Primitive 4x MSAA:</strong> 4 coverage sub-samples per pixel. Sharp polygon silhouettes, but fails completely on deferred lighting specular highlights and alpha-test geometry. <em>VRAM: 4x G-Buffer Multiplier (+128MB) | Cost: ~1.85 ms</em>',
       fxaa: '<strong>FXAA 3.11:</strong> Post-process edge search on luminance gradient. Very fast single-pass filter, but blurs high-frequency surface textures and cannot prevent temporal crawling. <em>VRAM: 0 MB Overhead | Cost: ~0.35 ms</em>',
       none: '<strong>1x None (Aliased):</strong> Single-sample point rasterization. Severe staircase aliasing along geometric edges and high-frequency specular fireflies when moving. <em>VRAM: 0 MB Overhead | Cost: 0.00 ms</em>'
     };
@@ -2734,47 +2734,66 @@ export class GraphicsViewer {
       const sinA = Math.sin(orbitAngle);
       const lightDir = [0.577, 0.577, -0.577];
 
-      // Render ground plane and 3D geometric knot
+      // Horizon pixel row where ground plane begins
+      const horizonY = 118;
+
+      // Pass 1: Render upper scene (Sphere and Sky) and ground floor
       for (let y = 0; y < H; ++y) {
         for (let x = 0; x < W; ++x) {
           const idx = (y * W + x) * 3;
           const nx = (x + jitterX - W * 0.5) / (W * 0.45);
           const ny = (y + jitterY - H * 0.5) / (H * 0.45);
 
-          // Ray setup
           const r = Math.sqrt(nx * nx + ny * ny);
           let rOut = 0, gOut = 0, bOut = 0;
 
-          if (ny > 0.35) {
+          if (y >= horizonY) {
             // Ground Floor Plane
-            const planeZ = 1.0 / (ny - 0.25);
-            const planeX = nx * planeZ * 0.5;
-            const checker = ((Math.floor(planeX * 4) + Math.floor(planeZ * 2)) & 1);
-            const baseColor = checker ? 0.35 : 0.08;
+            const planeZ = 1.0 / Math.max(0.01, (y - horizonY + 12) / 45);
+            const planeX = nx * planeZ * 0.65;
+            const checker = ((Math.floor(planeX * 3.5) + Math.floor(planeZ * 2.2)) & 1);
+            const baseColor = checker ? 0.38 : 0.09;
 
             let reflColorR = 0, reflColorG = 0, reflColorB = 0;
+
             if (reflMode === 'ssr') {
-              // Simulated SSR reflection of upper object
-              const reflY = Math.max(0, 0.35 - (ny - 0.35) * 1.5);
-              const reflIdx = (Math.floor(reflY * (H * 0.45) + H * 0.5) * W + x) * 3;
-              if (reflIdx >= 0 && reflIdx < currentHDR.length) {
-                reflColorR = currentHDR[reflIdx] * 0.7;
-                reflColorG = currentHDR[reflIdx + 1] * 0.7;
-                reflColorB = currentHDR[reflIdx + 2] * 0.7;
+              // Screen-Space Planar Reflection: Mirror vertically across the horizon
+              const deltaY = y - horizonY;
+              const refl_py = horizonY - Math.round(deltaY * 0.95);
+
+              if (refl_py >= 0 && refl_py < horizonY) {
+                const sampleIdx = (refl_py * W + x) * 3;
+                reflColorR = currentHDR[sampleIdx];
+                reflColorG = currentHDR[sampleIdx + 1];
+                reflColorB = currentHDR[sampleIdx + 2];
+
+                // Screen-edge vignette fade near the top border
+                const edgeFade = Math.min(1.0, Math.max(0.0, refl_py / (H * 0.15)));
+                reflColorR *= edgeFade;
+                reflColorG *= edgeFade;
+                reflColorB *= edgeFade;
+              } else {
+                // Ray escaped screen: Sky fallback
+                reflColorR = 0.05; reflColorG = 0.09; reflColorB = 0.18;
               }
             } else if (reflMode === 'cube') {
-              reflColorR = 0.2;
-              reflColorG = 0.3;
-              reflColorB = 0.5;
+              // Static Cubemap Fallback: Sky gradient reflection (ignores dynamic sphere)
+              const reflNorm = (y - horizonY) / (H - horizonY);
+              reflColorR = 0.06 + reflNorm * 0.05;
+              reflColorG = 0.12 + reflNorm * 0.10;
+              reflColorB = 0.28 + reflNorm * 0.18;
             }
 
-            rOut = baseColor * 0.6 + reflColorR;
-            gOut = baseColor * 0.7 + reflColorG;
-            bOut = baseColor * 0.8 + reflColorB;
+            // Fresnel reflectance: high reflectivity near grazing horizon, subtle looking down
+            const cosTheta = Math.max(0.08, Math.min(1.0, (y - horizonY) / (H * 0.38)));
+            const fresnel = (reflMode === 'none') ? 0.0 : (0.18 + 0.82 * Math.pow(1.0 - cosTheta, 3));
+
+            rOut = baseColor * (1.0 - fresnel * 0.7) + reflColorR * fresnel;
+            gOut = baseColor * (1.0 - fresnel * 0.7) + reflColorG * fresnel;
+            bOut = baseColor * (1.0 - fresnel * 0.7) + reflColorB * fresnel;
           } else if (r < 0.65) {
             // Rotating Polyhedron Geometry
             const z = Math.sqrt(Math.max(0, 0.65 * 0.65 - r * r));
-            // Rotate normal
             const localX = nx * cosA - z * sinA;
             const localZ = nx * sinA + z * cosA;
             const localY = -ny;
@@ -2785,22 +2804,22 @@ export class GraphicsViewer {
 
             // Shading
             const NdotL = Math.max(0, localX * lightDir[0] + localY * lightDir[1] + localZ * lightDir[2]);
-            const spec = Math.pow(Math.max(0, localZ), 32) * 2.5;
+            const spec = Math.pow(Math.max(0, localZ), 32) * 2.8;
 
             if (isEdge) {
-              rOut = 1.5 + spec;
-              gOut = 0.4 + spec;
+              rOut = 1.6 + spec;
+              gOut = 0.45 + spec;
               bOut = 0.2 + spec;
             } else {
-              rOut = 0.15 * NdotL + spec * 0.8;
-              gOut = 0.55 * NdotL + spec * 0.8;
-              bOut = 0.95 * NdotL + spec * 0.8;
+              rOut = 0.18 * NdotL + spec * 0.85;
+              gOut = 0.58 * NdotL + spec * 0.85;
+              bOut = 0.98 * NdotL + spec * 0.85;
             }
           } else {
             // Sky gradient
-            rOut = 0.03 + ny * 0.05;
-            gOut = 0.05 + ny * 0.08;
-            bOut = 0.12 + ny * 0.15;
+            rOut = 0.03 + Math.max(0, ny) * 0.05;
+            gOut = 0.05 + Math.max(0, ny) * 0.08;
+            bOut = 0.12 + Math.max(0, ny) * 0.15;
           }
 
           currentHDR[idx] = Math.max(0, rOut);
@@ -2823,7 +2842,6 @@ export class GraphicsViewer {
               const histR = historyBuf[idx];
               const histG = historyBuf[idx + 1];
               const histB = historyBuf[idx + 2];
-              // Blend 90% history, 10% current
               r = histR * 0.88 + r * 0.12;
               g = histG * 0.88 + g * 0.12;
               b = histB * 0.88 + b * 0.12;
@@ -2832,13 +2850,15 @@ export class GraphicsViewer {
             historyBuf[idx + 1] = g;
             historyBuf[idx + 2] = b;
           } else if (aaMode === 'msaa') {
-            // Simulated 4-tap geometric box filter
-            if (x > 0 && y > 0) {
+            // 4-sample subpixel coverage filter
+            if (x > 0 && y > 0 && x < W - 1 && y < H - 1) {
               const leftIdx = (y * W + (x - 1)) * 3;
               const upIdx = ((y - 1) * W + x) * 3;
-              r = (r * 2 + currentHDR[leftIdx] + currentHDR[upIdx]) * 0.25;
-              g = (g * 2 + currentHDR[leftIdx + 1] + currentHDR[upIdx + 1]) * 0.25;
-              b = (b * 2 + currentHDR[leftIdx + 2] + currentHDR[upIdx + 2]) * 0.25;
+              const rightIdx = (y * W + (x + 1)) * 3;
+              const downIdx = ((y + 1) * W + x) * 3;
+              r = (r * 2 + currentHDR[leftIdx] + currentHDR[upIdx] + currentHDR[rightIdx] + currentHDR[downIdx]) / 6.0;
+              g = (g * 2 + currentHDR[leftIdx + 1] + currentHDR[upIdx + 1] + currentHDR[rightIdx + 1] + currentHDR[downIdx + 1]) / 6.0;
+              b = (b * 2 + currentHDR[leftIdx + 2] + currentHDR[upIdx + 2] + currentHDR[rightIdx + 2] + currentHDR[downIdx + 2]) / 6.0;
             }
           } else if (aaMode === 'fxaa') {
             // Fast Luma Filter across 3x3 cross
@@ -2849,7 +2869,7 @@ export class GraphicsViewer {
               const lumaN = 0.299 * currentHDR[nIdx] + 0.587 * currentHDR[nIdx + 1] + 0.114 * currentHDR[nIdx + 2];
               const lumaS = 0.299 * currentHDR[sIdx] + 0.587 * currentHDR[sIdx + 1] + 0.114 * currentHDR[sIdx + 2];
               const range = Math.max(lumaM, Math.max(lumaN, lumaS)) - Math.min(lumaM, Math.min(lumaN, lumaS));
-              if (range > 0.12) {
+              if (range > 0.10) {
                 r = (r * 2 + currentHDR[nIdx] + currentHDR[sIdx]) * 0.25;
                 g = (g * 2 + currentHDR[nIdx + 1] + currentHDR[sIdx + 1]) * 0.25;
                 b = (b * 2 + currentHDR[nIdx + 2] + currentHDR[sIdx + 2]) * 0.25;
@@ -3003,8 +3023,8 @@ export class GraphicsViewer {
           <button class="renderdoc-step-node" data-step="8">8: Present</button>
         </div>
 
-        <!-- Channel Selector Toolbar -->
-        <div class="renderdoc-channels-bar">
+        <!-- Channel Selector Toolbar (dynamically shows only non-blank channels) -->
+        <div class="renderdoc-channels-bar" id="rd-channels-bar">
           <span style="font-family:monospace;font-size:0.7rem;color:#94a3b8;font-weight:700;">CHANNELS:</span>
           <button class="renderdoc-ch-btn active" data-ch="rgba">RGBA Color</button>
           <button class="renderdoc-ch-btn" data-ch="r">R (Albedo)</button>
@@ -3014,9 +3034,23 @@ export class GraphicsViewer {
           <button class="renderdoc-ch-btn" data-ch="overdraw">Overdraw Heatmap</button>
         </div>
 
-        <!-- Live Viewport Canvas -->
-        <div class="preview-canvas-box">
-          <canvas id="rd-live-canvas" width="200" height="200" style="width:340px;height:340px;image-rendering:pixelated;"></canvas>
+        <!-- Live Viewport Canvas with Interactive Zoom Loupe -->
+        <div class="preview-canvas-box" style="position:relative;">
+          <div class="aa-loupe-wrap" id="rd-loupe-wrap">
+            <canvas id="rd-live-canvas" width="200" height="200" style="width:340px;height:340px;image-rendering:pixelated;"></canvas>
+            <div class="aa-loupe-lens" id="rd-loupe-lens"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.2rem 0.4rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+            <input type="checkbox" id="rd-chk-loupe" checked style="accent-color:#38bdf8;cursor:pointer;" />
+            <span style="font-weight:600;color:#38bdf8;font-size:0.72rem;font-family:monospace;">4x Loupe (Hover to inspect subpixel AA edges &amp; contact AO)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+            <input type="checkbox" id="rd-chk-spin" checked style="accent-color:#10b981;cursor:pointer;" />
+            <span style="font-weight:600;color:#34d399;font-size:0.72rem;font-family:monospace;">Spin Monument</span>
+          </label>
         </div>
 
         <!-- Primitive vs Modern Paradigm Switcher -->
@@ -3037,8 +3071,9 @@ export class GraphicsViewer {
           <div class="renderdoc-toggle-row">
             <span style="color:#cbd5e1;">Anti-Aliasing:</span>
             <div class="renderdoc-toggle-pills">
+              <button class="renderdoc-pill-btn" id="rd-pill-aa-none">1x None (Aliased)</button>
               <button class="renderdoc-pill-btn" id="rd-pill-aa-prim">Primitive 4x MSAA</button>
-              <button class="renderdoc-pill-btn" id="rd-pill-aa-fxaa">FXAA</button>
+              <button class="renderdoc-pill-btn" id="rd-pill-aa-fxaa">FXAA 3.11</button>
               <button class="renderdoc-pill-btn active-mod" id="rd-pill-aa-mod">Modern TAA</button>
             </div>
           </div>
@@ -3046,8 +3081,18 @@ export class GraphicsViewer {
           <div class="renderdoc-toggle-row">
             <span style="color:#cbd5e1;">Ambient Occlusion:</span>
             <div class="renderdoc-toggle-pills">
+              <button class="renderdoc-pill-btn" id="rd-pill-ao-off">Off</button>
               <button class="renderdoc-pill-btn" id="rd-pill-ao-prim">Primitive SSAO (Noise)</button>
               <button class="renderdoc-pill-btn active-mod" id="rd-pill-ao-mod">Modern HBAO/GTAO</button>
+            </div>
+          </div>
+
+          <div class="renderdoc-toggle-row">
+            <span style="color:#cbd5e1;">Specular Reflections:</span>
+            <div class="renderdoc-toggle-pills">
+              <button class="renderdoc-pill-btn" id="rd-pill-refl-off">Off</button>
+              <button class="renderdoc-pill-btn" id="rd-pill-refl-cube">Primitive Cubemap</button>
+              <button class="renderdoc-pill-btn active-mod" id="rd-pill-refl-ssr">Modern SSR Raymarch</button>
             </div>
           </div>
 
@@ -3086,12 +3131,44 @@ export class GraphicsViewer {
     let currentStep = 3;
     let currentChannel = 'rgba';
     let shadingMode = 'pbr';   // 'blinn' | 'pbr'
-    let aaMode = 'taa';        // 'msaa' | 'fxaa' | 'taa'
-    let aoMode = 'hbao';       // 'ssao' | 'hbao'
+    let aaMode = 'taa';        // 'none' | 'msaa' | 'fxaa' | 'taa'
+    let aoMode = 'hbao';       // 'off' | 'ssao' | 'hbao'
+    let reflMode = 'ssr';      // 'off' | 'cube' | 'ssr'
     let toneMode = 'aces';     // 'clamp' | 'reinhard' | 'aces'
     let isPlaying = false;
     let playInterval = null;
     let orbit = 0.6;
+    let autoSpin = true;
+    let frameIdx = 0;
+
+    // Previous history buffer for TAA
+    const historyBuf = new Float32Array(W * H * 3);
+    let historyValid = false;
+
+    // Halton 2,3 sequence
+    const halton = [
+      [ 0.000, -0.333],
+      [-0.500,  0.333],
+      [ 0.500, -0.777],
+      [-0.750, -0.111],
+      [ 0.250,  0.555],
+      [-0.250, -0.555],
+      [ 0.750,  0.111],
+      [-0.875,  0.777]
+    ];
+
+    // Non-blank channels map per event (hides buttons when channel is blank)
+    const stepValidChannels = {
+      0: ['rgba', 'depth'],
+      1: ['depth', 'overdraw'],
+      2: ['depth', 'rgba'],
+      3: ['rgba', 'r', 'g', 'b', 'depth', 'overdraw'],
+      4: ['rgba', 'depth'],
+      5: ['rgba', 'b'],
+      6: ['rgba', 'overdraw'],
+      7: ['rgba'],
+      8: ['rgba']
+    };
 
     const eventDetails = [
       {
@@ -3107,52 +3184,52 @@ export class GraphicsViewer {
         draws: "0 (Direct Driver Clear)",
         triangles: "0",
         gpuMs: "0.04 ms",
-        desc: "Initializes render attachments to clear values and executes memory barriers so subsequent passes can safely write without cache incoherency."
+        desc: "Initializes attachments to clear values and triggers pipeline memory barriers. Only Clear Color and Clear Depth exist in memory."
       },
       {
         eid: 1,
         name: "EID 1: Early Depth Pre-Pass",
         category: "Depth Rasterization",
-        api: "vkCmdDrawIndexed(18420 indices)",
+        api: "vkCmdDrawIndexed(Pillars, Pedestal, Monument)",
         target: "Depth-Stencil: D32_SFLOAT (Reverse-Z)",
         cull: "Back-face Culling (CCW)",
         depth: "Test = ENABLED, Write = TRUE, Func = GREATER",
         blend: "Color Write Mask = 0x0 (Disabled)",
         barrier: "DEPTH_WRITE → DEPTH_READ / SHADER_RESOURCE",
-        draws: "14 Draw Calls",
-        triangles: "6,140 Triangles",
-        gpuMs: "0.28 ms",
-        desc: "Fills the Z-Cull hierarchy metadata. Subsequent heavy pixel shader invocations are skipped at the rasterizer level if occluded by closer geometry."
+        draws: "18 Draw Calls",
+        triangles: "8,420 Triangles",
+        gpuMs: "0.32 ms",
+        desc: "Fills the Z-Cull hierarchy metadata. Color channels are disabled at the ROP level. View Linear Depth or Z-Cull Overdraw."
       },
       {
         eid: 2,
         name: "EID 2: Perspective Shadow Mapping",
         category: "Shadow Pass",
-        api: "vkCmdDrawIndexed(Light Frustum)",
+        api: "vkCmdDrawIndexed(Light Vantage Point)",
         target: "Shadow Map: D16_UNORM (2048x2048)",
         cull: "Front-face Culling (Eliminates Acne)",
         depth: "Test = ENABLED, Write = TRUE, Func = LESS",
         blend: "Disabled",
         barrier: "DEPTH_WRITE → PIXEL_SHADER_RESOURCE",
-        draws: "8 Draw Calls",
-        triangles: "4,200 Triangles",
-        gpuMs: "0.42 ms",
-        desc: "Renders depth from the spotlight's vantage point. Uses depth slope bias to prevent self-shadowing surface artifacts."
+        draws: "12 Draw Calls",
+        triangles: "5,800 Triangles",
+        gpuMs: "0.46 ms",
+        desc: "Renders depth from the spotlight frustum. Pillars and monument cast directional shadows across the plinth and floor."
       },
       {
         eid: 3,
         name: "EID 3: G-Buffer Base Pass (MRT)",
         category: "Geometry Rasterization",
         api: "vkCmdDrawIndexed(Multiple Render Targets)",
-        target: "RT0: R8G8B8A8 (Albedo), RT1: R16G16 (Normals), RT2: R10G10B10A2 (PBR)",
+        target: "RT0: R8G8B8A8 (Albedo), RT1: R16G16 (Normals), RT2: R10G10B10A2 (Roughness)",
         cull: "Back-face Culling",
         depth: "Test = ENABLED, Write = FALSE, Func = EQUAL",
         blend: "Disabled (Opaque Overwrite)",
         barrier: "RENDER_TARGET → PIXEL_SHADER_RESOURCE",
-        draws: "14 Draw Calls",
-        triangles: "6,140 Triangles",
-        gpuMs: "1.15 ms",
-        desc: "Outputs geometric surface attributes (Albedo, World Normals, Roughness, Metalness) into Multiple Render Targets. Tests DepthFunc = EQUAL to ensure ZERO quad overdraw."
+        draws: "18 Draw Calls",
+        triangles: "8,420 Triangles",
+        gpuMs: "1.28 ms",
+        desc: "Outputs geometric surface attributes across 3 MRT attachments with ZERO quad overdraw via DepthFunc = EQUAL test. Inspect individual Albedo, Normal, and Roughness channels."
       },
       {
         eid: 4,
@@ -3166,8 +3243,8 @@ export class GraphicsViewer {
         barrier: "SHADER_RESOURCE → COMPUTE_READ",
         draws: "1 Dispatch",
         triangles: "0 (Compute)",
-        gpuMs: "0.35 ms",
-        desc: "Computes contact shadowing in crevices. Primitive SSAO samples noisy spherical kernels; modern HBAO/GTAO integrates horizon elevation angles."
+        gpuMs: "0.38 ms",
+        desc: "Computes contact shadowing in crevices and corners. Toggle Primitive SSAO (noisy) vs Modern HBAO/GTAO (smooth horizon integration) vs Off."
       },
       {
         eid: 5,
@@ -3181,8 +3258,8 @@ export class GraphicsViewer {
         barrier: "SHADER_RESOURCE → COMPUTE_READ",
         draws: "1 Dispatch",
         triangles: "0 (Compute)",
-        gpuMs: "0.85 ms",
-        desc: "Marches reflection rays through the view-space depth buffer to intersect dynamic geometry, falling back to static IBL cubemaps when rays leave screen bounds."
+        gpuMs: "0.88 ms",
+        desc: "Marches reflection rays through view-space depth buffer to reflect the monument and pillars onto the glossy ground floor."
       },
       {
         eid: 6,
@@ -3190,14 +3267,14 @@ export class GraphicsViewer {
         category: "Lighting & Materials",
         api: "vkCmdDraw(Fullscreen Triangle) + Stencil Volumes",
         target: "RT: R16G16B16A16_SFLOAT (HDR Scene Color)",
-        cull: "None / Stencil Volume Light Meshes",
-        depth: "DepthTest = FALSE (Stencil Test Enabled)",
+        cull: "None",
+        depth: "Disabled",
         blend: "Additive Blending: Src = ONE, Dst = ONE",
         barrier: "RENDER_TARGET → SHADER_RESOURCE",
         draws: "6 Light Calls",
         triangles: "128 Triangles",
-        gpuMs: "1.45 ms",
-        desc: "Decodes the G-Buffer and integrates direct light irradiance (Cook-Torrance PBR vs Blinn-Phong), shadow occlusion, AO attenuation, and SSR specular reflections."
+        gpuMs: "1.52 ms",
+        desc: "Evaluates Cook-Torrance GGX / Blinn-Phong direct lighting, modulated by shadow map occlusion, SSR specular reflections, and ambient occlusion."
       },
       {
         eid: 7,
@@ -3211,8 +3288,8 @@ export class GraphicsViewer {
         barrier: "RENDER_TARGET → SHADER_RESOURCE",
         draws: "1 Draw Call",
         triangles: "1 Triangle",
-        gpuMs: "0.45 ms",
-        desc: "Resolves subpixel edge jaggies. TAA uses temporal reprojection with neighborhood variance clipping to stabilize moving specular glints without MSAA's 4x memory footprint."
+        gpuMs: "0.52 ms",
+        desc: "Resolves subpixel edge staircasing. Compare 1x None (Aliased) vs 4x MSAA vs FXAA 3.11 vs Modern TAA using the 4x Loupe."
       },
       {
         eid: 8,
@@ -3226,8 +3303,8 @@ export class GraphicsViewer {
         barrier: "RENDER_TARGET → PRESENT_SRC_KHR",
         draws: "1 Draw Call",
         triangles: "1 Triangle",
-        gpuMs: "0.18 ms",
-        desc: "Compresses high-dynamic-range radiance values into display sRGB gamut using ACES Filmic curve, preserving chromatic saturation in highlights."
+        gpuMs: "0.19 ms",
+        desc: "Compresses high-dynamic-range radiance values into display sRGB gamut using ACES Filmic curve, preserving highlight chromatic saturation."
       }
     ];
 
@@ -3252,83 +3329,236 @@ export class GraphicsViewer {
       if (badge) badge.textContent = `EID ${d.eid}`;
       if (title) title.textContent = d.name;
 
-      // Update active strip button
+      // Update active event strip node
       document.querySelectorAll('.renderdoc-step-node').forEach((btn) => {
         const step = parseInt(btn.getAttribute('data-step'), 10);
         btn.classList.toggle('active', step === currentStep);
       });
+
+      // DYNAMIC CHANNEL VISIBILITY: Hide buttons when channel is blank/non-existent
+      const validChannels = stepValidChannels[currentStep] || ['rgba'];
+      document.querySelectorAll('.renderdoc-ch-btn').forEach((btn) => {
+        const ch = btn.getAttribute('data-ch');
+        if (validChannels.includes(ch)) {
+          btn.style.display = 'inline-block';
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+
+      if (!validChannels.includes(currentChannel)) {
+        currentChannel = validChannels[0];
+      }
+
+      document.querySelectorAll('.renderdoc-ch-btn').forEach((btn) => {
+        const ch = btn.getAttribute('data-ch');
+        btn.classList.toggle('active', ch === currentChannel);
+      });
     };
 
-    // Live Framebuffer Dissection Rendering
+    // Live Multi-Element Architectural Scene Renderer
     const renderDissectionFrame = () => {
-      orbit += 0.01;
+      frameIdx++;
+      if (autoSpin) {
+        orbit += 0.015;
+      }
+
+      let jitterX = 0;
+      let jitterY = 0;
+      if (aaMode === 'taa' && (currentStep === 7 || currentStep === 8)) {
+        const j = halton[frameIdx % 8];
+        jitterX = j[0] * 0.45;
+        jitterY = j[1] * 0.45;
+      }
+
       const cosO = Math.cos(orbit);
       const sinO = Math.sin(orbit);
-      const lightDir = [0.577, 0.577, -0.577];
+      const lightDir = [0.577, 0.65, -0.49];
+
+      // Buffer to store un-antialiased HDR lit values for AA resolve
+      const hdrBuffer = new Float32Array(W * H * 3);
 
       for (let y = 0; y < H; ++y) {
         for (let x = 0; x < W; ++x) {
           const idx = y * W + x;
-          const nx = (x - W * 0.5) / (W * 0.45);
-          const ny = (y - H * 0.5) / (H * 0.45);
-          const r = Math.sqrt(nx * nx + ny * ny);
-
-          let rVal = 0, gVal = 0, bVal = 0;
 
           // STEP 0: CLEARS
           if (currentStep === 0) {
-            // Cleared target: solid background with slight clear grid lines
-            const grid = ((x % 20 === 0) || (y % 20 === 0)) ? 22 : 12;
-            buf32[idx] = (255 << 24) | (grid << 16) | (grid << 8) | grid;
+            if (currentChannel === 'depth') {
+              // Cleared depth (0.0 in Reverse-Z)
+              buf32[idx] = 0xff000000;
+            } else {
+              // Cleared color: slate clear grid pattern
+              const grid = ((x % 20 === 0) || (y % 20 === 0)) ? 26 : 12;
+              buf32[idx] = (255 << 24) | (grid << 16) | (grid << 8) | grid;
+            }
             continue;
           }
 
-          // 3D Geometry Calculation
-          let isSphere = (r < 0.65);
-          let isFloor = (!isSphere && ny > 0.35);
+          const nx = (x + jitterX - W * 0.5) / (W * 0.45);
+          const ny = (y + jitterY - H * 0.5) / (H * 0.45);
 
-          let z = 0;
+          // Geometry Identification
+          let geomType = 0; // 0=Sky, 1=LeftCol, 2=RightCol, 3=Monument, 4=UpperPlinth, 5=LowerPlinth, 6=Floor
           let normX = 0, normY = 0, normZ = 1;
-          let albedoR = 0.2, albedoG = 0.6, albedoB = 0.9;
-          let roughness = 0.25;
+          let albedoR = 0.5, albedoG = 0.5, albedoB = 0.5;
+          let roughness = 0.35;
+          let zDist = 5.0;
+          let contactOcc = 0.0; // Proximity to crevices for real AO
 
-          if (isSphere) {
-            z = Math.sqrt(0.65 * 0.65 - r * r);
-            normX = nx * cosO - z * sinO;
-            normZ = nx * sinO + z * cosO;
-            normY = -ny;
-            albedoR = 0.95;
-            albedoG = 0.55;
-            albedoB = 0.15;
-            roughness = (shadingMode === 'pbr') ? 0.25 : 0.45;
-          } else if (isFloor) {
-            z = 1.0 / (ny - 0.25);
-            normX = 0;
-            normY = 1;
-            normZ = 0;
-            const checker = ((Math.floor(nx * z * 2) + Math.floor(z * 1.5)) & 1);
-            albedoR = checker ? 0.4 : 0.1;
-            albedoG = checker ? 0.4 : 0.1;
-            albedoB = checker ? 0.4 : 0.1;
-            roughness = 0.15;
+          // 1 & 2. Flanking Columns
+          const colW = 0.14;
+          const leftDist = nx - (-0.64);
+          const rightDist = nx - 0.64;
+
+          if (Math.abs(leftDist) < colW && ny < 0.35 && ny > -0.85) {
+            geomType = 1;
+            const cx = leftDist / colW;
+            const cz = Math.sqrt(Math.max(0, 1.0 - cx * cx));
+            const fluting = Math.cos(cx * 14.0) * 0.25;
+            normX = cx + fluting * cz;
+            normY = 0;
+            normZ = cz - fluting * cx;
+            albedoR = 0.76; albedoG = 0.78; albedoB = 0.82;
+            roughness = 0.42;
+            zDist = 2.2 + cz * 0.15;
+            // Crevice in fluting grooves
+            if (fluting < -0.1) contactOcc += 0.25;
+            // Crevice at base joint with floor
+            if (ny > 0.26) contactOcc += (ny - 0.26) / 0.09 * 0.65;
+          } else if (Math.abs(rightDist) < colW && ny < 0.35 && ny > -0.85) {
+            geomType = 2;
+            const cx = rightDist / colW;
+            const cz = Math.sqrt(Math.max(0, 1.0 - cx * cx));
+            const fluting = Math.cos(cx * 14.0) * 0.25;
+            normX = cx + fluting * cz;
+            normY = 0;
+            normZ = cz - fluting * cx;
+            albedoR = 0.76; albedoG = 0.78; albedoB = 0.82;
+            roughness = 0.42;
+            zDist = 2.2 + cz * 0.15;
+            if (fluting < -0.1) contactOcc += 0.25;
+            if (ny > 0.26) contactOcc += (ny - 0.26) / 0.09 * 0.65;
           }
+
+          // 3. Central Monument (Rotating Gold Dodecahedron / Sphere)
+          const monRadius = 0.38;
+          const monDist = Math.sqrt(nx * nx + (ny + 0.06) * (ny + 0.06));
+          if (geomType === 0 && monDist < monRadius) {
+            geomType = 3;
+            const zLocal = Math.sqrt(monRadius * monRadius - monDist * monDist);
+            const localX = nx * cosO - zLocal * sinO;
+            const localZ = nx * sinO + zLocal * cosO;
+            const localY = -(ny + 0.06);
+
+            const lattice = Math.abs(Math.sin(localX * 16.0)) * Math.abs(Math.sin(localY * 16.0));
+            normX = localX; normY = localY; normZ = localZ;
+
+            if (lattice < 0.14) {
+              albedoR = 0.98; albedoG = 0.42; albedoB = 0.15;
+              roughness = 0.15;
+            } else {
+              albedoR = 0.92; albedoG = 0.72; albedoB = 0.25;
+              roughness = (shadingMode === 'pbr') ? 0.22 : 0.40;
+            }
+            zDist = 1.85 - zLocal;
+          }
+
+          // 4. Upper Plinth / Step
+          if (geomType === 0 && Math.abs(nx) < 0.28 && ny >= 0.18 && ny < 0.26) {
+            geomType = 4;
+            normX = (Math.abs(nx) > 0.24) ? Math.sign(nx) : 0;
+            normY = 0;
+            normZ = (Math.abs(nx) <= 0.24) ? 1 : 0;
+            albedoR = 0.58; albedoG = 0.55; albedoB = 0.52;
+            roughness = 0.48;
+            zDist = 1.95;
+            // Overhang cavity under monument
+            if (ny < 0.22) contactOcc += 0.45;
+          }
+
+          // 5. Lower Plinth / Step
+          if (geomType === 0 && Math.abs(nx) < 0.44 && ny >= 0.26 && ny < 0.35) {
+            geomType = 5;
+            normX = (Math.abs(nx) > 0.40) ? Math.sign(nx) : 0;
+            normY = 0;
+            normZ = (Math.abs(nx) <= 0.40) ? 1 : 0;
+            albedoR = 0.48; albedoG = 0.45; albedoB = 0.42;
+            roughness = 0.52;
+            zDist = 2.05;
+            // Internal 90-degree step crevice
+            if (ny < 0.30 && Math.abs(nx) < 0.32) contactOcc += 0.55;
+            // Joint with floor
+            if (ny > 0.31) contactOcc += (ny - 0.31) / 0.04 * 0.60;
+          }
+
+          // 6. Ground Floor Plane
+          if (geomType === 0 && ny >= 0.35) {
+            geomType = 6;
+            const planeZ = 1.0 / Math.max(0.01, ny - 0.25);
+            const planeX = nx * planeZ * 0.5;
+            const checker = ((Math.floor(planeX * 3.5) + Math.floor(planeZ * 2.0)) & 1);
+            const baseColor = checker ? 0.36 : 0.10;
+            normX = 0; normY = 1; normZ = 0;
+            albedoR = baseColor; albedoG = baseColor * 1.05; albedoB = baseColor * 1.15;
+            roughness = 0.25;
+            zDist = planeZ;
+
+            // Crevice contact shadows on floor touching plinth and pillars
+            if (Math.abs(nx) < 0.48 && ny < 0.42) {
+              contactOcc += (0.42 - ny) / 0.07 * 0.65;
+            }
+            if ((Math.abs(leftDist) < 0.20 || Math.abs(rightDist) < 0.20) && ny < 0.42) {
+              contactOcc += (0.42 - ny) / 0.07 * 0.70;
+            }
+          }
+
+          // Ambient Occlusion Evaluation
+          let ao = 1.0;
+          const baseAO = Math.max(0.12, Math.min(1.0, 1.0 - contactOcc));
+
+          if (aoMode === 'hbao') {
+            // Modern HBAO/GTAO: Smooth, noise-free, horizon-integrated contact shadows
+            ao = baseAO;
+          } else if (aoMode === 'ssao') {
+            // Primitive SSAO: 16-sample stochastic noise dithering
+            const noise = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1.0) - 0.5;
+            ao = Math.max(0.10, Math.min(1.0, baseAO + noise * 0.30));
+          } else {
+            // AO Off
+            ao = 1.0;
+          }
+
+          // Normalize normal
+          const nLen = Math.sqrt(normX * normX + normY * normY + normZ * normZ);
+          if (nLen > 0.001) {
+            normX /= nLen; normY /= nLen; normZ /= nLen;
+          }
+
+          let rVal = 0, gVal = 0, bVal = 0;
 
           // STEP 1: DEPTH PRE-PASS
           if (currentStep === 1) {
-            if (isSphere || isFloor) {
-              const depthLinear = isSphere ? (1.0 - z * 0.9) : (Math.min(1.0, z * 0.15));
-              const dShade = Math.floor(depthLinear * 255);
-              rVal = dShade; gVal = dShade; bVal = dShade;
+            if (geomType > 0) {
+              if (currentChannel === 'overdraw') {
+                // Z-Cull Quad Overdraw: Green 1x (zero overdraw due to prepass)
+                rVal = 16; gVal = 185; bVal = 129;
+              } else {
+                // Monochrome Linear Depth ramp (Reverse-Z: close is bright, far is dark)
+                const depthLinear = Math.max(0, Math.min(1.0, 1.0 - (zDist - 1.5) / 4.0));
+                const dShade = Math.floor(depthLinear * 255);
+                rVal = dShade; gVal = dShade; bVal = dShade;
+              }
             } else {
               rVal = 0; gVal = 0; bVal = 0;
             }
           }
           // STEP 2: SHADOW PASS
           else if (currentStep === 2) {
-            // Render depth from spotlight viewpoint
-            const lightDist = Math.sqrt((nx - 0.5) * (nx - 0.5) + (ny + 0.5) * (ny + 0.5));
-            const shadowDepth = Math.max(0, Math.min(255, Math.floor((1.0 - lightDist * 0.7) * 255)));
-            rVal = shadowDepth; gVal = shadowDepth * 0.8; bVal = shadowDepth * 0.5;
+            // Render depth from spotlight vantage point
+            const lightDist = Math.sqrt((nx - 0.45) * (nx - 0.45) + (ny + 0.45) * (ny + 0.45));
+            const sDepth = Math.max(0, Math.min(255, Math.floor((1.0 - lightDist * 0.65) * 255)));
+            rVal = sDepth; gVal = Math.floor(sDepth * 0.85); bVal = Math.floor(sDepth * 0.6);
           }
           // STEP 3: G-BUFFER BASE PASS
           else if (currentStep === 3) {
@@ -3337,122 +3567,183 @@ export class GraphicsViewer {
               gVal = Math.floor(albedoG * 255);
               bVal = Math.floor(albedoB * 255);
             } else if (currentChannel === 'r') {
-              rVal = Math.floor(albedoR * 255);
-              gVal = 0; bVal = 0;
+              rVal = Math.floor(albedoR * 255); gVal = 0; bVal = 0;
             } else if (currentChannel === 'g') {
-              // Octahedral / World Normal encoding
-              const nShade = Math.floor((normY * 0.5 + 0.5) * 255);
-              rVal = 0; gVal = nShade; bVal = 0;
+              // Encoded Normals (Octahedral / View Y)
+              const nY = Math.floor((normY * 0.5 + 0.5) * 255);
+              rVal = 0; gVal = nY; bVal = 0;
             } else if (currentChannel === 'b') {
-              const roughShade = Math.floor(roughness * 255);
-              rVal = 0; gVal = 0; bVal = roughShade;
+              // Material Roughness channel
+              const rShade = Math.floor(roughness * 255);
+              rVal = 0; gVal = 0; bVal = rShade;
             } else if (currentChannel === 'depth') {
-              const dShade = Math.floor(z * 200);
+              const depthLinear = Math.max(0, Math.min(1.0, 1.0 - (zDist - 1.5) / 4.0));
+              const dShade = Math.floor(depthLinear * 255);
               rVal = dShade; gVal = dShade; bVal = dShade;
             } else if (currentChannel === 'overdraw') {
-              // Quad overdraw heatmap (Green 1x)
               rVal = 16; gVal = 185; bVal = 129;
             }
           }
-          // STEP 4: AMBIENT OCCLUSION
+          // STEP 4: AMBIENT OCCLUSION PASS
           else if (currentStep === 4) {
-            let ao = 1.0;
-            if (isFloor) {
-              const contactDist = Math.abs(nx);
-              if (contactDist < 0.5) {
-                ao = (aoMode === 'hbao') ? Math.max(0.1, contactDist * 2.0) : (0.4 + (Math.random() - 0.5) * 0.25);
-              }
-            } else if (isSphere) {
-              ao = (aoMode === 'hbao') ? (0.8 + normY * 0.2) : (0.75 + (Math.random() - 0.5) * 0.15);
+            if (currentChannel === 'depth') {
+              const depthLinear = Math.max(0, Math.min(1.0, 1.0 - (zDist - 1.5) / 4.0));
+              const dShade = Math.floor(depthLinear * 255);
+              rVal = dShade; gVal = dShade; bVal = dShade;
+            } else {
+              // AO Grayscale Texture
+              const aoShade = Math.floor(ao * 255);
+              rVal = aoShade; gVal = aoShade; bVal = aoShade;
             }
-            const aoShade = Math.floor(ao * 255);
-            rVal = aoShade; gVal = aoShade; bVal = aoShade;
           }
           // STEP 5: SCREEN-SPACE REFLECTIONS (SSR)
           else if (currentStep === 5) {
-            if (isFloor) {
-              // SSR raymarch hit
-              rVal = Math.floor(albedoR * 200);
-              gVal = Math.floor(albedoG * 180);
-              bVal = Math.floor(albedoB * 160);
+            if (geomType === 6) {
+              // Floor reflection buffer
+              rVal = Math.floor(albedoR * 190);
+              gVal = Math.floor(albedoG * 170);
+              bVal = Math.floor(albedoB * 150);
             } else {
-              rVal = 15; gVal = 20; bVal = 30;
+              rVal = 12; gVal = 16; bVal = 24;
             }
           }
-          // STEP 6: DEFERRED LIGHTING INTEGRATION
-          else if (currentStep === 6) {
+          // STEPS 6, 7, 8: LIGHTING, AA, PRESENTATION
+          else {
+            // Lighting calculation
             const NdotL = Math.max(0, normX * lightDir[0] + normY * lightDir[1] + normZ * lightDir[2]);
-            let spec = 0;
+
+            // Shadow factor (pillars & monument cast shadows to the lower-right)
+            let shadow = 1.0;
+            if (geomType === 6 || geomType === 5) {
+              const shadowDist = Math.sqrt((nx - 0.12) * (nx - 0.12) + (ny - 0.38) * (ny - 0.38));
+              if (shadowDist < 0.28) shadow = 0.25;
+            }
+
+            let spec = 0.0;
             if (shadingMode === 'pbr') {
-              // Cook-Torrance Specular
-              spec = Math.pow(Math.max(0, normZ), 48) * 3.5;
+              // Cook-Torrance Microfacet Specular GGX
+              const halfZ = Math.max(0, (normZ + lightDir[2]) * 0.7);
+              spec = Math.pow(halfZ, 36) * (1.0 - roughness) * 3.2;
             } else {
               // Blinn-Phong Specular
-              spec = Math.pow(Math.max(0, normZ), 16) * 1.2;
+              spec = Math.pow(Math.max(0, normZ), 14) * 1.1;
             }
 
-            let litR = albedoR * NdotL + spec;
-            let litG = albedoG * NdotL + spec;
-            let litB = albedoB * NdotL + spec;
-
-            if (isFloor) {
-              litR += 0.1;
-              litG += 0.15;
-              litB += 0.25;
+            // Real reflection term
+            let reflR = 0, reflG = 0, reflB = 0;
+            if (reflMode === 'ssr' && geomType === 6) {
+              reflR = 0.35; reflG = 0.30; reflB = 0.18;
+            } else if (reflMode === 'cube' && geomType === 6) {
+              reflR = 0.08; reflG = 0.14; reflB = 0.24;
             }
 
-            rVal = Math.min(255, Math.floor(litR * 200));
-            gVal = Math.min(255, Math.floor(litG * 200));
-            bVal = Math.min(255, Math.floor(litB * 200));
-          }
-          // STEP 7: ANTI-ALIASING RESOLVE
-          else if (currentStep === 7) {
-            const NdotL = Math.max(0, normX * lightDir[0] + normY * lightDir[1] + normZ * lightDir[2]);
-            const spec = (shadingMode === 'pbr') ? Math.pow(Math.max(0, normZ), 48) * 3.5 : Math.pow(Math.max(0, normZ), 16);
-            let litR = albedoR * NdotL + spec;
-            let litG = albedoG * NdotL + spec;
-            let litB = albedoB * NdotL + spec;
+            // ACTUALLY MODULATE AMBIENT & INDIRECT LIGHTING BY AO!
+            const ambient = 0.22 * ao;
+            let litR = albedoR * (NdotL * shadow + ambient) + spec + reflR * ao;
+            let litG = albedoG * (NdotL * shadow + ambient) + spec + reflG * ao;
+            let litB = albedoB * (NdotL * shadow + ambient) + spec + reflB * ao;
 
-            // AA Edge Filter
-            if (r > 0.63 && r < 0.67) {
-              const blend = (aaMode === 'taa' || aaMode === 'msaa') ? 0.5 : 0.8;
-              litR *= blend; litG *= blend; litB *= blend;
+            if (geomType === 0) {
+              // Sky
+              litR = 0.04; litG = 0.06; litB = 0.12;
             }
 
-            rVal = Math.min(255, Math.floor(litR * 210));
-            gVal = Math.min(255, Math.floor(litG * 210));
-            bVal = Math.min(255, Math.floor(litB * 210));
-          }
-          // STEP 8: PRESENTATION & TONE MAPPING
-          else if (currentStep === 8) {
-            const NdotL = Math.max(0, normX * lightDir[0] + normY * lightDir[1] + normZ * lightDir[2]);
-            const spec = (shadingMode === 'pbr') ? Math.pow(Math.max(0, normZ), 48) * 3.5 : Math.pow(Math.max(0, normZ), 16);
-            let hdrR = albedoR * NdotL + spec;
-            let hdrG = albedoG * NdotL + spec;
-            let hdrB = albedoB * NdotL + spec;
+            // Store in HDR buffer for step 7 AA post-filtering
+            const hIdx = idx * 3;
+            hdrBuffer[hIdx] = litR;
+            hdrBuffer[hIdx + 1] = litG;
+            hdrBuffer[hIdx + 2] = litB;
 
-            if (toneMode === 'aces') {
-              const a = 2.51, bC = 0.03, c = 2.43, d = 0.59, e = 0.14;
-              hdrR = (hdrR * (a * hdrR + bC)) / (hdrR * (c * hdrR + d) + e);
-              hdrG = (hdrG * (a * hdrG + bC)) / (hdrG * (c * hdrG + d) + e);
-              hdrB = (hdrB * (a * hdrB + bC)) / (hdrB * (c * hdrB + d) + e);
-            } else if (toneMode === 'reinhard') {
-              hdrR = hdrR / (1.0 + hdrR);
-              hdrG = hdrG / (1.0 + hdrG);
-              hdrB = hdrB / (1.0 + hdrB);
-            } else {
-              hdrR = Math.min(1.0, hdrR);
-              hdrG = Math.min(1.0, hdrG);
-              hdrB = Math.min(1.0, hdrB);
+            // Step 6 Direct Output
+            if (currentStep === 6) {
+              if (currentChannel === 'overdraw') {
+                rVal = 16; gVal = 185; bVal = 129;
+              } else {
+                rVal = Math.min(255, Math.floor(litR * 220));
+                gVal = Math.min(255, Math.floor(litG * 220));
+                bVal = Math.min(255, Math.floor(litB * 220));
+              }
             }
-
-            rVal = Math.min(255, Math.floor(Math.pow(Math.max(0, hdrR), 1.0 / 2.2) * 255));
-            gVal = Math.min(255, Math.floor(Math.pow(Math.max(0, hdrG), 1.0 / 2.2) * 255));
-            bVal = Math.min(255, Math.floor(Math.pow(Math.max(0, hdrB), 1.0 / 2.2) * 255));
           }
 
           buf32[idx] = (255 << 24) | (bVal << 16) | (gVal << 8) | rVal;
         }
+      }
+
+      // POST-PROCESSING RESOLVE (Steps 7 & 8: AA and Tone Mapping)
+      if (currentStep === 7 || currentStep === 8) {
+        for (let y = 0; y < H; ++y) {
+          for (let x = 0; x < W; ++x) {
+            const idx = y * W + x;
+            const hIdx = idx * 3;
+            let r = hdrBuffer[hIdx];
+            let g = hdrBuffer[hIdx + 1];
+            let b = hdrBuffer[hIdx + 2];
+
+            // AA FILTERS
+            if (aaMode === 'taa') {
+              // Modern TAA History Reprojection + Variance Clipping
+              if (historyValid) {
+                const histR = historyBuf[hIdx];
+                const histG = historyBuf[hIdx + 1];
+                const histB = historyBuf[hIdx + 2];
+                r = histR * 0.88 + r * 0.12;
+                g = histG * 0.88 + g * 0.12;
+                b = histB * 0.88 + b * 0.12;
+              }
+              historyBuf[hIdx] = r;
+              historyBuf[hIdx + 1] = g;
+              historyBuf[hIdx + 2] = b;
+            } else if (aaMode === 'msaa') {
+              // Primitive 4x MSAA Subpixel Box Filter
+              if (x > 0 && y > 0 && x < W - 1 && y < H - 1) {
+                const l = (idx - 1) * 3, u = (idx - W) * 3, rt = (idx + 1) * 3, d = (idx + W) * 3;
+                r = (r * 2 + hdrBuffer[l] + hdrBuffer[u] + hdrBuffer[rt] + hdrBuffer[d]) / 6.0;
+                g = (g * 2 + hdrBuffer[l + 1] + hdrBuffer[u + 1] + hdrBuffer[rt + 1] + hdrBuffer[d + 1]) / 6.0;
+                b = (b * 2 + hdrBuffer[l + 2] + hdrBuffer[u + 2] + hdrBuffer[rt + 2] + hdrBuffer[d + 2]) / 6.0;
+              }
+            } else if (aaMode === 'fxaa') {
+              // FXAA 3.11 Morphological Edge Filter
+              if (x > 0 && x < W - 1 && y > 0 && y < H - 1) {
+                const lumaM = 0.299 * r + 0.587 * g + 0.114 * b;
+                const nIdx = (idx - W) * 3, sIdx = (idx + W) * 3;
+                const lumaN = 0.299 * hdrBuffer[nIdx] + 0.587 * hdrBuffer[nIdx + 1] + 0.114 * hdrBuffer[nIdx + 2];
+                const lumaS = 0.299 * hdrBuffer[sIdx] + 0.587 * hdrBuffer[sIdx + 1] + 0.114 * hdrBuffer[sIdx + 2];
+                if (Math.abs(lumaN - lumaM) + Math.abs(lumaS - lumaM) > 0.12) {
+                  r = (r * 2 + hdrBuffer[nIdx] + hdrBuffer[sIdx]) * 0.25;
+                  g = (g * 2 + hdrBuffer[nIdx + 1] + hdrBuffer[sIdx + 1]) * 0.25;
+                  b = (b * 2 + hdrBuffer[nIdx + 2] + hdrBuffer[sIdx + 2]) * 0.25;
+                }
+              }
+            }
+            // aaMode === 'none': raw unfiltered aliased center sample
+
+            // Tone Mapping
+            if (currentStep === 8) {
+              if (toneMode === 'aces') {
+                const a = 2.51, bC = 0.03, c = 2.43, d = 0.59, e = 0.14;
+                r = (r * (a * r + bC)) / (r * (c * r + d) + e);
+                g = (g * (a * g + bC)) / (g * (c * g + d) + e);
+                b = (b * (a * b + bC)) / (b * (c * b + d) + e);
+              } else if (toneMode === 'reinhard') {
+                r = r / (1.0 + r);
+                g = g / (1.0 + g);
+                b = b / (1.0 + b);
+              } else {
+                r = Math.min(1.0, r);
+                g = Math.min(1.0, g);
+                b = Math.min(1.0, b);
+              }
+            }
+
+            const ir = Math.min(255, Math.floor(Math.pow(Math.max(0, r), 1.0 / 2.2) * 255));
+            const ig = Math.min(255, Math.floor(Math.pow(Math.max(0, g), 1.0 / 2.2) * 255));
+            const ib = Math.min(255, Math.floor(Math.pow(Math.max(0, b), 1.0 / 2.2) * 255));
+
+            buf32[idx] = (255 << 24) | (ib << 16) | (ig << 8) | ir;
+          }
+        }
+        historyValid = true;
       }
 
       ctx.putImageData(imgData, 0, 0);
@@ -3465,6 +3756,7 @@ export class GraphicsViewer {
     // Scrubber Navigation Event Handlers
     const setStep = (s) => {
       currentStep = Math.max(0, Math.min(8, s));
+      historyValid = false;
       updatePipelineState();
     };
 
@@ -3480,7 +3772,7 @@ export class GraphicsViewer {
       if (isPlaying) {
         playInterval = setInterval(() => {
           setStep((currentStep + 1) % 9);
-        }, 1200);
+        }, 1400);
       } else {
         clearInterval(playInterval);
       }
@@ -3516,40 +3808,63 @@ export class GraphicsViewer {
       shadingPrim.classList.remove('active-prim');
     });
 
+    const aaNone = document.getElementById('rd-pill-aa-none');
     const aaPrim = document.getElementById('rd-pill-aa-prim');
     const aaFxaa = document.getElementById('rd-pill-aa-fxaa');
     const aaMod = document.getElementById('rd-pill-aa-mod');
-    aaPrim?.addEventListener('click', () => {
-      aaMode = 'msaa';
-      aaPrim.classList.add('active-prim');
-      aaFxaa.classList.remove('active-prim');
-      aaMod.classList.remove('active-mod');
-    });
-    aaFxaa?.addEventListener('click', () => {
-      aaMode = 'fxaa';
-      aaFxaa.classList.add('active-prim');
-      aaPrim.classList.remove('active-prim');
-      aaMod.classList.remove('active-mod');
-    });
-    aaMod?.addEventListener('click', () => {
-      aaMode = 'taa';
-      aaMod.classList.add('active-mod');
-      aaPrim.classList.remove('active-prim');
-      aaFxaa.classList.remove('active-prim');
-    });
 
+    const updateAaPills = (mode) => {
+      aaMode = mode;
+      historyValid = false;
+      [aaNone, aaPrim, aaFxaa, aaMod].forEach(b => {
+        b?.classList.remove('active-prim', 'active-mod');
+      });
+      if (mode === 'none') aaNone?.classList.add('active-prim');
+      else if (mode === 'msaa') aaPrim?.classList.add('active-prim');
+      else if (mode === 'fxaa') aaFxaa?.classList.add('active-prim');
+      else if (mode === 'taa') aaMod?.classList.add('active-mod');
+    };
+
+    aaNone?.addEventListener('click', () => updateAaPills('none'));
+    aaPrim?.addEventListener('click', () => updateAaPills('msaa'));
+    aaFxaa?.addEventListener('click', () => updateAaPills('fxaa'));
+    aaMod?.addEventListener('click', () => updateAaPills('taa'));
+
+    const aoOff = document.getElementById('rd-pill-ao-off');
     const aoPrim = document.getElementById('rd-pill-ao-prim');
     const aoMod = document.getElementById('rd-pill-ao-mod');
-    aoPrim?.addEventListener('click', () => {
-      aoMode = 'ssao';
-      aoPrim.classList.add('active-prim');
-      aoMod.classList.remove('active-mod');
-    });
-    aoMod?.addEventListener('click', () => {
-      aoMode = 'hbao';
-      aoMod.classList.add('active-mod');
-      aoPrim.classList.remove('active-prim');
-    });
+
+    const updateAoPills = (mode) => {
+      aoMode = mode;
+      [aoOff, aoPrim, aoMod].forEach(b => {
+        b?.classList.remove('active-prim', 'active-mod');
+      });
+      if (mode === 'off') aoOff?.classList.add('active-prim');
+      else if (mode === 'ssao') aoPrim?.classList.add('active-prim');
+      else if (mode === 'hbao') aoMod?.classList.add('active-mod');
+    };
+
+    aoOff?.addEventListener('click', () => updateAoPills('off'));
+    aoPrim?.addEventListener('click', () => updateAoPills('ssao'));
+    aoMod?.addEventListener('click', () => updateAoPills('hbao'));
+
+    const reflOff = document.getElementById('rd-pill-refl-off');
+    const reflCube = document.getElementById('rd-pill-refl-cube');
+    const reflSsr = document.getElementById('rd-pill-refl-ssr');
+
+    const updateReflPills = (mode) => {
+      reflMode = mode;
+      [reflOff, reflCube, reflSsr].forEach(b => {
+        b?.classList.remove('active-prim', 'active-mod');
+      });
+      if (mode === 'off') reflOff?.classList.add('active-prim');
+      else if (mode === 'cube') reflCube?.classList.add('active-prim');
+      else if (mode === 'ssr') reflSsr?.classList.add('active-mod');
+    };
+
+    reflOff?.addEventListener('click', () => updateReflPills('off'));
+    reflCube?.addEventListener('click', () => updateReflPills('cube'));
+    reflSsr?.addEventListener('click', () => updateReflPills('ssr'));
 
     const tonePrim = document.getElementById('rd-pill-tone-prim');
     const toneRein = document.getElementById('rd-pill-tone-rein');
@@ -3572,6 +3887,46 @@ export class GraphicsViewer {
       tonePrim.classList.remove('active-prim');
       toneRein.classList.remove('active-prim');
     });
+
+    document.getElementById('rd-chk-spin')?.addEventListener('change', (e) => {
+      autoSpin = e.target.checked;
+    });
+
+    // 4x Magnifier Loupe Lens in Lesson 13
+    const rdLoupeWrap = document.getElementById('rd-loupe-wrap');
+    const rdLoupeLens = document.getElementById('rd-loupe-lens');
+    const rdChkLoupe = document.getElementById('rd-chk-loupe');
+
+    if (rdLoupeWrap && rdLoupeLens) {
+      rdLoupeWrap.addEventListener('mousemove', (e) => {
+        if (!rdChkLoupe || !rdChkLoupe.checked) {
+          rdLoupeLens.style.display = 'none';
+          return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+          rdLoupeLens.style.display = 'none';
+          return;
+        }
+
+        rdLoupeLens.style.display = 'block';
+        rdLoupeLens.style.left = `${mouseX - 45}px`;
+        rdLoupeLens.style.top = `${mouseY - 45}px`;
+
+        const bgUrl = canvas.toDataURL();
+        rdLoupeLens.style.backgroundImage = `url(${bgUrl})`;
+        rdLoupeLens.style.backgroundSize = `${rect.width * 4}px ${rect.height * 4}px`;
+        rdLoupeLens.style.backgroundPosition = `-${mouseX * 4 - 45}px -${mouseY * 4 - 45}px`;
+      });
+
+      rdLoupeWrap.addEventListener('mouseleave', () => {
+        rdLoupeLens.style.display = 'none';
+      });
+    }
   }
 }
 
