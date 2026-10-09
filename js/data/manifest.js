@@ -1286,7 +1286,7 @@ export const GRAPHICS_CURRICULUM = [
   {
     part: 3,
     partTitle: 'Part 3: Advanced Pipelines & GPU Profiling',
-    partDesc: 'Visibility buffers, floating-point Reverse-Z, motion vector pre-passes, quad helper lane overdraw, and profiling with NVIDIA Nsight, RenderDoc, and AMD RGP.',
+    partDesc: 'Visibility buffers, floating-point Reverse-Z, motion vector pre-passes, quad helper lane overdraw, TAA/SSR post-processing, and complete step-by-step frame capture dissection with RenderDoc & Nsight.',
     badge: 'Pipelines & Profiling',
     modules: [
       {
@@ -1310,6 +1310,28 @@ export const GRAPHICS_CURRICULUM = [
           { name: '11_quad_overdraw_simulator.cpp', path: 'graphicslab/11_gpu_debugging_and_profiling/11_quad_overdraw_simulator.cpp', lang: 'cpp' }
         ],
         tags: ['Nsight', 'RenderDoc', 'RGP', 'Quad Overdraw', 'Wavefronts', 'Profiling', 'Early-Z']
+      },
+      {
+        id: '12_antialiasing_reflections_and_postprocessing',
+        num: '12',
+        title: 'Anti-Aliasing (MSAA, FXAA, TAA), SSR & Post-Processing',
+        desc: 'Geometric vs Temporal Anti-Aliasing (MSAA vs FXAA vs TAA with Halton jitter & YCoCg variance clipping); Screen-Space Reflections (SSR) with 2.5D DDA raymarching; HBAO/GTAO; ACES Filmic tone mapping.',
+        mdPath: 'graphicslab/12_antialiasing_reflections_and_postprocessing/12_antialiasing_reflections_and_postprocessing.md',
+        codeFiles: [
+          { name: '12_antialiasing_and_postprocessing.glsl', path: 'graphicslab/12_antialiasing_reflections_and_postprocessing/12_antialiasing_and_postprocessing.glsl', lang: 'c' }
+        ],
+        tags: ['Anti-Aliasing', 'TAA', 'MSAA', 'FXAA', 'SSR', 'HBAO', 'ACES Filmic', 'Tone Mapping', 'Variance Clipping']
+      },
+      {
+        id: '13_renderdoc_frame_dissection_viewer',
+        num: '13',
+        title: 'RenderDoc & Nsight Frame Dissection: Step-by-Step Anatomy',
+        desc: 'Comprehensive frame capture dissection from clears and early depth pre-pass to shadow maps, G-buffer, SSAO/HBAO, SSR, deferred lighting, AA, and tone mapping; pipeline state inspection and primitive vs modern paradigm comparison.',
+        mdPath: 'graphicslab/13_renderdoc_frame_dissection_viewer/13_renderdoc_frame_dissection_viewer.md',
+        codeFiles: [
+          { name: '13_frame_debugger_simulation.cpp', path: 'graphicslab/13_renderdoc_frame_dissection_viewer/13_frame_debugger_simulation.cpp', lang: 'cpp' }
+        ],
+        tags: ['RenderDoc', 'Nsight', 'Frame Capture', 'Pipeline State', 'Barriers', 'G-Buffer', 'Event Scrubbing', 'Modern vs Primitive']
       }
     ]
   }

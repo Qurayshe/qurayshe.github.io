@@ -15,7 +15,7 @@
 static site on github pages containing code examples and interactive demos
 
 - **cprog1**: 33x systems c99->c11->cpp20->cpp26 (basicish sys arch, CPL/C-style vs Google vs ISO '26)
-- **graphicslab**: 11x computer graphics (CPU framebuffers, rasterization, Z-buffer, raytracer, Vulkan/WebGPU, PBR, Visibility Buffers, Nsight/RenderDoc profiling)
+- **graphicslab**: 13x computer graphics (CPU framebuffers, rasterization, Z-buffer, raytracer, Vulkan/WebGPU, PBR, Visibility Buffers, Nsight/RenderDoc profiling, TAA/SSR, frame dissection viewer)
 - **qutest2**: 11x threejs animations (frontendslop)
 - **rustserver**: 6x rust+golang servers (backend stuff)
 - **ailab**: 16x machine learning & ai fundamentals (math -> perceptrons -> transformers -> sota)
@@ -50,6 +50,8 @@ runs in browser w/o build
 | **9. pbr, diffuse & brdf** | Full Radiometry, Rendering Equation, Lambert vs Oren-Nayar rough diffuse, Classical Phong vs Blinn-Phong specular, Cook-Torrance GGX microfacet BRDF & IBL in GLSL & WGSL | `09_shading_comparison_models.glsl`<br/>`09_pbr_shader.glsl`<br/>`09_pbr_shader.wgsl` |
 | **10. visibility buffers & modern pipelines** | 64-bit Visibility Buffer (InstanceID + PrimitiveID), software attribute pulling, Reverse-Z depth precision, partial alpha-tested pre-pass, motion vectors | `10_visibility_buffer_shader.glsl` |
 | **11. gpu debugging & profiling** | 2x2 quad overdraw heatmaps, helper lane waste, NVIDIA Nsight Graphics SOL & GPU trace, RenderDoc G-buffer inspection, AMD RGP wavefront occupancy | `11_quad_overdraw_simulator.cpp` |
+| **12. antialiasing, ssr & post-processing** | MSAA 4x vs FXAA 3.11 vs Modern TAA (Halton 2,3 jitter & YCoCg variance clipping), Screen-Space Reflections (SSR) with 2.5D DDA raymarching, HBAO/GTAO, ACES Filmic tonemapping | `12_antialiasing_and_postprocessing.glsl` |
+| **13. renderdoc & nsight frame dissection** | Complete 9-event frame capture dissection (Clears, Early Depth, Shadows, G-Buffer, AO, SSR, Deferred Lighting, AA, Presentation), live channel inspection, pipeline state reflection & primitive vs modern paradigm toggles | `13_frame_debugger_simulation.cpp` |
 
 ### 3. 3d web motion & graphics (`qutest2`)
 
