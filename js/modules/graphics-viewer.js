@@ -2703,10 +2703,16 @@ export class GraphicsViewer {
       none: '<strong>1x None (Aliased):</strong> Single-sample point rasterization. Severe staircase aliasing along geometric edges and high-frequency specular fireflies when moving. <em>VRAM: 0 MB Overhead | Cost: 0.00 ms</em>'
     };
 
+    const reflDescriptions = {
+      ssr: '<br/><span style="color:#38bdf8;"><strong>Screen-Space Reflections (SSR):</strong> Marches depth rays to reflect the <em>dynamic rotating sphere</em> directly onto the floor in real-time. Notice how the sphere\'s wireframe lattice and specular highlight mirror onto the glossy checkerboard!</span>',
+      cube: '<br/><span style="color:#f59e0b;"><strong>Primitive Cubemap:</strong> Distant environment probe. Reflects the sky, horizon, and bright sun glint, but <em>completely omits the dynamic sphere</em> because pre-baked cubemaps lack local geometric depth and dynamic entity passes. This limitation led directly to SSR!</span>',
+      none: '<br/><span style="color:#94a3b8;"><strong>Reflections Off:</strong> Pure diffuse matte checkerboard ground plane with zero specular reflection.</span>'
+    };
+
     const updateStats = () => {
       const box = document.getElementById('aa-stats-box');
       if (box) {
-        box.innerHTML = statsDescriptions[aaMode] || '';
+        box.innerHTML = (statsDescriptions[aaMode] || '') + (reflDescriptions[reflMode] || '');
       }
     };
     updateStats();
@@ -2734,8 +2740,11 @@ export class GraphicsViewer {
       const sinA = Math.sin(orbitAngle);
       const lightDir = [0.577, 0.577, -0.577];
 
-      // Horizon pixel row where ground plane begins
-      const horizonY = 118;
+      // Sphere geometry parameters (centered slightly above the middle of screen)
+      const sphereCenterY = -0.12; // in ny coordinates
+      const sphereRadius = 0.44;   // bottom of sphere is at ny = 0.32
+      const horizonNy = 0.16;       // floor horizon in background
+      const contactY = 116;         // pixel row where floor meets the bottom of the sphere
 
       // Pass 1: Render upper scene (Sphere and Sky) and ground floor
       for (let y = 0; y < H; ++y) {
@@ -2744,59 +2753,19 @@ export class GraphicsViewer {
           const nx = (x + jitterX - W * 0.5) / (W * 0.45);
           const ny = (y + jitterY - H * 0.5) / (H * 0.45);
 
-          const r = Math.sqrt(nx * nx + ny * ny);
+          // Check Sphere Hit: SPHERE IS CLOSER TO CAMERA THAN THE FLOOR BEHIND IT!
+          const dySphere = ny - sphereCenterY;
+          const distSqSphere = nx * nx + dySphere * dySphere;
+          const isSphere = distSqSphere < (sphereRadius * sphereRadius);
+
           let rOut = 0, gOut = 0, bOut = 0;
 
-          if (y >= horizonY) {
-            // Ground Floor Plane
-            const planeZ = 1.0 / Math.max(0.01, (y - horizonY + 12) / 45);
-            const planeX = nx * planeZ * 0.65;
-            const checker = ((Math.floor(planeX * 3.5) + Math.floor(planeZ * 2.2)) & 1);
-            const baseColor = checker ? 0.38 : 0.09;
-
-            let reflColorR = 0, reflColorG = 0, reflColorB = 0;
-
-            if (reflMode === 'ssr') {
-              // Screen-Space Planar Reflection: Mirror vertically across the horizon
-              const deltaY = y - horizonY;
-              const refl_py = horizonY - Math.round(deltaY * 0.95);
-
-              if (refl_py >= 0 && refl_py < horizonY) {
-                const sampleIdx = (refl_py * W + x) * 3;
-                reflColorR = currentHDR[sampleIdx];
-                reflColorG = currentHDR[sampleIdx + 1];
-                reflColorB = currentHDR[sampleIdx + 2];
-
-                // Screen-edge vignette fade near the top border
-                const edgeFade = Math.min(1.0, Math.max(0.0, refl_py / (H * 0.15)));
-                reflColorR *= edgeFade;
-                reflColorG *= edgeFade;
-                reflColorB *= edgeFade;
-              } else {
-                // Ray escaped screen: Sky fallback
-                reflColorR = 0.05; reflColorG = 0.09; reflColorB = 0.18;
-              }
-            } else if (reflMode === 'cube') {
-              // Static Cubemap Fallback: Sky gradient reflection (ignores dynamic sphere)
-              const reflNorm = (y - horizonY) / (H - horizonY);
-              reflColorR = 0.06 + reflNorm * 0.05;
-              reflColorG = 0.12 + reflNorm * 0.10;
-              reflColorB = 0.28 + reflNorm * 0.18;
-            }
-
-            // Fresnel reflectance: high reflectivity near grazing horizon, subtle looking down
-            const cosTheta = Math.max(0.08, Math.min(1.0, (y - horizonY) / (H * 0.38)));
-            const fresnel = (reflMode === 'none') ? 0.0 : (0.18 + 0.82 * Math.pow(1.0 - cosTheta, 3));
-
-            rOut = baseColor * (1.0 - fresnel * 0.7) + reflColorR * fresnel;
-            gOut = baseColor * (1.0 - fresnel * 0.7) + reflColorG * fresnel;
-            bOut = baseColor * (1.0 - fresnel * 0.7) + reflColorB * fresnel;
-          } else if (r < 0.65) {
-            // Rotating Polyhedron Geometry
-            const z = Math.sqrt(Math.max(0, 0.65 * 0.65 - r * r));
+          if (isSphere) {
+            // Sphere is in front of the floor!
+            const z = Math.sqrt(sphereRadius * sphereRadius - distSqSphere);
             const localX = nx * cosA - z * sinA;
             const localZ = nx * sinA + z * cosA;
-            const localY = -ny;
+            const localY = -dySphere;
 
             // High frequency wireframe lattice pattern
             const lattice = Math.abs(Math.sin(localX * 18)) * Math.abs(Math.sin(localY * 18));
@@ -2815,11 +2784,68 @@ export class GraphicsViewer {
               gOut = 0.58 * NdotL + spec * 0.85;
               bOut = 0.98 * NdotL + spec * 0.85;
             }
+          } else if (ny >= horizonNy) {
+            // Ground Floor Plane (extends behind and under the sphere)
+            const planeZ = 1.0 / Math.max(0.01, ny - (horizonNy - 0.05));
+            const planeX = nx * planeZ * 0.65;
+            const checker = ((Math.floor(planeX * 3.5) + Math.floor(planeZ * 2.2)) & 1);
+            let baseColor = checker ? 0.38 : 0.09;
+
+            // Ambient contact shadow directly beneath the sphere to ground it in 3D
+            const shadowDist = Math.sqrt(nx * nx + (ny - 0.32) * (ny - 0.32));
+            if (shadowDist < 0.35) {
+              const occ = (1.0 - shadowDist / 0.35) * 0.65;
+              baseColor *= (1.0 - occ);
+            }
+
+            let reflColorR = 0, reflColorG = 0, reflColorB = 0;
+
+            if (reflMode === 'ssr') {
+              // Screen-Space Planar Reflection: Mirror vertically across the contact line
+              const deltaY = y - contactY;
+              const refl_py = contactY - Math.round(deltaY * 0.92);
+
+              if (refl_py >= 0 && refl_py < contactY) {
+                const sampleIdx = (refl_py * W + x) * 3;
+                reflColorR = currentHDR[sampleIdx];
+                reflColorG = currentHDR[sampleIdx + 1];
+                reflColorB = currentHDR[sampleIdx + 2];
+
+                // Screen-edge vignette fade near the top border
+                const edgeFade = Math.min(1.0, Math.max(0.0, refl_py / (H * 0.15)));
+                reflColorR *= edgeFade;
+                reflColorG *= edgeFade;
+                reflColorB *= edgeFade;
+              } else {
+                // Ray hit sky in screen space
+                reflColorR = 0.08; reflColorG = 0.16; reflColorB = 0.32;
+              }
+            } else if (reflMode === 'cube') {
+              // Distant Environment Cubemap:
+              // Reflects sky gradient, horizon glow, and directional sun glint.
+              // Crucially: DOES NOT reflect the dynamic sphere (cubemap lacks local depth & entity passes)!
+              const reflAngle = (ny - horizonNy);
+              const sunAlign = Math.max(0, 1.0 - Math.abs(nx - 0.35) * 4.0 - Math.abs(ny - 0.45) * 5.0);
+              const sunGlint = Math.pow(sunAlign, 16) * 1.5;
+
+              reflColorR = 0.10 + reflAngle * 0.08 + sunGlint;
+              reflColorG = 0.22 + reflAngle * 0.12 + sunGlint * 0.9;
+              reflColorB = 0.45 + reflAngle * 0.15 + sunGlint * 0.6;
+            }
+
+            // Fresnel reflectance: high reflectivity near grazing horizon, subtle looking down
+            const cosTheta = Math.max(0.08, Math.min(1.0, (ny - horizonNy) / 0.8));
+            const fresnel = (reflMode === 'none') ? 0.0 : (0.22 + 0.78 * Math.pow(1.0 - cosTheta, 3));
+
+            rOut = baseColor * (1.0 - fresnel * 0.7) + reflColorR * fresnel;
+            gOut = baseColor * (1.0 - fresnel * 0.7) + reflColorG * fresnel;
+            bOut = baseColor * (1.0 - fresnel * 0.7) + reflColorB * fresnel;
           } else {
-            // Sky gradient
-            rOut = 0.03 + Math.max(0, ny) * 0.05;
-            gOut = 0.05 + Math.max(0, ny) * 0.08;
-            bOut = 0.12 + Math.max(0, ny) * 0.15;
+            // Sky background (above horizon)
+            const skyT = Math.max(0, 1.0 - (ny + 0.5));
+            rOut = 0.04 + skyT * 0.04;
+            gOut = 0.08 + skyT * 0.08;
+            bOut = 0.18 + skyT * 0.16;
           }
 
           currentHDR[idx] = Math.max(0, rOut);
@@ -2930,6 +2956,7 @@ export class GraphicsViewer {
       ['aa-refl-ssr', 'aa-refl-cube', 'aa-refl-none'].forEach((id) => {
         document.getElementById(id)?.classList.toggle('active', id === `aa-refl-${r}`);
       });
+      updateStats();
     };
     document.getElementById('aa-refl-ssr')?.addEventListener('click', () => setRefl('ssr'));
     document.getElementById('aa-refl-cube')?.addEventListener('click', () => setRefl('cube'));
