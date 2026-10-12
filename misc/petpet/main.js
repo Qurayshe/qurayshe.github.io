@@ -953,30 +953,42 @@ const g = { ...DEFAULTS };
       });
     }
 
-    // THEME TOGGLE
+    // Title badge spring wobble click
+    const $titleBadge = $("#titleBadge");
+    if ($titleBadge) {
+      $titleBadge.addEventListener("click", () => {
+        $titleBadge.classList.remove("is-wobbling");
+        void $titleBadge.offsetWidth;
+        $titleBadge.classList.add("is-wobbling");
+      });
+    }
+
+    // THEME TOGGLE (if present)
     const $themeBtn = $("#themeToggle");
-    const getStoredTheme = () => {
-      return localStorage.getItem("petpet_theme") || "dark";
-    };
+    if ($themeBtn) {
+      const getStoredTheme = () => {
+        return localStorage.getItem("petpet_theme") || "dark";
+      };
 
-    const setTheme = (theme) => {
-      document.documentElement.setAttribute("data-theme", theme);
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-        $themeBtn.innerText = "🌚";
-      } else {
-        document.documentElement.classList.remove("dark");
-        $themeBtn.innerText = "🌝";
-      }
-      localStorage.setItem("petpet_theme", theme);
-    };
+      const setTheme = (theme) => {
+        document.documentElement.setAttribute("data-theme", theme);
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+          $themeBtn.innerText = "🌚";
+        } else {
+          document.documentElement.classList.remove("dark");
+          $themeBtn.innerText = "🌝";
+        }
+        localStorage.setItem("petpet_theme", theme);
+      };
 
-    setTheme(getStoredTheme());
+      setTheme(getStoredTheme());
 
-    $themeBtn.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme");
-      setTheme(current === "dark" ? "light" : "dark");
-    });
+      $themeBtn.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme");
+        setTheme(current === "dark" ? "light" : "dark");
+      });
+    }
 
     // Start playback once loaded
     window.addEventListener("load", () => {

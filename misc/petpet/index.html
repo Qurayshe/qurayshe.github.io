@@ -1,254 +1,302 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="petpet gif generator with custom hand & squish controls" />
-  <meta name="theme-color" content="#fed86e" />
-  <title>petpet generator</title>
+  <meta name="description" content="petpet gif generator with custom hand & squish controls — styled with silly blorbo doodle vibes" />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>petpet generator ✨</title>
 
-  <!-- Google Fonts: Balsamiq Sans & Work Sans -->
+  <!-- Google Fonts matching Blorbo Stats Maker -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <main class="grid">
-    <!-- Header -->
-    <header class="header">
-      <div class="heading">
-        <span>petpet generator</span>
-        <button id="themeToggle" class="theme-toggle-btn" type="button" title="Toggle dark/light mode">🌚</button>
+  <!-- ====================================================================
+       TOP CREDIT SECTION (benisland)
+       ==================================================================== -->
+  <aside class="credit-banner top-credit" aria-label="Attribution">
+    <span class="sparkle-icon">✨</span>
+    <span>
+      Original petpet generator created by the legendary 
+      <a href="https://benisland.neocities.org/" target="_blank" rel="noopener"><strong>benisland</strong></a> 
+      on Neocities!
+    </span>
+    <span class="sparkle-icon">🐾</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>🐾 petpet generator</span>
+        <span style="font-size: 22px;">✨</span>
       </div>
-      <div class="subheading">if this crashes your browser it is NOT my fault</div>
+      <div class="subtitle-badge">
+        if this crashes your browser it is NOT my fault
+      </div>
     </header>
 
-    <!-- Column 1: Preview Canvas & Interactive Sliders -->
-    <section class="preview content">
-      <div class="content-heading">preview</div>
-
-      <div class="preview-canvas-box">
-        <canvas id="canvas" class="canvas" width="112" height="112" tabindex="1" title="Click adjust mode to reposition sprite"></canvas>
-        <div class="preview-playback">
-          <button id="prev" class="btn btn-playback-prev" type="button" title="Previous frame">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
-          </button>
-          <button id="play" class="btn btn-playback-playpause" type="button" title="Pause / Play animation">
-            <svg class="btn-playback-pause" viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
-            <svg class="btn-playback-play" viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          </button>
-          <button id="next" class="btn btn-playback-next" type="button" title="Next frame">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
-          </button>
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: PREVIEW & INTERACTIVE SLIDERS
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Preview Section">
+        <div class="card-header-badge badge-yellow">
+          <span>👀 preview</span>
         </div>
-        <div class="hint" style="text-align: center; margin-top: 0.4em;">
-          frame: <span id="frameIndicator">1/5</span>
-        </div>
-      </div>
 
-      <div class="preview-controls">
+        <div class="preview-stage">
+          <div class="canvas-box">
+            <canvas id="canvas" class="canvas" width="112" height="112" tabindex="1" title="Click adjust mode to drag sprite around"></canvas>
+
+            <div class="playback-controls">
+              <button id="prev" class="sketchy-btn sm" type="button" title="Previous frame">⏮ prev</button>
+              <button id="play" class="sketchy-btn sm yellow" type="button" title="Pause / Play animation">
+                <span class="btn-playback-pause">⏸ pause</span>
+                <span class="btn-playback-play">▶ play</span>
+              </button>
+              <button id="next" class="sketchy-btn sm" type="button" title="Next frame">⏭ next</button>
+            </div>
+
+            <div class="frame-label">
+              frame: <span id="frameIndicator">1/5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
         <!-- Adjust Mode -->
-        <div class="row">
-          <div class="control-group">
-            <label for="toggleAdjust" class="control-group-l control-label" style="font-weight: 600;">adjust mode</label>
-            <label for="toggleAdjust" class="toggle-switch">
-              <input id="toggleAdjust" type="checkbox" class="toggle-switch-input" />
-              <span class="toggle-switch-control"></span>
+        <div class="control-row">
+          <label for="toggleAdjust" class="control-label">adjust mode</label>
+          <div class="toggle-wrap">
+            <label class="sketchy-toggle">
+              <input id="toggleAdjust" type="checkbox" />
+              <span class="toggle-slider"></span>
             </label>
           </div>
-          <div class="hint">
-            enable to move your image with mouse/touch/keyboard in the preview. works on mobile too :-)
-          </div>
+        </div>
+        <div class="helper-text">
+          enable to move your image with mouse/touch/arrow keys in the preview. works on mobile too :-)
         </div>
 
         <!-- Flip Target -->
-        <div class="row control-group">
-          <label for="toggleFlip" class="control-group-l control-label">flip</label>
-          <label for="toggleFlip" class="toggle-switch sm">
-            <input id="toggleFlip" type="checkbox" class="toggle-switch-input" />
-            <span class="toggle-switch-control"></span>
-          </label>
+        <div class="control-row" style="margin-top: 6px;">
+          <label for="toggleFlip" class="control-label">flip</label>
+          <div class="toggle-wrap">
+            <label class="sketchy-toggle">
+              <input id="toggleFlip" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
 
         <!-- Target Size -->
-        <div class="row control-group">
-          <label for="scale" class="control-label control-group-s">size</label>
-          <input id="scale" class="control-range control-group-l" type="range" step="1" min="15" max="200" value="85" />
+        <div class="control-row">
+          <label for="scale" class="control-label">size</label>
+          <div class="slider-wrap">
+            <input id="scale" class="sketchy-range" type="range" step="1" min="15" max="200" value="85" />
+          </div>
         </div>
 
         <!-- Target Squish -->
-        <div class="row control-group">
-          <label for="squish" class="control-label control-group-s">squish</label>
-          <input id="squish" class="control-range control-group-l" type="range" step="1" min="50" max="300" value="125" />
+        <div class="control-row">
+          <label for="squish" class="control-label">squish</label>
+          <div class="slider-wrap">
+            <input id="squish" class="sketchy-range" type="range" step="1" min="50" max="300" value="125" />
+          </div>
         </div>
 
         <!-- Speed / FPS -->
-        <div class="row control-group">
-          <label for="fps" class="control-label control-group-s">speed</label>
-          <input id="fps" class="control-range" type="range" step="2" min="2" max="60" value="16" />
-          <input id="fpsVal" class="control control-sm" type="number" step="1" min="2" max="60" value="16" />
-        </div>
-
-        <!-- Reset & Export Buttons -->
-        <div class="row export-row">
-          <div class="control-group">
-            <button id="reset" class="btn btn-reset" type="button">reset</button>
-            <button id="export" class="btn btn-export" type="button">export</button>
+        <div class="control-row">
+          <label for="fps" class="control-label">speed</label>
+          <div class="slider-wrap">
+            <input id="fps" class="sketchy-range" type="range" step="2" min="2" max="60" value="16" />
+            <input id="fpsVal" class="sketchy-input" type="number" step="1" min="2" max="60" value="16" style="width: 58px; text-align: center; padding: 2px 4px;" />
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Column 2: Upload Target Image -->
-    <section class="upload content">
-      <div class="content-heading">upload</div>
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button id="reset" class="sketchy-btn" type="button" style="flex: 1;">🔄 reset</button>
+          <button id="export" class="sketchy-btn primary" type="button" style="flex: 1.6; font-size: 21px;">💾 export</button>
+        </div>
+      </section>
 
-      <div class="upload-preview">
-        <label class="drop-area preview-image-container" id="dropArea" for="uploadFile" title="Click or drop an image file here">
-          <input class="drop-area-file-input" type="file" id="uploadFile" accept="image/*" />
-          <img class="preview-image" id="uploadPreview" src="./img/sample.png" alt="Target preview" />
-          <div class="drop-area-upload">
-            <span class="btn" style="font-size: 0.85em; padding: 0.35em 0.7em;">choose file</span>
-            <span id="uploadFileName" class="drop-area-upload-filename">or drop here</span>
+      <!-- ================================================================
+           COLUMN 2: UPLOAD TARGET, HAND CUSTOMIZATION, OUTPUT
+           ================================================================ -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Upload Target Image -->
+        <section class="sketchy-card" aria-label="Upload Target Section">
+          <div class="card-header-badge badge-blue">
+            <span>🖼️ upload target</span>
           </div>
-        </label>
 
-        <!-- Sample Target Chips -->
-        <div class="samples-row">
-          <span class="samples-label">sample avatars:</span>
-          <button type="button" class="chip-btn target-preset-chip active" data-target="default">Egg Guy 🥚</button>
-          <button type="button" class="chip-btn target-preset-chip" data-target="cat">Kitty 🐱</button>
-          <button type="button" class="chip-btn target-preset-chip" data-target="blorbo">Blorbo 🎨</button>
-        </div>
-
-        <!-- URL Upload Row -->
-        <div class="url-upload-row">
-          <input id="uploadUrl" class="control url-input" type="url" placeholder="enter a url to upload" />
-          <button id="uploadUrlBtn" class="btn url-btn" type="button" title="Fetch image from URL">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          </button>
-        </div>
-
-        <p id="uploadError" class="error-message"></p>
-        <p class="help">
-          note: url upload might not always work cus some sites don't like it when you direct link images from them
-        </p>
-        <p class="help" style="opacity: 0.75;">
-          tip: you can also press <strong>Ctrl+V</strong> anywhere on this page to paste an image directly from your clipboard!
-        </p>
-      </div>
-    </section>
-
-    <!-- Column 2b: Hand Customization & Hand Squish (Extra Feature) -->
-    <section class="hand-section content">
-      <div class="content-heading" style="display: flex; align-items: center; justify-content: center; gap: 0.4em;">
-        <span>hand sprite &amp; squish</span>
-        <span style="font-size: 0.8em; opacity: 0.75;">✨</span>
-      </div>
-
-      <div class="hand-custom-box">
-        <div class="hand-preview-wrap">
-          <img id="handThumb" class="hand-thumb" src="./img/sprite.png" alt="Active hand thumbnail" />
-          <div class="hand-meta">
-            <div id="handName" class="hand-name">Default Hand</div>
-            <div id="handDesc" class="hand-desc">Classic pet-pet hand (5-frame sprite sheet)</div>
-          </div>
-          <button id="btnResetHand" class="btn btn-reset" type="button" style="font-size: 0.8em; padding: 0.35em 0.6em;">reset hand</button>
-        </div>
-
-        <!-- Hand Presets Chips -->
-        <div class="samples-row" style="margin-top: 0.2em;">
-          <span class="samples-label">hand styles:</span>
-          <button type="button" class="chip-btn hand-preset-chip active" data-hand="default">🖐️ Classic Hand</button>
-          <button type="button" class="chip-btn hand-preset-chip" data-hand="catPaw">🐾 Kitty Paw</button>
-          <button type="button" class="chip-btn hand-preset-chip" data-hand="glove">🧤 Cartoon Glove</button>
-          <button type="button" class="chip-btn hand-preset-chip" data-hand="dogPaw">🐶 Puppy Paw</button>
-          <button type="button" class="chip-btn hand-preset-chip" data-hand="wand">✨ Magic Wand</button>
-        </div>
-
-        <!-- Upload Custom Hand -->
-        <label class="drop-area" id="handDropArea" for="uploadHandFile" style="margin-top: 0.7em; padding: 0.6em;" title="Upload custom hand image or sprite sheet">
-          <input class="drop-area-file-input" type="file" id="uploadHandFile" accept="image/*" />
-          <div class="drop-area-upload">
-            <span class="btn" style="font-size: 0.82em; padding: 0.3em 0.6em;">choose hand file</span>
-            <span id="handFileName" class="drop-area-upload-filename">or drop custom hand (png/svg/gif)</span>
-          </div>
-        </label>
-        <div class="hint" style="margin-top: 0.3em;">
-          accepts single images (paw, glove, item) or a 5-frame sprite sheet (560x112)!
-        </div>
-
-        <!-- Hand Squish Slider -->
-        <div class="row control-group" style="margin-top: 0.9em;">
-          <label for="handSquish" class="control-label control-group-s">hand squish</label>
-          <input id="handSquish" class="control-range control-group-l" type="range" step="5" min="20" max="300" value="100" />
-          <span id="handSquishVal" style="font-size: 0.85em; font-weight: 600; min-width: 3.5em; text-align: right;">100%</span>
-        </div>
-        <div class="hint">
-          controls hand downward stroke impact depth and flattening compression
-        </div>
-
-        <!-- Hand Size Slider -->
-        <div class="row control-group">
-          <label for="handScale" class="control-label control-group-s">hand size</label>
-          <input id="handScale" class="control-range control-group-l" type="range" step="2" min="30" max="200" value="100" />
-        </div>
-
-        <!-- Hand Flip Toggle -->
-        <div class="row control-group" style="margin-bottom: 0.2em;">
-          <label for="handFlip" class="control-group-l control-label">hand flip</label>
-          <label for="handFlip" class="toggle-switch sm">
-            <input id="handFlip" type="checkbox" class="toggle-switch-input" />
-            <span class="toggle-switch-control"></span>
+          <label class="dropzone" id="dropArea" for="uploadFile" title="Click or drop an image file here">
+            <input class="drop-area-file-input" type="file" id="uploadFile" accept="image/*" style="display: none;" />
+            <img class="drop-thumb" id="uploadPreview" src="./img/sample.png" alt="Target avatar preview" />
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sketchy-btn sm yellow">choose file</span>
+              <span id="uploadFileName" style="font-weight: bold; font-size: 17px; color: #555;">or drop here</span>
+            </div>
           </label>
-        </div>
+
+          <!-- Sample Avatars -->
+          <div class="chips-row">
+            <span class="chips-label">samples:</span>
+            <button type="button" class="sketchy-chip target-preset-chip active" data-target="default">Egg Guy 🥚</button>
+            <button type="button" class="sketchy-chip target-preset-chip" data-target="cat">Kitty 🐱</button>
+            <button type="button" class="sketchy-chip target-preset-chip" data-target="blorbo">Blorbo 🎨</button>
+          </div>
+
+          <!-- URL Upload -->
+          <div class="url-box">
+            <input id="uploadUrl" class="sketchy-input" type="url" placeholder="enter an image url to upload" />
+            <button id="uploadUrlBtn" class="sketchy-btn lime" type="button">upload</button>
+          </div>
+
+          <p id="uploadError" style="color: var(--color-s2); font-weight: bold; font-size: 16px; min-height: 18px;"></p>
+          <div class="helper-text">
+            note: url upload might not always work cus some sites block direct image links.
+          </div>
+          <div class="helper-text" style="color: #444;">
+            💡 tip: you can also press <strong>Ctrl+V</strong> anywhere to paste an image straight from your clipboard!
+          </div>
+        </section>
+
+        <!-- Hand Customization & Hand Squish Slider -->
+        <section class="sketchy-card" aria-label="Hand Customization Section">
+          <div class="card-header-badge badge-pink">
+            <span>🖐️ hand sprite &amp; squish</span>
+          </div>
+
+          <div class="hand-status-card">
+            <img id="handThumb" class="hand-status-thumb" src="./img/sprite.png" alt="Active hand thumbnail" />
+            <div class="hand-status-info">
+              <div id="handName" class="hand-status-title">Default Hand</div>
+              <div id="handDesc" class="hand-status-desc">Classic 5-frame petpet hand</div>
+            </div>
+            <button id="btnResetHand" class="sketchy-btn sm" type="button">reset hand</button>
+          </div>
+
+          <!-- Hand Styles Chips -->
+          <div class="chips-row">
+            <span class="chips-label">hand styles:</span>
+            <button type="button" class="sketchy-chip hand-preset-chip active" data-hand="default">🖐️ Classic Hand</button>
+            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="catPaw">🐾 Kitty Paw</button>
+            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="glove">🧤 Cartoon Glove</button>
+            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="dogPaw">🐶 Puppy Paw</button>
+            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="wand">✨ Magic Wand</button>
+          </div>
+
+          <!-- Custom Hand Upload Dropzone -->
+          <label class="dropzone" id="handDropArea" for="uploadHandFile" style="padding: 8px; margin-top: 4px;" title="Upload custom hand image or sprite sheet">
+            <input class="drop-area-file-input" type="file" id="uploadHandFile" accept="image/*" style="display: none;" />
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sketchy-btn sm lime">choose hand file</span>
+              <span id="handFileName" style="font-weight: bold; font-size: 16px; color: #555;">or drop custom hand (png/svg/gif)</span>
+            </div>
+          </label>
+          <div class="helper-text">
+            accepts single images (paw, glove, spatula, sticker) or 5-frame sprite sheets (560x112)!
+          </div>
+
+          <!-- Dedicated Hand Squish Slider -->
+          <div class="control-row" style="margin-top: 6px;">
+            <label for="handSquish" class="control-label">hand squish</label>
+            <div class="slider-wrap">
+              <input id="handSquish" class="sketchy-range" type="range" step="5" min="20" max="300" value="100" />
+              <span id="handSquishVal" class="num-pill">100%</span>
+            </div>
+          </div>
+          <div class="helper-text">
+            controls the hand's downward stroke impact depth and squishing compression
+          </div>
+
+          <!-- Hand Size Slider -->
+          <div class="control-row">
+            <label for="handScale" class="control-label">hand size</label>
+            <div class="slider-wrap">
+              <input id="handScale" class="sketchy-range" type="range" step="2" min="30" max="200" value="100" />
+            </div>
+          </div>
+
+          <!-- Hand Flip Toggle -->
+          <div class="control-row">
+            <label for="handFlip" class="control-label">hand flip</label>
+            <div class="toggle-wrap">
+              <label class="sketchy-toggle">
+                <input id="handFlip" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Output Card -->
+        <section class="sketchy-card" aria-label="Output Section">
+          <div class="card-header-badge badge-lime">
+            <span>✨ exported gif</span>
+          </div>
+
+          <div class="output-box">
+            <img id="result" class="output-gif" width="112" height="112" alt="Generated PetPet GIF" style="display: none;" />
+            <div id="info" class="output-info-text">...</div>
+
+            <div class="action-btns">
+              <button id="btnDownload" class="sketchy-btn primary" type="button" style="display: none;">
+                💾 download gif
+              </button>
+              <button id="btnCopy" class="sketchy-btn yellow" type="button" style="display: none;">
+                📋 copy gif
+              </button>
+            </div>
+          </div>
+
+          <div class="helper-text">
+            ps: save the exported gif if you want to share it, using the link won't work cus it only exists in your browser
+          </div>
+          <div class="helper-text">
+            pps: if there's weird green dots in the export try a different browser
+          </div>
+        </section>
       </div>
-    </section>
+    </main>
 
-    <!-- Column 3: Output & Export -->
-    <section class="output content">
-      <div class="content-heading">output</div>
-
-      <div class="output-preview-container">
-        <img id="result" class="output-image" width="112" height="112" alt="Generated PetPet GIF" style="display: none;" />
-        <div id="info" class="output-info">...</div>
-
-        <div class="output-actions">
-          <button id="btnDownload" class="btn" type="button" style="display: none;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>download gif</span>
-          </button>
-          <button id="btnCopy" class="btn btn-reset" type="button" style="display: none;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>copy gif</span>
-          </button>
-        </div>
+    <!-- ====================================================================
+         BOTTOM CREDIT SECTION (benisland)
+         ==================================================================== -->
+    <footer class="bottom-credit-card" aria-label="Credits">
+      <div class="bottom-credit-title">
+        💖 huge thanks &amp; credits!
       </div>
-
-      <p class="help">
-        ps: save the exported gif if you want to share it, using the link won't work cus it only exists in your browser
+      <p class="bottom-credit-text">
+        Huge love and credits to 
+        <a href="https://benisland.neocities.org/" target="_blank" rel="noopener"><strong>benisland</strong></a> 
+        for creating the original, iconic petpet generator at 
+        <a href="https://benisland.neocities.org/petpet/" target="_blank" rel="noopener">benisland.neocities.org/petpet</a>!
       </p>
-      <p class="help">
-        pps: if there's weird green dots in the export try a different browser
-      </p>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer help">
-      <div>
-        <span>v1</span>
-        <span class="separator">|</span>
-        <span>templates: <a href="./img/sprite.png" target="_blank" rel="noopener">sprite</a>, <a href="./img/sample.png" target="_blank" rel="noopener">sample</a></span>
-        <span class="separator">|</span>
-        <span>gifs are generated using <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener">gif.js</a></span>
+      <div class="bottom-links">
+        <a href="https://benisland.neocities.org/" target="_blank" rel="noopener" class="sketchy-btn yellow">
+          🌐 benisland's neocities
+        </a>
+        <a href="https://benisland.neocities.org/petpet/" target="_blank" rel="noopener" class="sketchy-btn primary">
+          🐱 original petpet generator
+        </a>
+        <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener" class="sketchy-btn blue">
+          🎞️ gif.js library
+        </a>
       </div>
-      <div style="margin-top: 0.8em;">
+      <div style="margin-top: 6px;">
         <span class="fingies" title="😳"><span class="fl">👉</span><span>👈</span></span>
       </div>
     </footer>
-  </main>
+  </div>
 
   <!-- Inlined Web Worker script source for zero-failure blob execution -->
   <script type="text/plain" id="gif-worker-code">
@@ -262,4 +310,3 @@
   <script src="./main.js"></script>
 </body>
 </html>
-
