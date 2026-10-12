@@ -107,16 +107,16 @@ const g = { ...DEFAULTS };
             </defs>
             <!-- Fluffy cat arm & rounded paw -->
             <path d="M 0 10 C 22 15 40 25 56 38 C 68 47 78 52 88 47 C 96 42 96 32 86 26 C 74 18 54 11 26 2 Z" fill="url(#pawGrad)" stroke="#cbb294" stroke-width="2.5" stroke-linejoin="round"/>
-            <!-- Paw print group: flipped vertically & skewed to fit snugly inside paw/arm -->
-            <g transform="translate(64, 35) rotate(-22) skewX(-10)">
+            <!-- Paw print group: flipped vertically, shrunk, and shifted right inside the paw -->
+            <g transform="translate(71, 35) rotate(-23) skewX(-8) scale(0.78)">
               <!-- Main palm pad (wrist/upper side of paw) -->
-              <ellipse cx="0" cy="-4" rx="12" ry="8.5" fill="#ff94b8" />
-              <ellipse cx="-2" cy="-6" rx="3.5" ry="2" fill="#ffffff" opacity="0.65" />
-              <!-- 4 Toe beans (curving along bottom/pet-facing side, inside paw contour) -->
-              <circle cx="-12" cy="7.5" r="4.2" fill="#ffaac6" />
-              <circle cx="-4" cy="10.5" r="4.6" fill="#ffaac6" />
-              <circle cx="5.5" cy="9.5" r="4.6" fill="#ffaac6" />
-              <circle cx="13" cy="5.5" r="4.2" fill="#ffaac6" />
+              <ellipse cx="0" cy="-3.5" rx="11" ry="7.5" fill="#ff94b8" />
+              <ellipse cx="-1.5" cy="-5" rx="3.2" ry="1.8" fill="#ffffff" opacity="0.65" />
+              <!-- 4 Toe beans (curving along bottom/pet-facing side, comfortably inside paw) -->
+              <circle cx="-11" cy="7" r="3.8" fill="#ffaac6" />
+              <circle cx="-3.5" cy="9.5" r="4.2" fill="#ffaac6" />
+              <circle cx="5" cy="8.8" r="4.2" fill="#ffaac6" />
+              <circle cx="12" cy="5" r="3.8" fill="#ffaac6" />
             </g>
           </svg>
         `),
