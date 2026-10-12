@@ -11,14 +11,16 @@
 import { AI_CURRICULUM } from '../data/manifest.js';
 import { AI_SIMPLIFIED_MATH } from '../data/ai-math-explainers.js';
 import { fetchFile, renderMarkdown, renderMath, highlightCode, copyToClipboard, escapeHtml } from '../utils/helpers.js';
+import { AIInteractiveLab } from './ai-interactive-lab.js';
 
 export class AIViewer {
   constructor(container) {
     this.container = container;
     this.currentModule = null;
-    this.activeTab = 'lesson'; // 'lesson', 'code', 'concepts'
+    this.activeTab = 'lesson'; // 'lesson', 'code', 'concepts', 'interactive'
     this.searchQuery = '';
     this.selectedCodeFileIndex = 0;
+    this.interactiveLab = null;
 
     // Flatten all modules for sequential pagination and quick lookup
     this.allModules = [];
@@ -37,6 +39,11 @@ export class AIViewer {
   init(initialModuleId = null) {
     this.renderLayout();
     this.bindEvents();
+
+    const interactiveContainer = document.getElementById('ai-interactive-container');
+    if (interactiveContainer) {
+      this.interactiveLab = new AIInteractiveLab(interactiveContainer);
+    }
 
     const target = this.allModules.find((m) => m.id === initialModuleId) || this.allModules[0];
     this.loadModule(target);
@@ -91,6 +98,10 @@ export class AIViewer {
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                 <span>Key Concepts &amp; Math</span>
               </button>
+              <button class="lab-tab" data-tab="interactive" id="ai-tab-interactive">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Interactive 2D Lab</span>
+              </button>
             </div>
           </div>
 
@@ -122,6 +133,11 @@ export class AIViewer {
               <div class="concepts-view" id="ai-concepts-view">
                 <!-- Injected dynamically -->
               </div>
+            </div>
+
+            <!-- Tab 4: Interactive 2D Vector Playground -->
+            <div class="lab-pane" id="pane-ai-interactive">
+              <div id="ai-interactive-container"></div>
             </div>
           </div>
 
@@ -270,6 +286,11 @@ export class AIViewer {
     // 3. Render Key Concepts
     this.renderConceptsPane(module);
 
+    // 4. Update Interactive 2D Lab if currently on that tab
+    if (this.activeTab === 'interactive' && this.interactiveLab) {
+      this.interactiveLab.mount(module.id);
+    }
+
     // Scroll main viewport smoothly to top
     const contentArea = document.getElementById('ai-content-area');
     if (contentArea) contentArea.scrollTo({ top: 0, behavior: 'smooth' });
@@ -353,6 +374,15 @@ export class AIViewer {
             <p class="concept-desc">${escapeHtml(math.simpleExplanation)}</p>
           </div>
 
+          ${math.stepByStepExample ? `
+          <div class="math-explanation-section">
+            <div class="math-section-title example">
+              <span>step-by-step 2d example</span>
+            </div>
+            <p class="concept-desc" style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">${escapeHtml(math.stepByStepExample)}</p>
+          </div>
+          ` : ''}
+
           <div class="math-explanation-section">
             <div class="math-section-title analogy">
               <span>analogy</span>
@@ -366,6 +396,11 @@ export class AIViewer {
             </div>
             <p class="concept-desc">${escapeHtml(math.svdInsight)}</p>
           </div>
+
+          <button class="ai-launch-lab-btn" id="btn-ai-launch-interactive">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Launch Interactive 2D Vector Lab for This Module</span>
+          </button>
         </div>
       `;
     }
@@ -390,6 +425,13 @@ export class AIViewer {
         </ul>
       </div>
     `;
+
+    const launchBtn = pane.querySelector('#btn-ai-launch-interactive');
+    if (launchBtn) {
+      launchBtn.addEventListener('click', () => {
+        this.switchTab('interactive');
+      });
+    }
 
     renderMath(pane);
   }
@@ -435,6 +477,7 @@ export class AIViewer {
   }
 
   switchTab(tabName) {
+    const prevTab = this.activeTab;
     this.activeTab = tabName;
 
     // Update Tab Buttons
@@ -446,9 +489,21 @@ export class AIViewer {
     const lessonPane = document.getElementById('pane-ai-lesson');
     const codePane = document.getElementById('pane-ai-code');
     const conceptsPane = document.getElementById('pane-ai-concepts');
+    const interactivePane = document.getElementById('pane-ai-interactive');
 
     if (lessonPane) lessonPane.classList.toggle('active', tabName === 'lesson');
     if (codePane) codePane.classList.toggle('active', tabName === 'code');
     if (conceptsPane) conceptsPane.classList.toggle('active', tabName === 'concepts');
+    if (interactivePane) interactivePane.classList.toggle('active', tabName === 'interactive');
+
+    if (tabName === 'interactive') {
+      if (this.interactiveLab && this.currentModule) {
+        this.interactiveLab.mount(this.currentModule.id);
+      }
+    } else if (prevTab === 'interactive') {
+      if (this.interactiveLab) {
+        this.interactiveLab.destroy();
+      }
+    }
   }
 }

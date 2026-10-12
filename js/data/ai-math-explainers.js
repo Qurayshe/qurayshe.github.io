@@ -8,6 +8,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Vector Spaces & Linear Transformations',
     coreFormula: '$$T(\\mathbf{x}) = A\\mathbf{x} = \\sum_{j=1}^n x_j \\mathbf{a}_j \\quad \\text{and} \\quad \\text{proj}_{\\mathbf{v}}(\\mathbf{u}) = \\frac{\\mathbf{u} \\cdot \\mathbf{v}}{\\|\\mathbf{v}\\|^2} \\mathbf{v}$$',
     simpleExplanation: 'A vector space is a sandbox where you can stretch (scalar multiply) and combine (add) arrows without ever leaving the box. A matrix is just a machine that tilts, stretches, or rotates the grid lines of this sandbox while keeping the origin fixed and parallel lines parallel.',
+    stepByStepExample: 'Let u = [3, 1] and v = [1, 2]. Dot product = 3(1) + 1(2) = 5. Lengths: ||u|| = √10 ≈ 3.16, ||v|| = √5 ≈ 2.24. Angle cos(θ) = 5 / (√10 × √5) = 1/√2 → θ = 45°. Orthogonal projection of u onto v: (5 / 5) × [1, 2] = [1, 2]. Orthogonal residual e = [3, 1] - [1, 2] = [2, -1], which satisfies e · v = 2(1) - 1(2) = 0.',
     realWorldAnalogy: 'Think of graph paper made of rubber. If you pin down the origin (0,0) and stretch the paper diagonally or twist it by 45 degrees, grid squares distort into parallelograms, but straight lines remain straight. A matrix simply records where the unit marks (1,0) and (0,1) landed after the stretch!',
     svdInsight: 'Every linear layer in a neural network (e.g. y = Wx + b) is literally a geometric transformation that shears, rotates, and stretches input features so that downstream classifiers can separate complex clusters.'
   },
@@ -16,6 +17,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Linear Systems, Inverses & Determinants',
     coreFormula: '$$A\\mathbf{x} = \\mathbf{b} \\iff \\mathbf{x} = A^{-1}\\mathbf{b} \\quad \\text{and} \\quad \\det(A) = \\prod_{i=1}^n u_{ii} (-1)^s$$',
     simpleExplanation: 'A system of linear equations is asking: what exact mixture of columns in matrix A will reach target destination b? The determinant measures whether the matrix squashes an entire multi-dimensional space flat into a pancake or line. If det(A) = 0, the volume collapses to zero, information is permanently lost, and no inverse can undo the squash.',
+    stepByStepExample: '2D System: 2x1 + x2 = 5 and x1 + 3x2 = 10. Matrix A = [2, 1; 1, 3], target b = [5, 10]. Determinant det(A) = (2)(3) - (1)(1) = 5 (parallelogram area = 5). Inverse A⁻¹ = (1/5) * [3, -1; -1, 2]. Solution x = A⁻¹ b = [1, 3]^T. In the Column Picture, we take 1 step along [2, 1]^T plus 3 steps along [1, 3]^T to arrive exactly at destination [5, 10]^T!',
     realWorldAnalogy: 'Imagine baking dough with an area of 1 square foot. A transformation with determinant 2 doubles the area to 2 square feet. A determinant of 0.5 halves it. A determinant of 0 runs a hydraulic press on the dough until it collapses into an infinitely thin crease—you can never reconstruct the original 3D bread from a 0-volume pancake!',
     svdInsight: 'Invertibility and condition numbers determine whether training neural networks will suffer from exploding or vanishing gradients. Normalizing flow architectures explicitly require cheap, non-zero determinants to track probability density.'
   },
@@ -24,6 +26,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Differential Equations & Continuous Dynamics',
     coreFormula: '$$\\frac{d\\mathbf{y}}{dt} = \\mathbf{f}(t, \\mathbf{y}) \\quad \\text{and} \\quad \\mathbf{y}_{n+1} = \\mathbf{y}_n + \\frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)$$',
     simpleExplanation: 'A differential equation gives you a velocity compass at every coordinate in space, telling you which direction to travel and how fast. An ODE solver is a hiker taking small steps along the direction of the compass to trace out the trajectory over time.',
+    stepByStepExample: 'For dy/dt = -2y with y(0) = 1 and step h = 0.5: Forward Euler computes y1 = 1 + 0.5(-2) = 0 (true value is e⁻¹ ≈ 0.368, giving 100% error!). Meanwhile RK4 averages 4 midpoint slope samples to yield y1 = 0.375 (error is only 0.007, over 50x more accurate on the exact same step size!).',
     realWorldAnalogy: 'Euler integration is like driving a car at night with your eyes closed for 1 second, opening them to check your GPS, and adjusting your steering wheel. RK4 is like having an autopilot that peeks ahead 4 times during that single second, averaging the curve of the road so you never drift off the highway.',
     svdInsight: 'Residual Networks (ResNets) are literally Euler steps through continuous depth. Modern image generators like Stable Diffusion 3, Flux, and OpenAI Sora use Flow Matching to solve continuous ODE trajectories that turn Gaussian noise into photorealistic images in straight lines.'
   },
@@ -32,6 +35,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Linear Algebra & Tensors',
     coreFormula: '$$\\mathbf{u} \\cdot \\mathbf{v} = \\|\\mathbf{u}\\| \\|\\mathbf{v}\\| \\cos(\\theta) \\quad \\text{and} \\quad A = U \\Sigma V^T$$',
     simpleExplanation: 'Imagine shining a flashlight from one arrow onto another. The length of the shadow cast tells you how closely aligned they are. If the arrows are perpendicular (90°), the shadow is zero—they share zero information.',
+    stepByStepExample: 'Eigenvalues of A = [4, 1; 2, 3]: det(A - λI) = λ² - 7λ + 10 = (λ - 5)(λ - 2) = 0 → λ1 = 5, λ2 = 2. Eigenvector for λ1 = 5 is [1, 1]^T, and for λ2 = 2 is [1, -2]^T. For 2D data points, SVD factors data into primary variance axes (u1 with σ1 = 3.8, u2 with σ2 = 0.8). Truncating to Rank 1 projects all points onto u1, preserving 83% of variance while cutting dimensions in half.',
     realWorldAnalogy: 'In vector search and LLM embeddings (like ChatGPT searching a knowledge base), every sentence is converted into a list of numbers. When you ask a question, the AI computes the dot product (cosine similarity) between your question and millions of documents in milliseconds to find the closest matches.',
     svdInsight: 'SVD (Singular Value Decomposition) compresses a giant data table into just the top few most important recipes or ingredients, discarding noise. It is the mathematical grandparent of modern LLM weight compression and LoRA fine-tuning.'
   },
@@ -40,6 +44,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Multivariate Calculus & Autodiff',
     coreFormula: '$$\\mathbf{w}_{t+1} = \\mathbf{w}_t - \\eta \\nabla \\mathcal{L}(\\mathbf{w}) \\quad \\text{and} \\quad \\frac{\\partial L}{\\partial x} = \\sum_{i} \\frac{\\partial L}{\\partial y_i} \\frac{\\partial y_i}{\\partial x}$$',
     simpleExplanation: 'Imagine you are blindfolded on a foggy mountain and want to reach the lowest valley. You feel the slope with your feet and take a step in the steepest downward direction. That is Gradient Descent!',
+    stepByStepExample: 'For loss f(x, y) = x²y + 3y² at (2, 1): ∂f/∂x = 2xy = 4, ∂f/∂y = x² + 6y = 10. Gradient vector ∇f = [4, 10]^T points uphill. A single gradient descent step with learning rate η = 0.1 updates weights to (2 - 0.4, 1 - 1.0) = (1.6, 0.0), reducing the loss instantly from 7.0 down to 0.0!',
     realWorldAnalogy: 'The gradient (∇L) is simply a compass pointing uphill toward where the model makes more mistakes. We multiply by a small step size (learning rate η) and step in the opposite direction (-∇L) to reduce errors.',
     svdInsight: 'Reverse-mode automatic differentiation (backprop) is pure genius: instead of testing how 70 billion parameters affect the loss one-by-one from left to right, it starts at the final error and flows backward in ONE single pass, computing exact blame scores for every parameter at the same time.'
   },
@@ -48,6 +53,7 @@ export const AI_SIMPLIFIED_MATH = {
     title: 'Probability & Information Theory',
     coreFormula: '$$H(P) = -\\sum_{x} P(x) \\log_2 P(x) \\quad \\text{and} \\quad D_{KL}(P \\parallel Q) = \\sum_{x} P(x) \\log \\frac{P(x)}{Q(x)}$$',
     simpleExplanation: 'Information measures surprise. If someone tells you the sun rose this morning, that carries zero surprise (zero entropy). If they tell you it snowed in the Sahara, that carries massive surprise (high entropy).',
+    stepByStepExample: 'Fair coin: H = -2(0.5 log2 0.5) = 1.0 bit. Biased coin (p=0.9): H = -(0.9 log2 0.9 + 0.1 log2 0.1) = 0.469 bits. Comparing true distribution P = [0.8, 0.2] with model Q = [0.7, 0.3]: D_KL(P || Q) = 0.8 ln(0.8/0.7) + 0.2 ln(0.2/0.3) = 0.026 nats, measuring statistical penalty in LLM alignment.',
     realWorldAnalogy: 'Cross-Entropy Loss measures how surprised an AI model is by the correct answer. If the model predicted the next word was 99% likely to be "coffee", its penalty is close to 0. If it predicted 0.01%, the penalty is huge.',
     svdInsight: 'KL Divergence is a mathematical ruler measuring the difference between two belief distributions. In RLHF and DPO alignment, it acts as a safety leash to prevent a fine-tuned chatbot from drifting too far from its original base knowledge.'
   },
