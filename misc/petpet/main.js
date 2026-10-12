@@ -26,6 +26,7 @@ const DEFAULTS = Object.freeze({
   handFlip: false,  // Hand horizontal mirror
   handOffsetX: 0,
   handOffsetY: 0,
+  handBehind: false, // Layer switch: false = hand on top, true = hand on bottom
 });
 
 const CANVAS_OPTIONS = Object.freeze({
@@ -100,62 +101,26 @@ const g = { ...DEFAULTS };
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" width="112" height="112">
             <defs>
               <linearGradient id="pawGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fff9f0"/>
-                <stop offset="100%" stop-color="#f5e2cb"/>
+                <stop offset="0%" stop-color="#fffdf8"/>
+                <stop offset="100%" stop-color="#f5e1cb"/>
               </linearGradient>
             </defs>
-            <!-- Fluffy cat arm & paw -->
-            <path d="M 0 15 C 22 18 38 28 52 42 C 64 54 75 58 86 53 C 94 48 95 38 86 31 C 74 22 56 16 30 2 Z" fill="url(#pawGrad)" stroke="#d9bfa3" stroke-width="2.5" stroke-linejoin="round"/>
-            <!-- Main paw bean pad -->
-            <ellipse cx="62" cy="46" rx="13" ry="10" fill="#ff94b8" transform="rotate(-15 62 46)"/>
-            <!-- Toe beans -->
-            <circle cx="48" cy="32" r="5" fill="#ffaac6"/>
-            <circle cx="61" cy="26" r="5.2" fill="#ffaac6"/>
-            <circle cx="75" cy="27" r="5.2" fill="#ffaac6"/>
-            <circle cx="85" cy="35" r="4.8" fill="#ffaac6"/>
-            <!-- Cute highlight fur tufts -->
-            <path d="M 52 40 Q 56 36 60 40" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            <!-- Fluffy cat arm & rounded paw -->
+            <path d="M 0 10 C 22 15 40 25 56 38 C 68 47 78 52 88 47 C 96 42 96 32 86 26 C 74 18 54 11 26 2 Z" fill="url(#pawGrad)" stroke="#cbb294" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- Paw print group: flipped vertically & skewed to fit snugly inside paw/arm -->
+            <g transform="translate(64, 35) rotate(-22) skewX(-10)">
+              <!-- Main palm pad (wrist/upper side of paw) -->
+              <ellipse cx="0" cy="-4" rx="12" ry="8.5" fill="#ff94b8" />
+              <ellipse cx="-2" cy="-6" rx="3.5" ry="2" fill="#ffffff" opacity="0.65" />
+              <!-- 4 Toe beans (curving along bottom/pet-facing side, inside paw contour) -->
+              <circle cx="-12" cy="7.5" r="4.2" fill="#ffaac6" />
+              <circle cx="-4" cy="10.5" r="4.6" fill="#ffaac6" />
+              <circle cx="5.5" cy="9.5" r="4.6" fill="#ffaac6" />
+              <circle cx="13" cy="5.5" r="4.2" fill="#ffaac6" />
+            </g>
           </svg>
         `),
         desc: "Cute fluffy kitten paw with pink beans",
-      },
-      glove: {
-        name: "Cartoon Glove 🧤",
-        type: "single",
-        src: "data:image/svg+xml;utf8," + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" width="112" height="112">
-            <!-- Glove arm -->
-            <path d="M 0 20 C 22 25 38 32 50 44 C 62 55 76 60 86 54 C 95 48 95 36 84 30 C 72 23 54 16 26 6 Z" fill="#ffffff" stroke="#22130f" stroke-width="3" stroke-linejoin="round"/>
-            <!-- Palm body -->
-            <ellipse cx="58" cy="43" rx="16" ry="13" fill="#ffffff" stroke="#22130f" stroke-width="2.5" transform="rotate(-10 58 43)"/>
-            <!-- 3 classic cartoon back-of-hand lines -->
-            <line x1="50" y1="36" x2="54" y2="46" stroke="#22130f" stroke-width="2.2" stroke-linecap="round"/>
-            <line x1="59" y1="34" x2="63" y2="44" stroke="#22130f" stroke-width="2.2" stroke-linecap="round"/>
-            <line x1="68" y1="35" x2="71" y2="44" stroke="#22130f" stroke-width="2.2" stroke-linecap="round"/>
-          </svg>
-        `),
-        desc: "Classic white cartoon glove",
-      },
-      dogPaw: {
-        name: "Puppy Paw 🐶",
-        type: "single",
-        src: "data:image/svg+xml;utf8," + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" width="112" height="112">
-            <defs>
-              <linearGradient id="dogGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#e8af7a"/>
-                <stop offset="100%" stop-color="#c6874e"/>
-              </linearGradient>
-            </defs>
-            <path d="M 0 16 C 24 18 40 28 54 42 C 66 54 78 58 88 52 C 96 46 96 36 86 30 C 74 22 56 15 30 4 Z" fill="url(#dogGrad)" stroke="#8f572a" stroke-width="2.5" stroke-linejoin="round"/>
-            <ellipse cx="64" cy="46" rx="14" ry="11" fill="#3a2215" transform="rotate(-12 64 46)"/>
-            <circle cx="50" cy="32" r="5" fill="#3a2215"/>
-            <circle cx="63" cy="26" r="5.2" fill="#3a2215"/>
-            <circle cx="76" cy="27" r="5.2" fill="#3a2215"/>
-            <circle cx="86" cy="36" r="4.8" fill="#3a2215"/>
-          </svg>
-        `),
-        desc: "Warm puppy dog paw with dark pads",
       },
       wand: {
         name: "Magic Wand ✨",
@@ -342,31 +307,39 @@ const g = { ...DEFAULTS };
       if (_ctx.globalAlpha !== 1) _ctx.globalAlpha = 1;
       _ctx.clearRect(0, 0, OUT_SIZE, OUT_SIZE);
 
-      // 1. Draw Target Sprite
-      _ctx.save();
-      _ctx.translate(cf.dx, cf.dy);
+      const drawTargetSprite = () => {
+        _ctx.save();
+        _ctx.translate(cf.dx, cf.dy);
 
-      let targetW = cf.dw;
-      if (g.flip) {
-        _ctx.scale(-1, 1);
-        targetW = -cf.dw;
+        let targetW = cf.dw;
+        if (g.flip) {
+          _ctx.scale(-1, 1);
+          targetW = -cf.dw;
+        }
+
+        if (spriteImg.complete && spriteImg.naturalWidth) {
+          _ctx.drawImage(spriteImg, 0, 0, targetW, cf.dh);
+        }
+
+        // Draw bounding box if in adjust mode
+        if (_adjust) {
+          _ctx.setLineDash([3, 2]);
+          _ctx.strokeStyle = "#ff3b30";
+          _ctx.strokeRect(0, 0, targetW, cf.dh);
+          _ctx.setLineDash([]);
+        }
+        _ctx.restore();
+      };
+
+      if (g.handBehind) {
+        // Hand rendered first (underneath target)
+        drawHand(_frame, _ctx, _adjust, cf);
+        drawTargetSprite();
+      } else {
+        // Target rendered first, hand on top (default)
+        drawTargetSprite();
+        drawHand(_frame, _ctx, _adjust, cf);
       }
-
-      if (spriteImg.complete && spriteImg.naturalWidth) {
-        _ctx.drawImage(spriteImg, 0, 0, targetW, cf.dh);
-      }
-
-      // Draw bounding box if in adjust mode
-      if (_adjust) {
-        _ctx.setLineDash([3, 2]);
-        _ctx.strokeStyle = "#ff3b30";
-        _ctx.strokeRect(0, 0, targetW, cf.dh);
-        _ctx.setLineDash([]);
-      }
-      _ctx.restore();
-
-      // 2. Draw Hand Sprite
-      drawHand(_frame, _ctx, _adjust, cf);
     };
 
     const tick = () => {
@@ -713,6 +686,15 @@ const g = { ...DEFAULTS };
       animation.tick();
     });
 
+    // Layer switch (Hand on bottom / behind target)
+    const $toggleHandBehind = $("#toggleHandBehind");
+    if ($toggleHandBehind) {
+      $toggleHandBehind.addEventListener("change", (e) => {
+        g.handBehind = e.target.checked;
+        animation.tick();
+      });
+    }
+
     // Hand Presets Selection
     $$(".hand-preset-chip").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -777,6 +759,9 @@ const g = { ...DEFAULTS };
       if ($handSquishVal) $handSquishVal.innerText = "100%";
       $("#handScale").value = 100;
       $("#handFlip").checked = false;
+      g.handBehind = DEFAULTS.handBehind;
+      const $toggleHandBehind = $("#toggleHandBehind");
+      if ($toggleHandBehind) $toggleHandBehind.checked = false;
 
       $$(".hand-preset-chip").forEach((b) => b.classList.remove("active"));
       const defaultChip = document.querySelector('[data-hand="default"]');
@@ -876,6 +861,8 @@ const g = { ...DEFAULTS };
       if ($handSquishVal) $handSquishVal.innerText = "100%";
       $("#handScale").value = 100;
       $("#handFlip").checked = false;
+      const $toggleHandBehind = $("#toggleHandBehind");
+      if ($toggleHandBehind) $toggleHandBehind.checked = false;
 
       animation.toggleAdjust(false);
       setPlayState(false);
@@ -963,30 +950,33 @@ const g = { ...DEFAULTS };
       });
     }
 
-    // THEME TOGGLE (if present)
+    // THEME TOGGLE: Blorbo Doodle vs Modern Cyber Dark
     const $themeBtn = $("#themeToggle");
+    const $themeToggleText = $("#themeToggleText");
+    const $themeToggleIcon = $("#themeToggleIcon");
+
     if ($themeBtn) {
       const getStoredTheme = () => {
-        return localStorage.getItem("petpet_theme") || "dark";
+        return localStorage.getItem("petpet_theme_mode") || "blorbo";
       };
 
       const setTheme = (theme) => {
         document.documentElement.setAttribute("data-theme", theme);
-        if (theme === "dark") {
-          document.documentElement.classList.add("dark");
-          $themeBtn.innerText = "🌚";
+        if (theme === "modern") {
+          if ($themeToggleText) $themeToggleText.innerText = "Blorbo Theme";
+          if ($themeToggleIcon) $themeToggleIcon.innerText = "🎨";
         } else {
-          document.documentElement.classList.remove("dark");
-          $themeBtn.innerText = "🌝";
+          if ($themeToggleText) $themeToggleText.innerText = "Cyber Dark";
+          if ($themeToggleIcon) $themeToggleIcon.innerText = "⚡";
         }
-        localStorage.setItem("petpet_theme", theme);
+        localStorage.setItem("petpet_theme_mode", theme);
       };
 
       setTheme(getStoredTheme());
 
       $themeBtn.addEventListener("click", () => {
         const current = document.documentElement.getAttribute("data-theme");
-        setTheme(current === "dark" ? "light" : "dark");
+        setTheme(current === "modern" ? "blorbo" : "modern");
       });
     }
 

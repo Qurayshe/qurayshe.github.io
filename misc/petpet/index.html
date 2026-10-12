@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffe66d" />
   <title>petpet generator ✨</title>
 
-  <!-- Google Fonts matching Blorbo Stats Maker -->
+  <!-- Google Fonts: Blorbo Doodle fonts + Modern Cyber fonts (Inter & JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&family=Silkscreen:wght@400;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -35,8 +35,14 @@
         <span>🐾 petpet generator</span>
         <span style="font-size: 22px;">✨</span>
       </div>
-      <div class="subtitle-badge">
-        if this crashes your browser it is NOT my fault
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="subtitle-badge">
+          if this crashes your browser it is NOT my fault
+        </div>
+        <button id="themeToggle" class="sketchy-btn sm theme-toggle-btn" type="button" title="Toggle between Blorbo Doodle and Cyber Modern theme">
+          <span id="themeToggleIcon">⚡</span>
+          <span id="themeToggleText">Cyber Dark</span>
+        </button>
       </div>
     </header>
 
@@ -189,8 +195,6 @@
             <span class="chips-label">hand styles:</span>
             <button type="button" class="sketchy-chip hand-preset-chip active" data-hand="default">🖐️ Classic Hand</button>
             <button type="button" class="sketchy-chip hand-preset-chip" data-hand="catPaw">🐾 Kitty Paw</button>
-            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="glove">🧤 Cartoon Glove</button>
-            <button type="button" class="sketchy-chip hand-preset-chip" data-hand="dogPaw">🐶 Puppy Paw</button>
             <button type="button" class="sketchy-chip hand-preset-chip" data-hand="wand">✨ Magic Wand</button>
           </div>
 
@@ -203,7 +207,7 @@
             </div>
           </label>
           <div class="helper-text">
-            accepts single images (paw, glove, spatula, sticker) or 5-frame sprite sheets (560x112)!
+            accepts single images (paw, wand, spatula, sticker) or 5-frame sprite sheets (560x112)!
           </div>
 
           <!-- Dedicated Hand Squish Slider -->
@@ -235,6 +239,20 @@
                 <span class="toggle-slider"></span>
               </label>
             </div>
+          </div>
+
+          <!-- Hand Layer Order Switch (Hand Behind Target) -->
+          <div class="control-row" style="margin-top: 4px;">
+            <label for="toggleHandBehind" class="control-label">hand on bottom</label>
+            <div class="toggle-wrap">
+              <label class="sketchy-toggle">
+                <input id="toggleHandBehind" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="helper-text">
+            swap layers so the hand is underneath the target instead of on top
           </div>
         </section>
 
