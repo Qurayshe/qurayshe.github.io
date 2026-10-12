@@ -173,9 +173,11 @@ class App {
     // Dynamically point the embed frame at the requested tool (default: blorbo).
     const frame = document.getElementById('misc-embed-frame');
     if (frame) {
-      const toolPath = toolId ? `./misc/${toolId}/index.html` : './misc/blorbo/index.html';
+      const activeTool = toolId || 'blorbo';
+      const toolPath = `./misc/${activeTool}/index.html`;
       if (frame.getAttribute('src') !== toolPath) {
         frame.setAttribute('src', toolPath);
+        frame.src = toolPath;
       }
     }
   }

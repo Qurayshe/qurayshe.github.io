@@ -45,8 +45,9 @@ export class Router {
 
     document.querySelectorAll('.dropdown-item').forEach((item) => {
       const href = item.getAttribute('href')?.replace('#', '');
-      // Match both plain routes (#systems) and nested routes (#misc/blorbo)
-      item.classList.toggle('active', href === section || href?.split('/')[0] === section);
+      const fullRoute = subParam ? `${section}/${subParam}` : section;
+      const isMatch = href === fullRoute || (!subParam && href === section);
+      item.classList.toggle('active', Boolean(isMatch));
     });
 
     // 2. Switch Visible Section Container

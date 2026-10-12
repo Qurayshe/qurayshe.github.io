@@ -556,7 +556,7 @@ a:hover {
   height: calc(100vh - 72px);
   min-height: 640px;
   border: none;
-  background: #f5f0e8;
+  background: transparent;
 }
 
 @media (max-width: 900px) {

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="petpet gif generator with custom hand & squish controls" />
+  <meta name="theme-color" content="#fed86e" />
+  <title>petpet generator</title>
+
+  <!-- Google Fonts: Balsamiq Sans & Work Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="grid">
+    <!-- Header -->
+    <header class="header">
+      <div class="heading">
+        <span>petpet generator</span>
+        <button id="themeToggle" class="theme-toggle-btn" type="button" title="Toggle dark/light mode">🌚</button>
+      </div>
+      <div class="subheading">if this crashes your browser it is NOT my fault</div>
+    </header>
+
+    <!-- Column 1: Preview Canvas & Interactive Sliders -->
+    <section class="preview content">
+      <div class="content-heading">preview</div>
+
+      <div class="preview-canvas-box">
+        <canvas id="canvas" class="canvas" width="112" height="112" tabindex="1" title="Click adjust mode to reposition sprite"></canvas>
+        <div class="preview-playback">
+          <button id="prev" class="btn btn-playback-prev" type="button" title="Previous frame">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+          </button>
+          <button id="play" class="btn btn-playback-playpause" type="button" title="Pause / Play animation">
+            <svg class="btn-playback-pause" viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+            <svg class="btn-playback-play" viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </button>
+          <button id="next" class="btn btn-playback-next" type="button" title="Next frame">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+          </button>
+        </div>
+        <div class="hint" style="text-align: center; margin-top: 0.4em;">
+          frame: <span id="frameIndicator">1/5</span>
+        </div>
+      </div>
+
+      <div class="preview-controls">
+        <!-- Adjust Mode -->
+        <div class="row">
+          <div class="control-group">
+            <label for="toggleAdjust" class="control-group-l control-label" style="font-weight: 600;">adjust mode</label>
+            <label for="toggleAdjust" class="toggle-switch">
+              <input id="toggleAdjust" type="checkbox" class="toggle-switch-input" />
+              <span class="toggle-switch-control"></span>
+            </label>
+          </div>
+          <div class="hint">
+            enable to move your image with mouse/touch/keyboard in the preview. works on mobile too :-)
+          </div>
+        </div>
+
+        <!-- Flip Target -->
+        <div class="row control-group">
+          <label for="toggleFlip" class="control-group-l control-label">flip</label>
+          <label for="toggleFlip" class="toggle-switch sm">
+            <input id="toggleFlip" type="checkbox" class="toggle-switch-input" />
+            <span class="toggle-switch-control"></span>
+          </label>
+        </div>
+
+        <!-- Target Size -->
+        <div class="row control-group">
+          <label for="scale" class="control-label control-group-s">size</label>
+          <input id="scale" class="control-range control-group-l" type="range" step="1" min="15" max="200" value="85" />
+        </div>
+
+        <!-- Target Squish -->
+        <div class="row control-group">
+          <label for="squish" class="control-label control-group-s">squish</label>
+          <input id="squish" class="control-range control-group-l" type="range" step="1" min="50" max="300" value="125" />
+        </div>
+
+        <!-- Speed / FPS -->
+        <div class="row control-group">
+          <label for="fps" class="control-label control-group-s">speed</label>
+          <input id="fps" class="control-range" type="range" step="2" min="2" max="60" value="16" />
+          <input id="fpsVal" class="control control-sm" type="number" step="1" min="2" max="60" value="16" />
+        </div>
+
+        <!-- Reset & Export Buttons -->
+        <div class="row export-row">
+          <div class="control-group">
+            <button id="reset" class="btn btn-reset" type="button">reset</button>
+            <button id="export" class="btn btn-export" type="button">export</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 2: Upload Target Image -->
+    <section class="upload content">
+      <div class="content-heading">upload</div>
+
+      <div class="upload-preview">
+        <label class="drop-area preview-image-container" id="dropArea" for="uploadFile" title="Click or drop an image file here">
+          <input class="drop-area-file-input" type="file" id="uploadFile" accept="image/*" />
+          <img class="preview-image" id="uploadPreview" src="./img/sample.png" alt="Target preview" />
+          <div class="drop-area-upload">
+            <span class="btn" style="font-size: 0.85em; padding: 0.35em 0.7em;">choose file</span>
+            <span id="uploadFileName" class="drop-area-upload-filename">or drop here</span>
+          </div>
+        </label>
+
+        <!-- Sample Target Chips -->
+        <div class="samples-row">
+          <span class="samples-label">sample avatars:</span>
+          <button type="button" class="chip-btn target-preset-chip active" data-target="default">Egg Guy 🥚</button>
+          <button type="button" class="chip-btn target-preset-chip" data-target="cat">Kitty 🐱</button>
+          <button type="button" class="chip-btn target-preset-chip" data-target="blorbo">Blorbo 🎨</button>
+        </div>
+
+        <!-- URL Upload Row -->
+        <div class="url-upload-row">
+          <input id="uploadUrl" class="control url-input" type="url" placeholder="enter a url to upload" />
+          <button id="uploadUrlBtn" class="btn url-btn" type="button" title="Fetch image from URL">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </button>
+        </div>
+
+        <p id="uploadError" class="error-message"></p>
+        <p class="help">
+          note: url upload might not always work cus some sites don't like it when you direct link images from them
+        </p>
+        <p class="help" style="opacity: 0.75;">
+          tip: you can also press <strong>Ctrl+V</strong> anywhere on this page to paste an image directly from your clipboard!
+        </p>
+      </div>
+    </section>
+
+    <!-- Column 2b: Hand Customization & Hand Squish (Extra Feature) -->
+    <section class="hand-section content">
+      <div class="content-heading" style="display: flex; align-items: center; justify-content: center; gap: 0.4em;">
+        <span>hand sprite &amp; squish</span>
+        <span style="font-size: 0.8em; opacity: 0.75;">✨</span>
+      </div>
+
+      <div class="hand-custom-box">
+        <div class="hand-preview-wrap">
+          <img id="handThumb" class="hand-thumb" src="./img/sprite.png" alt="Active hand thumbnail" />
+          <div class="hand-meta">
+            <div id="handName" class="hand-name">Default Hand</div>
+            <div id="handDesc" class="hand-desc">Classic pet-pet hand (5-frame sprite sheet)</div>
+          </div>
+          <button id="btnResetHand" class="btn btn-reset" type="button" style="font-size: 0.8em; padding: 0.35em 0.6em;">reset hand</button>
+        </div>
+
+        <!-- Hand Presets Chips -->
+        <div class="samples-row" style="margin-top: 0.2em;">
+          <span class="samples-label">hand styles:</span>
+          <button type="button" class="chip-btn hand-preset-chip active" data-hand="default">🖐️ Classic Hand</button>
+          <button type="button" class="chip-btn hand-preset-chip" data-hand="catPaw">🐾 Kitty Paw</button>
+          <button type="button" class="chip-btn hand-preset-chip" data-hand="glove">🧤 Cartoon Glove</button>
+          <button type="button" class="chip-btn hand-preset-chip" data-hand="dogPaw">🐶 Puppy Paw</button>
+          <button type="button" class="chip-btn hand-preset-chip" data-hand="wand">✨ Magic Wand</button>
+        </div>
+
+        <!-- Upload Custom Hand -->
+        <label class="drop-area" id="handDropArea" for="uploadHandFile" style="margin-top: 0.7em; padding: 0.6em;" title="Upload custom hand image or sprite sheet">
+          <input class="drop-area-file-input" type="file" id="uploadHandFile" accept="image/*" />
+          <div class="drop-area-upload">
+            <span class="btn" style="font-size: 0.82em; padding: 0.3em 0.6em;">choose hand file</span>
+            <span id="handFileName" class="drop-area-upload-filename">or drop custom hand (png/svg/gif)</span>
+          </div>
+        </label>
+        <div class="hint" style="margin-top: 0.3em;">
+          accepts single images (paw, glove, item) or a 5-frame sprite sheet (560x112)!
+        </div>
+
+        <!-- Hand Squish Slider -->
+        <div class="row control-group" style="margin-top: 0.9em;">
+          <label for="handSquish" class="control-label control-group-s">hand squish</label>
+          <input id="handSquish" class="control-range control-group-l" type="range" step="5" min="20" max="300" value="100" />
+          <span id="handSquishVal" style="font-size: 0.85em; font-weight: 600; min-width: 3.5em; text-align: right;">100%</span>
+        </div>
+        <div class="hint">
+          controls hand downward stroke impact depth and flattening compression
+        </div>
+
+        <!-- Hand Size Slider -->
+        <div class="row control-group">
+          <label for="handScale" class="control-label control-group-s">hand size</label>
+          <input id="handScale" class="control-range control-group-l" type="range" step="2" min="30" max="200" value="100" />
+        </div>
+
+        <!-- Hand Flip Toggle -->
+        <div class="row control-group" style="margin-bottom: 0.2em;">
+          <label for="handFlip" class="control-group-l control-label">hand flip</label>
+          <label for="handFlip" class="toggle-switch sm">
+            <input id="handFlip" type="checkbox" class="toggle-switch-input" />
+            <span class="toggle-switch-control"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 3: Output & Export -->
+    <section class="output content">
+      <div class="content-heading">output</div>
+
+      <div class="output-preview-container">
+        <img id="result" class="output-image" width="112" height="112" alt="Generated PetPet GIF" style="display: none;" />
+        <div id="info" class="output-info">...</div>
+
+        <div class="output-actions">
+          <button id="btnDownload" class="btn" type="button" style="display: none;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>download gif</span>
+          </button>
+          <button id="btnCopy" class="btn btn-reset" type="button" style="display: none;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>copy gif</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="help">
+        ps: save the exported gif if you want to share it, using the link won't work cus it only exists in your browser
+      </p>
+      <p class="help">
+        pps: if there's weird green dots in the export try a different browser
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer help">
+      <div>
+        <span>v1</span>
+        <span class="separator">|</span>
+        <span>templates: <a href="./img/sprite.png" target="_blank" rel="noopener">sprite</a>, <a href="./img/sample.png" target="_blank" rel="noopener">sample</a></span>
+        <span class="separator">|</span>
+        <span>gifs are generated using <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener">gif.js</a></span>
+      </div>
+      <div style="margin-top: 0.8em;">
+        <span class="fingies" title="😳"><span class="fl">👉</span><span>👈</span></span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Inlined Web Worker script source for zero-failure blob execution -->
+  <script type="text/plain" id="gif-worker-code">
+// gif.worker.js 0.2.0 - https://github.com/jnordberg/gif.js
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){var NeuQuant=require("./TypedNeuQuant.js");var LZWEncoder=require("./LZWEncoder.js");function ByteArray(){this.page=-1;this.pages=[];this.newPage()}ByteArray.pageSize=4096;ByteArray.charMap={};for(var i=0;i<256;i++)ByteArray.charMap[i]=String.fromCharCode(i);ByteArray.prototype.newPage=function(){this.pages[++this.page]=new Uint8Array(ByteArray.pageSize);this.cursor=0};ByteArray.prototype.getData=function(){var rv="";for(var p=0;p<this.pages.length;p++){for(var i=0;i<ByteArray.pageSize;i++){rv+=ByteArray.charMap[this.pages[p][i]]}}return rv};ByteArray.prototype.writeByte=function(val){if(this.cursor>=ByteArray.pageSize)this.newPage();this.pages[this.page][this.cursor++]=val};ByteArray.prototype.writeUTFBytes=function(string){for(var l=string.length,i=0;i<l;i++)this.writeByte(string.charCodeAt(i))};ByteArray.prototype.writeBytes=function(array,offset,length){for(var l=length||array.length,i=offset||0;i<l;i++)this.writeByte(array[i])};function GIFEncoder(width,height){this.width=~~width;this.height=~~height;this.transparent=null;this.transIndex=0;this.repeat=-1;this.delay=0;this.image=null;this.pixels=null;this.indexedPixels=null;this.colorDepth=null;this.colorTab=null;this.neuQuant=null;this.usedEntry=new Array;this.palSize=7;this.dispose=-1;this.firstFrame=true;this.sample=10;this.dither=false;this.globalPalette=false;this.out=new ByteArray}GIFEncoder.prototype.setDelay=function(milliseconds){this.delay=Math.round(milliseconds/10)};GIFEncoder.prototype.setFrameRate=function(fps){this.delay=Math.round(100/fps)};GIFEncoder.prototype.setDispose=function(disposalCode){if(disposalCode>=0)this.dispose=disposalCode};GIFEncoder.prototype.setRepeat=function(repeat){this.repeat=repeat};GIFEncoder.prototype.setTransparent=function(color){this.transparent=color};GIFEncoder.prototype.addFrame=function(imageData){this.image=imageData;this.colorTab=this.globalPalette&&this.globalPalette.slice?this.globalPalette:null;this.getImagePixels();this.analyzePixels();if(this.globalPalette===true)this.globalPalette=this.colorTab;if(this.firstFrame){this.writeLSD();this.writePalette();if(this.repeat>=0){this.writeNetscapeExt()}}this.writeGraphicCtrlExt();this.writeImageDesc();if(!this.firstFrame&&!this.globalPalette)this.writePalette();this.writePixels();this.firstFrame=false};GIFEncoder.prototype.finish=function(){this.out.writeByte(59)};GIFEncoder.prototype.setQuality=function(quality){if(quality<1)quality=1;this.sample=quality};GIFEncoder.prototype.setDither=function(dither){if(dither===true)dither="FloydSteinberg";this.dither=dither};GIFEncoder.prototype.setGlobalPalette=function(palette){this.globalPalette=palette};GIFEncoder.prototype.getGlobalPalette=function(){return this.globalPalette&&this.globalPalette.slice&&this.globalPalette.slice(0)||this.globalPalette};GIFEncoder.prototype.writeHeader=function(){this.out.writeUTFBytes("GIF89a")};GIFEncoder.prototype.analyzePixels=function(){if(!this.colorTab){this.neuQuant=new NeuQuant(this.pixels,this.sample);this.neuQuant.buildColormap();this.colorTab=this.neuQuant.getColormap()}if(this.dither){this.ditherPixels(this.dither.replace("-serpentine",""),this.dither.match(/-serpentine/)!==null)}else{this.indexPixels()}this.pixels=null;this.colorDepth=8;this.palSize=7;if(this.transparent!==null){this.transIndex=this.findClosest(this.transparent,true)}};GIFEncoder.prototype.indexPixels=function(imgq){var nPix=this.pixels.length/3;this.indexedPixels=new Uint8Array(nPix);var k=0;for(var j=0;j<nPix;j++){var index=this.findClosestRGB(this.pixels[k++]&255,this.pixels[k++]&255,this.pixels[k++]&255);this.usedEntry[index]=true;this.indexedPixels[j]=index}};GIFEncoder.prototype.ditherPixels=function(kernel,serpentine){var kernels={FalseFloydSteinberg:[[3/8,1,0],[3/8,0,1],[2/8,1,1]],FloydSteinberg:[[7/16,1,0],[3/16,-1,1],[5/16,0,1],[1/16,1,1]],Stucki:[[8/42,1,0],[4/42,2,0],[2/42,-2,1],[4/42,-1,1],[8/42,0,1],[4/42,1,1],[2/42,2,1],[1/42,-2,2],[2/42,-1,2],[4/42,0,2],[2/42,1,2],[1/42,2,2]],Atkinson:[[1/8,1,0],[1/8,2,0],[1/8,-1,1],[1/8,0,1],[1/8,1,1],[1/8,0,2]]};if(!kernel||!kernels[kernel]){throw"Unknown dithering kernel: "+kernel}var ds=kernels[kernel];var index=0,height=this.height,width=this.width,data=this.pixels;var direction=serpentine?-1:1;this.indexedPixels=new Uint8Array(this.pixels.length/3);for(var y=0;y<height;y++){if(serpentine)direction=direction*-1;for(var x=direction==1?0:width-1,xend=direction==1?width:0;x!==xend;x+=direction){index=y*width+x;var idx=index*3;var r1=data[idx];var g1=data[idx+1];var b1=data[idx+2];idx=this.findClosestRGB(r1,g1,b1);this.usedEntry[idx]=true;this.indexedPixels[index]=idx;idx*=3;var r2=this.colorTab[idx];var g2=this.colorTab[idx+1];var b2=this.colorTab[idx+2];var er=r1-r2;var eg=g1-g2;var eb=b1-b2;for(var i=direction==1?0:ds.length-1,end=direction==1?ds.length:0;i!==end;i+=direction){var x1=ds[i][1];var y1=ds[i][2];if(x1+x>=0&&x1+x<width&&y1+y>=0&&y1+y<height){var d=ds[i][0];idx=index+x1+y1*width;idx*=3;data[idx]=Math.max(0,Math.min(255,data[idx]+er*d));data[idx+1]=Math.max(0,Math.min(255,data[idx+1]+eg*d));data[idx+2]=Math.max(0,Math.min(255,data[idx+2]+eb*d))}}}}};GIFEncoder.prototype.findClosest=function(c,used){return this.findClosestRGB((c&16711680)>>16,(c&65280)>>8,c&255,used)};GIFEncoder.prototype.findClosestRGB=function(r,g,b,used){if(this.colorTab===null)return-1;if(this.neuQuant&&!used){return this.neuQuant.lookupRGB(r,g,b)}var c=b|g<<8|r<<16;var minpos=0;var dmin=256*256*256;var len=this.colorTab.length;for(var i=0,index=0;i<len;index++){var dr=r-(this.colorTab[i++]&255);var dg=g-(this.colorTab[i++]&255);var db=b-(this.colorTab[i++]&255);var d=dr*dr+dg*dg+db*db;if((!used||this.usedEntry[index])&&d<dmin){dmin=d;minpos=index}}return minpos};GIFEncoder.prototype.getImagePixels=function(){var w=this.width;var h=this.height;this.pixels=new Uint8Array(w*h*3);var data=this.image;var srcPos=0;var count=0;for(var i=0;i<h;i++){for(var j=0;j<w;j++){this.pixels[count++]=data[srcPos++];this.pixels[count++]=data[srcPos++];this.pixels[count++]=data[srcPos++];srcPos++}}};GIFEncoder.prototype.writeGraphicCtrlExt=function(){this.out.writeByte(33);this.out.writeByte(249);this.out.writeByte(4);var transp,disp;if(this.transparent===null){transp=0;disp=0}else{transp=1;disp=2}if(this.dispose>=0){disp=dispose&7}disp<<=2;this.out.writeByte(0|disp|0|transp);this.writeShort(this.delay);this.out.writeByte(this.transIndex);this.out.writeByte(0)};GIFEncoder.prototype.writeImageDesc=function(){this.out.writeByte(44);this.writeShort(0);this.writeShort(0);this.writeShort(this.width);this.writeShort(this.height);if(this.firstFrame||this.globalPalette){this.out.writeByte(0)}else{this.out.writeByte(128|0|0|0|this.palSize)}};GIFEncoder.prototype.writeLSD=function(){this.writeShort(this.width);this.writeShort(this.height);this.out.writeByte(128|112|0|this.palSize);this.out.writeByte(0);this.out.writeByte(0)};GIFEncoder.prototype.writeNetscapeExt=function(){this.out.writeByte(33);this.out.writeByte(255);this.out.writeByte(11);this.out.writeUTFBytes("NETSCAPE2.0");this.out.writeByte(3);this.out.writeByte(1);this.writeShort(this.repeat);this.out.writeByte(0)};GIFEncoder.prototype.writePalette=function(){this.out.writeBytes(this.colorTab);var n=3*256-this.colorTab.length;for(var i=0;i<n;i++)this.out.writeByte(0)};GIFEncoder.prototype.writeShort=function(pValue){this.out.writeByte(pValue&255);this.out.writeByte(pValue>>8&255)};GIFEncoder.prototype.writePixels=function(){var enc=new LZWEncoder(this.width,this.height,this.indexedPixels,this.colorDepth);enc.encode(this.out)};GIFEncoder.prototype.stream=function(){return this.out};module.exports=GIFEncoder},{"./LZWEncoder.js":2,"./TypedNeuQuant.js":3}],2:[function(require,module,exports){var EOF=-1;var BITS=12;var HSIZE=5003;var masks=[0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535];function LZWEncoder(width,height,pixels,colorDepth){var initCodeSize=Math.max(2,colorDepth);var accum=new Uint8Array(256);var htab=new Int32Array(HSIZE);var codetab=new Int32Array(HSIZE);var cur_accum,cur_bits=0;var a_count;var free_ent=0;var maxcode;var clear_flg=false;var g_init_bits,ClearCode,EOFCode;function char_out(c,outs){accum[a_count++]=c;if(a_count>=254)flush_char(outs)}function cl_block(outs){cl_hash(HSIZE);free_ent=ClearCode+2;clear_flg=true;output(ClearCode,outs)}function cl_hash(hsize){for(var i=0;i<hsize;++i)htab[i]=-1}function compress(init_bits,outs){var fcode,c,i,ent,disp,hsize_reg,hshift;g_init_bits=init_bits;clear_flg=false;n_bits=g_init_bits;maxcode=MAXCODE(n_bits);ClearCode=1<<init_bits-1;EOFCode=ClearCode+1;free_ent=ClearCode+2;a_count=0;ent=nextPixel();hshift=0;for(fcode=HSIZE;fcode<65536;fcode*=2)++hshift;hshift=8-hshift;hsize_reg=HSIZE;cl_hash(hsize_reg);output(ClearCode,outs);outer_loop:while((c=nextPixel())!=EOF){fcode=(c<<BITS)+ent;i=c<<hshift^ent;if(htab[i]===fcode){ent=codetab[i];continue}else if(htab[i]>=0){disp=hsize_reg-i;if(i===0)disp=1;do{if((i-=disp)<0)i+=hsize_reg;if(htab[i]===fcode){ent=codetab[i];continue outer_loop}}while(htab[i]>=0)}output(ent,outs);ent=c;if(free_ent<1<<BITS){codetab[i]=free_ent++;htab[i]=fcode}else{cl_block(outs)}}output(ent,outs);output(EOFCode,outs)}function encode(outs){outs.writeByte(initCodeSize);remaining=width*height;curPixel=0;compress(initCodeSize+1,outs);outs.writeByte(0)}function flush_char(outs){if(a_count>0){outs.writeByte(a_count);outs.writeBytes(accum,0,a_count);a_count=0}}function MAXCODE(n_bits){return(1<<n_bits)-1}function nextPixel(){if(remaining===0)return EOF;--remaining;var pix=pixels[curPixel++];return pix&255}function output(code,outs){cur_accum&=masks[cur_bits];if(cur_bits>0)cur_accum|=code<<cur_bits;else cur_accum=code;cur_bits+=n_bits;while(cur_bits>=8){char_out(cur_accum&255,outs);cur_accum>>=8;cur_bits-=8}if(free_ent>maxcode||clear_flg){if(clear_flg){maxcode=MAXCODE(n_bits=g_init_bits);clear_flg=false}else{++n_bits;if(n_bits==BITS)maxcode=1<<BITS;else maxcode=MAXCODE(n_bits)}}if(code==EOFCode){while(cur_bits>0){char_out(cur_accum&255,outs);cur_accum>>=8;cur_bits-=8}flush_char(outs)}}this.encode=encode}module.exports=LZWEncoder},{}],3:[function(require,module,exports){var ncycles=100;var netsize=256;var maxnetpos=netsize-1;var netbiasshift=4;var intbiasshift=16;var intbias=1<<intbiasshift;var gammashift=10;var gamma=1<<gammashift;var betashift=10;var beta=intbias>>betashift;var betagamma=intbias<<gammashift-betashift;var initrad=netsize>>3;var radiusbiasshift=6;var radiusbias=1<<radiusbiasshift;var initradius=initrad*radiusbias;var radiusdec=30;var alphabiasshift=10;var initalpha=1<<alphabiasshift;var alphadec;var radbiasshift=8;var radbias=1<<radbiasshift;var alpharadbshift=alphabiasshift+radbiasshift;var alpharadbias=1<<alpharadbshift;var prime1=499;var prime2=491;var prime3=487;var prime4=503;var minpicturebytes=3*prime4;function NeuQuant(pixels,samplefac){var network;var netindex;var bias;var freq;var radpower;function init(){network=[];netindex=new Int32Array(256);bias=new Int32Array(netsize);freq=new Int32Array(netsize);radpower=new Int32Array(netsize>>3);var i,v;for(i=0;i<netsize;i++){v=(i<<netbiasshift+8)/netsize;network[i]=new Float64Array([v,v,v,0]);freq[i]=intbias/netsize;bias[i]=0}}function unbiasnet(){for(var i=0;i<netsize;i++){network[i][0]>>=netbiasshift;network[i][1]>>=netbiasshift;network[i][2]>>=netbiasshift;network[i][3]=i}}function altersingle(alpha,i,b,g,r){network[i][0]-=alpha*(network[i][0]-b)/initalpha;network[i][1]-=alpha*(network[i][1]-g)/initalpha;network[i][2]-=alpha*(network[i][2]-r)/initalpha}function alterneigh(radius,i,b,g,r){var lo=Math.abs(i-radius);var hi=Math.min(i+radius,netsize);var j=i+1;var k=i-1;var m=1;var p,a;while(j<hi||k>lo){a=radpower[m++];if(j<hi){p=network[j++];p[0]-=a*(p[0]-b)/alpharadbias;p[1]-=a*(p[1]-g)/alpharadbias;p[2]-=a*(p[2]-r)/alpharadbias}if(k>lo){p=network[k--];p[0]-=a*(p[0]-b)/alpharadbias;p[1]-=a*(p[1]-g)/alpharadbias;p[2]-=a*(p[2]-r)/alpharadbias}}}function contest(b,g,r){var bestd=~(1<<31);var bestbiasd=bestd;var bestpos=-1;var bestbiaspos=bestpos;var i,n,dist,biasdist,betafreq;for(i=0;i<netsize;i++){n=network[i];dist=Math.abs(n[0]-b)+Math.abs(n[1]-g)+Math.abs(n[2]-r);if(dist<bestd){bestd=dist;bestpos=i}biasdist=dist-(bias[i]>>intbiasshift-netbiasshift);if(biasdist<bestbiasd){bestbiasd=biasdist;bestbiaspos=i}betafreq=freq[i]>>betashift;freq[i]-=betafreq;bias[i]+=betafreq<<gammashift}freq[bestpos]+=beta;bias[bestpos]-=betagamma;return bestbiaspos}function inxbuild(){var i,j,p,q,smallpos,smallval,previouscol=0,startpos=0;for(i=0;i<netsize;i++){p=network[i];smallpos=i;smallval=p[1];for(j=i+1;j<netsize;j++){q=network[j];if(q[1]<smallval){smallpos=j;smallval=q[1]}}q=network[smallpos];if(i!=smallpos){j=q[0];q[0]=p[0];p[0]=j;j=q[1];q[1]=p[1];p[1]=j;j=q[2];q[2]=p[2];p[2]=j;j=q[3];q[3]=p[3];p[3]=j}if(smallval!=previouscol){netindex[previouscol]=startpos+i>>1;for(j=previouscol+1;j<smallval;j++)netindex[j]=i;previouscol=smallval;startpos=i}}netindex[previouscol]=startpos+maxnetpos>>1;for(j=previouscol+1;j<256;j++)netindex[j]=maxnetpos}function inxsearch(b,g,r){var a,p,dist;var bestd=1e3;var best=-1;var i=netindex[g];var j=i-1;while(i<netsize||j>=0){if(i<netsize){p=network[i];dist=p[1]-g;if(dist>=bestd)i=netsize;else{i++;if(dist<0)dist=-dist;a=p[0]-b;if(a<0)a=-a;dist+=a;if(dist<bestd){a=p[2]-r;if(a<0)a=-a;dist+=a;if(dist<bestd){bestd=dist;best=p[3]}}}}if(j>=0){p=network[j];dist=g-p[1];if(dist>=bestd)j=-1;else{j--;if(dist<0)dist=-dist;a=p[0]-b;if(a<0)a=-a;dist+=a;if(dist<bestd){a=p[2]-r;if(a<0)a=-a;dist+=a;if(dist<bestd){bestd=dist;best=p[3]}}}}}return best}function learn(){var i;var lengthcount=pixels.length;var alphadec=30+(samplefac-1)/3;var samplepixels=lengthcount/(3*samplefac);var delta=~~(samplepixels/ncycles);var alpha=initalpha;var radius=initradius;var rad=radius>>radiusbiasshift;if(rad<=1)rad=0;for(i=0;i<rad;i++)radpower[i]=alpha*((rad*rad-i*i)*radbias/(rad*rad));var step;if(lengthcount<minpicturebytes){samplefac=1;step=3}else if(lengthcount%prime1!==0){step=3*prime1}else if(lengthcount%prime2!==0){step=3*prime2}else if(lengthcount%prime3!==0){step=3*prime3}else{step=3*prime4}var b,g,r,j;var pix=0;i=0;while(i<samplepixels){b=(pixels[pix]&255)<<netbiasshift;g=(pixels[pix+1]&255)<<netbiasshift;r=(pixels[pix+2]&255)<<netbiasshift;j=contest(b,g,r);altersingle(alpha,j,b,g,r);if(rad!==0)alterneigh(rad,j,b,g,r);pix+=step;if(pix>=lengthcount)pix-=lengthcount;i++;if(delta===0)delta=1;if(i%delta===0){alpha-=alpha/alphadec;radius-=radius/radiusdec;rad=radius>>radiusbiasshift;if(rad<=1)rad=0;for(j=0;j<rad;j++)radpower[j]=alpha*((rad*rad-j*j)*radbias/(rad*rad))}}}function buildColormap(){init();learn();unbiasnet();inxbuild()}this.buildColormap=buildColormap;function getColormap(){var map=[];var index=[];for(var i=0;i<netsize;i++)index[network[i][3]]=i;var k=0;for(var l=0;l<netsize;l++){var j=index[l];map[k++]=network[j][0];map[k++]=network[j][1];map[k++]=network[j][2]}return map}this.getColormap=getColormap;this.lookupRGB=inxsearch}module.exports=NeuQuant},{}],4:[function(require,module,exports){var GIFEncoder,renderFrame;GIFEncoder=require("./GIFEncoder.js");renderFrame=function(frame){var encoder,page,stream,transfer;encoder=new GIFEncoder(frame.width,frame.height);if(frame.index===0){encoder.writeHeader()}else{encoder.firstFrame=false}encoder.setTransparent(frame.transparent);encoder.setRepeat(frame.repeat);encoder.setDelay(frame.delay);encoder.setQuality(frame.quality);encoder.setDither(frame.dither);encoder.setGlobalPalette(frame.globalPalette);encoder.addFrame(frame.data);if(frame.last){encoder.finish()}if(frame.globalPalette===true){frame.globalPalette=encoder.getGlobalPalette()}stream=encoder.stream();frame.data=stream.pages;frame.cursor=stream.cursor;frame.pageSize=stream.constructor.pageSize;if(frame.canTransfer){transfer=function(){var i,len,ref,results;ref=frame.data;results=[];for(i=0,len=ref.length;i<len;i++){page=ref[i];results.push(page.buffer)}return results}();return self.postMessage(frame,transfer)}else{return self.postMessage(frame)}};self.onmessage=function(event){return renderFrame(event.data)}},{"./GIFEncoder.js":1}]},{},[4]);
+  </script>
+
+  <!-- External Script Dependencies -->
+  <script src="./requestInterval.js"></script>
+  <script src="./gif.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>
+

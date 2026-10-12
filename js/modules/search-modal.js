@@ -204,6 +204,33 @@ export class SearchModal {
         });
       });
     }
+
+    // 5. Index Misc Fun Tools
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '🐾',
+      badge: 'GIF Maker',
+      badgeClass: 'badge-three',
+      id: 'misc-petpet',
+      title: 'Petpet Generator',
+      desc: 'Interactive pet-pet petting hand animation and animated GIF generator with custom hand & squish controls.',
+      keywords: 'petpet pet pat petting hand gif generator squish meme avatar animated misc',
+      route: '#misc/petpet'
+    });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '🎨',
+      badge: 'Character Maker',
+      badgeClass: 'badge-anime',
+      id: 'misc-blorbo',
+      title: 'Blorbo Stats Maker',
+      desc: 'Silly character stat card editor with MS-paint style doodle canvas and interactive spider radar chart.',
+      keywords: 'blorbo character stats card maker doodle spider radar chart ms paint silly oc misc',
+      route: '#misc/blorbo'
+    });
   }
 
   renderModal() {
