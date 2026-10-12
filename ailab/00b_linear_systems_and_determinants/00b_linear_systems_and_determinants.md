@@ -179,7 +179,7 @@ True solution is $(1, 1)$. Pivoting preserved precision across all IEEE-754 mant
 
 ## 4. Determinants: The Geometric Scaling Factor
 
-The determinant $\det(A)$ is a scalar measuring how much a matrix transformation scales $n$-dimensional volumes.
+The determinant $\det(A)$ is a scalar measuring how much a linear transformation scales $n$-dimensional volumes. It is the single most important diagnostic number of a square matrix.
 
 ### Geometric Area in 2D
 Given matrix $A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$, its columns $\mathbf{v}_1 = \begin{bmatrix} a \\ c \end{bmatrix}$ and $\mathbf{v}_2 = \begin{bmatrix} b \\ d \end{bmatrix}$ span a parallelogram:
@@ -200,43 +200,168 @@ $$\det(A) = ad - bc$$
 ```
 
 ### What does the sign of $\det(A)$ mean?
-- **$\det(A) > 0$:** Preserves spatial orientation (counter-clockwise stays counter-clockwise).
-- **$\det(A) < 0$:** Inverts orientation (mirror flip / reflection).
-- **$\det(A) = 0$:** **Singular (Dimension Collapse!)** The transformation squashes the entire 2D plane into a 1D line or point. The area becomes $0$. Information is permanently lost, and no inverse function can ever undo the squash!
+- **$\det(A) > 0$:** Preserves spatial orientation (counter-clockwise basis stays counter-clockwise, right-handed coordinates stay right-handed).
+- **$\det(A) < 0$:** Inverts spatial orientation (mirror reflection, handedness flips).
+- **$\det(A) = 0$:** **Singular (Dimension Collapse!)** The transformation squashes the entire 2D plane into a 1D line or a single 0D point. The area becomes $0$. Information is permanently destroyed, and no inverse function can ever undo the squash!
 
-### Key Algebraic Properties
-| Property | Formula | Intuition |
-| :--- | :--- | :--- |
-| Identity | $\det(I) = 1$ | Unit square has area 1 |
-| Product Rule | $\det(AB) = \det(A) \det(B)$ | Scaling factors multiply |
-| Transpose | $\det(A^T) = \det(A)$ | Area invariant under transpose |
-| Inverse | $\det(A^{-1}) = \frac{1}{\det(A)}$ | Undoing transformation inverts scale |
-| Row Swap | $\det(A_{\text{swapped}}) = -\det(A)$ | Flips orientation sign |
+---
 
-Using Gaussian elimination with $s$ row swaps and upper triangular pivots $u_{ii}$:
-$$\det(A) = (-1)^s \prod_{i=1}^n u_{ii}$$
+### Computing 3x3 Determinants: The Rule of Sarrus
+For a $3 \times 3$ matrix:
+
+$$A = \begin{bmatrix} 
+a_{11} & a_{12} & a_{13} \\ 
+a_{21} & a_{22} & a_{23} \\ 
+a_{31} & a_{32} & a_{33} 
+\end{bmatrix}$$
+
+Write the first two columns again to the right of the matrix:
+
+```
+    a11   a12   a13 | a11   a12
+       \     \     \
+    a21   a22   a23 | a21   a22
+       \     \     \
+    a31   a32   a33 | a31   a32
+       /     /     /
+```
+
+Add the products along the three down-right diagonals, and subtract the products along the three up-right diagonals:
+
+$$\begin{aligned}
+\det(A) = &+(a_{11} a_{22} a_{33} + a_{12} a_{23} a_{31} + a_{13} a_{21} a_{32}) \\
+          &-(a_{31} a_{22} a_{13} + a_{32} a_{23} a_{11} + a_{33} a_{21} a_{12})
+\end{aligned}$$
+
+#### Concrete 3x3 Numerical Example
+Let:
+$$A = \begin{bmatrix} 
+1 & 2 & 3 \\ 
+0 & 1 & 4 \\ 
+5 & 6 & 0 
+\end{bmatrix}$$
+
+1. **Downward Diagonals (+):**
+   $$(1 \times 1 \times 0) + (2 \times 4 \times 5) + (3 \times 0 \times 6) = 0 + 40 + 0 = \mathbf{40}$$
+2. **Upward Diagonals (-):**
+   $$(5 \times 1 \times 3) + (6 \times 4 \times 1) + (0 \times 0 \times 2) = 15 + 24 + 0 = \mathbf{39}$$
+3. **Determinant:**
+   $$\det(A) = 40 - 39 = \mathbf{1}$$
+Because $\det(A) = 1$, the transformation preserves 3D volume exactly without any scale change!
+
+---
+
+### Laplace Expansion (Minors & Cofactors for Any $n \times n$ Matrix)
+For matrices larger than $3 \times 3$, the Rule of Sarrus does not apply. We use **Laplace Cofactor Expansion** along any row $i$ or column $j$:
+
+$$\det(A) = \sum_{j=1}^n (-1)^{i+j} a_{ij} M_{ij} = \sum_{j=1}^n a_{ij} C_{ij}$$
+
+Where:
+- **Minor $M_{ij}$:** The determinant of the $(n-1) \times (n-1)$ submatrix obtained by deleting row $i$ and column $j$.
+- **Cofactor $C_{ij} = (-1)^{i+j} M_{ij}$:** The signed minor, using the checkerboard sign pattern:
+  $$\begin{bmatrix} + & - & + & \cdots \\ - & + & - & \cdots \\ + & - & + & \cdots \end{bmatrix}$$
+
+---
+
+### The Adjugate Matrix & Classical Adjoint Inverse Formula
+The **Cofactor Matrix** $C$ replaces each entry $a_{ij}$ with its cofactor $C_{ij}$.
+The **Adjugate Matrix** $\text{adj}(A)$ is the **transpose** of the cofactor matrix:
+
+$$\text{adj}(A) = C^T \iff [\text{adj}(A)]_{ij} = C_{ji}$$
+
+This yields the celebrated universal analytical formula for the inverse matrix:
+
+$$A^{-1} = \frac{1}{\det(A)} \text{adj}(A)$$
+
+#### Full 2x2 Derivation
+For $A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$:
+- Minors: $M_{11} = d, \; M_{12} = c, \; M_{21} = b, \; M_{22} = a$.
+- Cofactors: $C_{11} = d, \; C_{12} = -c, \; C_{21} = -b, \; C_{22} = a$.
+- Cofactor matrix: $C = \begin{bmatrix} d & -c \\ -b & a \end{bmatrix}$.
+- Adjugate matrix (transpose): $\text{adj}(A) = C^T = \begin{bmatrix} d & -b \\ -c & a \end{bmatrix}$.
+- Resulting inverse:
+  $$A^{-1} = \frac{1}{ad - bc} \begin{bmatrix} d & -b \\ -c & a \end{bmatrix}$$
+
+---
+
+### Cramer's Rule: Solving Systems via Determinant Ratios
+For an invertible system $A\mathbf{x} = \mathbf{b}$, each unknown variable $x_i$ can be solved as the ratio of two determinants:
+
+$$x_i = \frac{\det(A_i)}{\det(A)}$$
+
+Where $A_i$ is matrix $A$ with its $i$-th column replaced by the target vector $\mathbf{b}$!
+
+#### Step-by-Step 2D Example with Cramer's Rule
+Solve:
+$$\begin{aligned}
+2x_1 + x_2 &= 5 \\
+x_1 + 3x_2 &= 10
+\end{aligned} \implies A = \begin{bmatrix} 2 & 1 \\ 1 & 3 \end{bmatrix}, \quad \mathbf{b} = \begin{bmatrix} 5 \\ 10 \end{bmatrix}$$
+
+1. **System Determinant $\det(A)$:**
+   $$\det(A) = (2)(3) - (1)(1) = 6 - 1 = \mathbf{5}$$
+2. **Replace Column 1 with $\mathbf{b}$ ($A_1$):**
+   $$A_1 = \begin{bmatrix} 5 & 1 \\ 10 & 3 \end{bmatrix} \implies \det(A_1) = (5)(3) - (1)(10) = 15 - 10 = \mathbf{5}$$
+   $$x_1 = \frac{\det(A_1)}{\det(A)} = \frac{5}{5} = \mathbf{1}$$
+3. **Replace Column 2 with $\mathbf{b}$ ($A_2$):**
+   $$A_2 = \begin{bmatrix} 2 & 5 \\ 1 & 10 \end{bmatrix} \implies \det(A_2) = (2)(10) - (5)(1) = 20 - 5 = \mathbf{15}$$
+   $$x_2 = \frac{\det(A_2)}{\det(A)} = \frac{15}{5} = \mathbf{3}$$
+
+**Solution:** $\mathbf{x} = \begin{bmatrix} 1 \\ 3 \end{bmatrix}$ (Matches Gaussian elimination exactly!).
+
+---
+
+### The Matrix Trace $\text{Tr}(A)$ & Eigenvalue Unification
+The **Trace** of an $n \times n$ square matrix is the sum of its main diagonal elements:
+
+$$\text{Tr}(A) = \sum_{i=1}^n a_{ii} = a_{11} + a_{22} + \dots + a_{nn}$$
+
+#### Key Trace Properties
+1. **Linearity:** $\text{Tr}(A + B) = \text{Tr}(A) + \text{Tr}(B)$ and $\text{Tr}(c A) = c \text{Tr}(A)$
+2. **Transpose Invariance:** $\text{Tr}(A^T) = \text{Tr}(A)$
+3. **Cyclic Permutation Property (Crucial for Machine Learning & Matrix Calculus):**
+   $$\text{Tr}(ABC) = \text{Tr}(BCA) = \text{Tr}(CAB)$$
+   *(Note: $\text{Tr}(ABC) \neq \text{Tr}(BAC)$ in general, only cyclic shifts preserve the trace!)*
+4. **Frobenius Norm via Trace:**
+   $$\|A\|_F^2 = \sum_{i=1}^m \sum_{j=1}^n a_{ij}^2 = \text{Tr}(A^T A)$$
+
+#### The Deep Connection Between Trace, Determinant & Eigenvalues
+For any $n \times n$ matrix with eigenvalues $\lambda_1, \dots, \lambda_n$:
+
+$$\text{Tr}(A) = \sum_{i=1}^n \lambda_i \quad \text{and} \quad \det(A) = \prod_{i=1}^n \lambda_i$$
+
+In 2D, the entire characteristic polynomial $\det(A - \lambda I) = 0$ is expressed purely by Trace and Determinant:
+
+$$\lambda^2 - \text{Tr}(A)\lambda + \det(A) = 0$$
+
+$$\lambda_{1, 2} = \frac{\text{Tr}(A) \pm \sqrt{\text{Tr}(A)^2 - 4\det(A)}}{2}$$
+
+- If $\text{Tr}(A)^2 - 4\det(A) > 0$: Two distinct real eigenvalues.
+- If $\text{Tr}(A)^2 - 4\det(A) = 0$: Repeated eigenvalue.
+- If $\text{Tr}(A)^2 - 4\det(A) < 0$: Complex conjugate eigenvalues (causes rotation/spirals in dynamical systems!).
+
+---
+
+### The Invertible Matrix Theorem
+For any square $n \times n$ matrix $A$, the following statements are **all mathematically equivalent**:
+1. $A$ is invertible ($A^{-1}$ exists).
+2. $\det(A) \neq 0$.
+3. $\text{rank}(A) = n$ (Full rank).
+4. $\text{nullity}(A) = 0$ (The only solution to $A\mathbf{x} = \mathbf{0}$ is $\mathbf{x} = \mathbf{0}$).
+5. The columns of $A$ are linearly independent and span $\mathbb{R}^n$.
+6. The rows of $A$ are linearly independent and span $\mathbb{R}^n$.
+7. $A\mathbf{x} = \mathbf{b}$ has a unique solution for every target vector $\mathbf{b}$.
+8. $A$ can be row-reduced to the identity matrix $I_n$.
+9. Zero is not an eigenvalue of $A$ ($\lambda_i \neq 0$ for all $i$).
+10. The linear transformation $T(\mathbf{x}) = A\mathbf{x}$ is both one-to-one (injective) and onto (surjective).
 
 ---
 
 ## 5. Matrix Inverses & Gauss-Jordan Elimination
 
 A square matrix $A \in \mathbb{R}^{n \times n}$ is invertible (non-singular) if and only if $\det(A) \neq 0$.
-
 The inverse matrix $A^{-1}$ satisfies:
 $$A A^{-1} = A^{-1} A = I_n$$
-
-### 2x2 Analytical Formula
-For a $2 \times 2$ matrix $A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$:
-
-$$A^{-1} = \frac{1}{ad - bc} \begin{bmatrix} d & -b \\ -c & a \end{bmatrix}$$
-
-**Worked Example:**
-Let $A = \begin{bmatrix} 2 & 1 \\ 1 & 3 \end{bmatrix}$.
-1. $\det(A) = (2)(3) - (1)(1) = 6 - 1 = 5 \neq 0$ (Invertible!).
-2. Swap diagonal, negate off-diagonal:
-   $$A^{-1} = \frac{1}{5} \begin{bmatrix} 3 & -1 \\ -1 & 2 \end{bmatrix} = \begin{bmatrix} 0.6 & -0.2 \\ -0.2 & 0.4 \end{bmatrix}$$
-3. Verify:
-   $$A A^{-1} = \begin{bmatrix} 2 & 1 \\ 1 & 3 \end{bmatrix} \begin{bmatrix} 0.6 & -0.2 \\ -0.2 & 0.4 \end{bmatrix} = \begin{bmatrix} 1.2 - 0.2 & -0.4 + 0.4 \\ 0.6 - 0.6 & -0.2 + 1.2 \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} \quad \checkmark$$
 
 ### Gauss-Jordan Inversion Algorithm for $n \times n$ Matrices
 To invert larger matrices, augment with the identity matrix $[A \mid I]$ and row reduce until the left side is $I$:

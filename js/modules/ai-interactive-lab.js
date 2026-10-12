@@ -81,12 +81,15 @@ export class AIInteractiveLab {
       ]
     };
 
-    // State for 2D Gradient Descent (02)
+    // State for 2D Gradient Descent & Transcendental Functions (02)
     this.gradState = {
+      mode: 'landscape', // 'landscape' or 'transcendental'
       surface: 'bowl', // 'bowl' or 'saddle'
       w: { x: 2.8, y: 2.2 },
       lr: 0.15,
-      history: []
+      history: [],
+      activation: 'sigmoid', // 'sigmoid', 'tanh', 'softplus', 'exp'
+      inputX: 1.0
     };
 
     // State for Bivariate Gaussian (03)
@@ -237,9 +240,15 @@ export class AIInteractiveLab {
         const dQ = Math.hypot(p.x - this.svdState.queryVec.x, p.y - this.svdState.queryVec.y);
         if (dQ < 0.6) this.vState.activeDrag = 'query';
       } else if (mod === '02_calculus_and_autodiff') {
-        this.gradState.w = { x: p.x, y: p.y };
-        this.gradState.history = [{ x: p.x, y: p.y }];
-        this.updateStats();
+        if (this.gradState.mode === 'transcendental') {
+          this.vState.activeDrag = 'transX';
+          this.gradState.inputX = parseFloat(Math.max(-4, Math.min(4, p.x)).toFixed(1));
+          this.syncSlider('slider-act-x', this.gradState.inputX);
+        } else {
+          this.gradState.w = { x: p.x, y: p.y };
+          this.gradState.history = [{ x: p.x, y: p.y }];
+          this.updateStats();
+        }
       }
     };
 
@@ -262,6 +271,9 @@ export class AIInteractiveLab {
       } else if (this.vState.activeDrag === 'query') {
         this.svdState.queryVec.x = parseFloat(clampedX.toFixed(2));
         this.svdState.queryVec.y = parseFloat(clampedY.toFixed(2));
+      } else if (this.vState.activeDrag === 'transX') {
+        this.gradState.inputX = parseFloat(Math.max(-4, Math.min(4, clampedX)).toFixed(1));
+        this.syncSlider('slider-act-x', this.gradState.inputX);
       }
       this.updateStats();
     };
@@ -556,10 +568,11 @@ export class AIInteractiveLab {
     return `
       <div class="ai-controls-grid">
         <div class="ai-control-group">
-          <div class="ai-control-title">System View Mode</div>
+          <div class="ai-control-title">System View Mode & Determinants</div>
           <div class="ai-chips-row">
             <button class="ai-chip ${this.sysState.mode === 'row' ? 'active' : ''}" id="chip-mode-row">Row Picture (Hyperplanes)</button>
             <button class="ai-chip ${this.sysState.mode === 'col' ? 'active' : ''}" id="chip-mode-col">Column Picture (Vectors)</button>
+            <button class="ai-chip ${this.sysState.mode === 'cramer' ? 'active' : ''}" id="chip-mode-cramer">Cramer's Rule &amp; Trace</button>
             <button class="ai-chip" id="chip-preset-singular">Singular (det = 0)</button>
             <button class="ai-chip" id="chip-preset-invertible">Invertible System</button>
           </div>
@@ -634,7 +647,16 @@ export class AIInteractiveLab {
         this.ctx.fillText(`x* = (${x1.toFixed(2)}, ${x2.toFixed(2)})`, pInt.x + 10, pInt.y - 10);
         this.ctx.restore();
       }
-    } else {
+
+      const statsEl = document.getElementById('ai-canvas-stats');
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <div class="stat-pill"><span class="k">Determinant det(A):</span> <span class="v">${det.toFixed(2)}</span></div>
+          <div class="stat-pill ${isSingular ? 'warn' : 'success'}"><span class="k">Status:</span> ${isSingular ? 'Singular / Parallel Hyperplanes (No Unique Intersection)' : 'Invertible (Unique Intersection Point)'}</div>
+          ${!isSingular ? `<div class="stat-pill"><span class="k">Solution x*:</span> <span class="v">[${x1.toFixed(2)}, ${x2.toFixed(2)}]^T</span></div>` : ''}
+        `;
+      }
+    } else if (s.mode === 'col') {
       // Column Picture: x1 * [a11, a21] + x2 * [a12, a22] = [b1, b2]
       this.drawArrow(0, 0, s.a11, s.a21, '#38bdf8', 2.5, 'col 1');
       this.drawArrow(0, 0, s.a12, s.a22, '#fb7185', 2.5, 'col 2');
@@ -658,15 +680,88 @@ export class AIInteractiveLab {
       this.ctx.fill();
       this.ctx.stroke();
       this.ctx.restore();
-    }
 
-    const statsEl = document.getElementById('ai-canvas-stats');
-    if (statsEl) {
-      statsEl.innerHTML = `
-        <div class="stat-pill"><span class="k">Determinant det(A):</span> <span class="v">${det.toFixed(2)}</span></div>
-        <div class="stat-pill ${isSingular ? 'warn' : 'success'}"><span class="k">Status:</span> ${isSingular ? 'Singular / Area = 0 (No Unique Inverse)' : 'Invertible (Area > 0, Unique Solution)'}</div>
-        ${!isSingular ? `<div class="stat-pill"><span class="k">Solution x:</span> <span class="v">[${x1.toFixed(2)}, ${x2.toFixed(2)}]^T</span></div>` : ''}
-      `;
+      const statsEl = document.getElementById('ai-canvas-stats');
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <div class="stat-pill"><span class="k">Determinant det(A):</span> <span class="v">${det.toFixed(2)}</span> (Column Parallelogram Area)</div>
+          <div class="stat-pill ${isSingular ? 'warn' : 'success'}"><span class="k">Status:</span> ${isSingular ? 'Singular / Area = 0 (Collinear Columns)' : 'Invertible (Area > 0, Basis Spans ℝ²)'}</div>
+          ${!isSingular ? `<div class="stat-pill"><span class="k">Combination Weights:</span> <span class="v">${x1.toFixed(2)}·a₁ + ${x2.toFixed(2)}·a₂ = b</span></div>` : ''}
+        `;
+      }
+    } else if (s.mode === 'cramer') {
+      const a1 = { x: s.a11, y: s.a21 };
+      const a2 = { x: s.a12, y: s.a22 };
+      const b = { x: s.b1, y: s.b2 };
+
+      const detA1 = b.x * a2.y - a2.x * b.y;
+      const detA2 = a1.x * b.y - b.x * a1.y;
+
+      const p0 = this.toCanvas(0, 0);
+      const pA1 = this.toCanvas(a1.x, a1.y);
+      const pA2 = this.toCanvas(a2.x, a2.y);
+      const pSumA = this.toCanvas(a1.x + a2.x, a1.y + a2.y);
+
+      // Base Parallelogram A
+      this.ctx.save();
+      this.ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
+      this.ctx.strokeStyle = '#38bdf8';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      this.ctx.moveTo(p0.x, p0.y);
+      this.ctx.lineTo(pA1.x, pA1.y);
+      this.ctx.lineTo(pSumA.x, pSumA.y);
+      this.ctx.lineTo(pA2.x, pA2.y);
+      this.ctx.closePath();
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // Substituted Parallelogram A1 = [b, a2]
+      const pB = this.toCanvas(b.x, b.y);
+      const pSumA1 = this.toCanvas(b.x + a2.x, b.y + a2.y);
+
+      this.ctx.fillStyle = 'rgba(244, 63, 94, 0.14)';
+      this.ctx.strokeStyle = '#fb7185';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.setLineDash([4, 4]);
+      this.ctx.beginPath();
+      this.ctx.moveTo(p0.x, p0.y);
+      this.ctx.lineTo(pB.x, pB.y);
+      this.ctx.lineTo(pSumA1.x, pSumA1.y);
+      this.ctx.lineTo(pA2.x, pA2.y);
+      this.ctx.closePath();
+      this.ctx.fill();
+      this.ctx.stroke();
+      this.ctx.restore();
+
+      // Draw Vectors
+      this.drawArrow(0, 0, a1.x, a1.y, '#38bdf8', 2.5, `col 1 a₁ (${a1.x}, ${a1.y})`);
+      this.drawArrow(0, 0, a2.x, a2.y, '#a855f7', 2.5, `col 2 a₂ (${a2.x}, ${a2.y})`);
+      this.drawArrow(0, 0, b.x, b.y, '#10b981', 3.0, `target b (${b.x}, ${b.y})`);
+
+      // Trace & Characteristic polynomial
+      const trace = s.a11 + s.a22;
+      const disc = trace * trace - 4 * det;
+      let eigenStr = '';
+      if (disc >= 0) {
+        const l1 = ((trace + Math.sqrt(disc)) / 2).toFixed(2);
+        const l2 = ((trace - Math.sqrt(disc)) / 2).toFixed(2);
+        eigenStr = `λ₁ = ${l1}, λ₂ = ${l2}`;
+      } else {
+        const re = (trace / 2).toFixed(2);
+        const im = (Math.sqrt(-disc) / 2).toFixed(2);
+        eigenStr = `${re} ± ${im}i`;
+      }
+
+      const statsEl = document.getElementById('ai-canvas-stats');
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <div class="stat-pill"><span class="k">det(A):</span> <span class="v">${det.toFixed(2)}</span> &nbsp;|&nbsp; <span class="k">det(A₁):</span> <span class="v">${detA1.toFixed(2)}</span> &nbsp;|&nbsp; <span class="k">det(A₂):</span> <span class="v">${detA2.toFixed(2)}</span></div>
+          <div class="stat-pill ${isSingular ? 'warn' : 'success'}"><span class="k">Cramer's Solution:</span> ${isSingular ? 'Singular (det=0, no unique solve)' : `x₁ = det(A₁)/det(A) = <strong>${x1.toFixed(2)}</strong>, &nbsp; x₂ = det(A₂)/det(A) = <strong>${x2.toFixed(2)}</strong>`}</div>
+          <div class="stat-pill"><span class="k">Matrix Trace Tr(A):</span> <span class="v">${trace.toFixed(2)}</span> &nbsp;|&nbsp; <span class="k">Char Poly:</span> λ² - (${trace.toFixed(1)})λ + (${det.toFixed(1)}) = 0</div>
+          <div class="stat-pill info"><span class="k">Eigenvalues:</span> ${eigenStr} &nbsp;(Sum = Tr(A), Product = det(A))</div>
+        `;
+      }
     }
   }
 
@@ -978,6 +1073,14 @@ export class AIInteractiveLab {
     return `
       <div class="ai-controls-grid">
         <div class="ai-control-group">
+          <div class="ai-control-title">Calculus Visualizer Mode</div>
+          <div class="ai-chips-row">
+            <button class="ai-chip ${this.gradState.mode === 'landscape' ? 'active' : ''}" id="chip-calc-landscape">2D Loss Surface &amp; Gradient</button>
+            <button class="ai-chip ${this.gradState.mode === 'transcendental' ? 'active' : ''}" id="chip-calc-trans">Transcendental Activations &amp; Tangents</button>
+          </div>
+        </div>
+
+        <div class="ai-control-group" id="group-calc-landscape" style="${this.gradState.mode === 'landscape' ? '' : 'display:none;'}">
           <div class="ai-control-title">Loss Surface Geometry</div>
           <div class="ai-chips-row">
             <button class="ai-chip ${this.gradState.surface === 'bowl' ? 'active' : ''}" id="chip-loss-bowl">Quadratic Bowl (Minimum)</button>
@@ -985,14 +1088,25 @@ export class AIInteractiveLab {
             <button class="ai-chip" id="chip-loss-step">Take 1 Gradient Step</button>
             <button class="ai-chip" id="chip-loss-reset">Reset Start</button>
           </div>
-        </div>
-
-        <div class="ai-control-group">
-          <div class="ai-control-title">Learning Rate η</div>
-          <div class="ai-slider-row">
-            <span>Learning Rate:</span>
+          <div class="ai-slider-row" style="margin-top:0.5rem;">
+            <span>Learning Rate η:</span>
             <input type="range" id="slider-loss-lr" min="0.02" max="0.5" step="0.02" value="${this.gradState.lr}" />
             <span class="val-badge" id="slider-loss-lr-val">${this.gradState.lr}</span>
+          </div>
+        </div>
+
+        <div class="ai-control-group" id="group-calc-trans" style="${this.gradState.mode === 'transcendental' ? '' : 'display:none;'}">
+          <div class="ai-control-title">Transcendental Activation f(x) &amp; Derivative Tangent</div>
+          <div class="ai-chips-row">
+            <button class="ai-chip ${this.gradState.activation === 'sigmoid' ? 'active' : ''}" id="chip-act-sigmoid">Sigmoid σ(x)</button>
+            <button class="ai-chip ${this.gradState.activation === 'tanh' ? 'active' : ''}" id="chip-act-tanh">Tanh tanh(x)</button>
+            <button class="ai-chip ${this.gradState.activation === 'softplus' ? 'active' : ''}" id="chip-act-softplus">Softplus ln(1+eˣ)</button>
+            <button class="ai-chip ${this.gradState.activation === 'exp' ? 'active' : ''}" id="chip-act-exp">Exponential eˣ</button>
+          </div>
+          <div class="ai-slider-row" style="margin-top:0.5rem;">
+            <span>Input point x:</span>
+            <input type="range" id="slider-act-x" min="-4" max="4" step="0.1" value="${this.gradState.inputX}" />
+            <span class="val-badge" id="slider-act-x-val">${this.gradState.inputX}</span>
           </div>
         </div>
       </div>
@@ -1001,6 +1115,111 @@ export class AIInteractiveLab {
 
   render02() {
     const ctx = this.ctx;
+
+    if (this.gradState.mode === 'transcendental') {
+      const act = this.gradState.activation;
+      const x0 = this.gradState.inputX;
+
+      const evalFn = (x) => {
+        if (act === 'sigmoid') return 1 / (1 + Math.exp(-Math.max(-15, Math.min(15, x))));
+        if (act === 'tanh') return Math.tanh(x);
+        if (act === 'softplus') return Math.log(1 + Math.exp(Math.max(-15, Math.min(15, x))));
+        if (act === 'exp') return Math.exp(Math.max(-10, Math.min(2.5, x)));
+        return x;
+      };
+
+      const evalDeriv = (x) => {
+        if (act === 'sigmoid') {
+          const s = evalFn(x);
+          return s * (1 - s);
+        }
+        if (act === 'tanh') {
+          const t = Math.tanh(x);
+          return 1 - t * t;
+        }
+        if (act === 'softplus') {
+          return 1 / (1 + Math.exp(-Math.max(-15, Math.min(15, x)))); // Derivative of softplus is sigmoid!
+        }
+        if (act === 'exp') {
+          return evalFn(x);
+        }
+        return 1;
+      };
+
+      // 1. Draw Activation Curve f(x) (Cyan)
+      ctx.save();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      let first = true;
+      for (let x = -6; x <= 6; x += 0.05) {
+        const y = evalFn(x);
+        const p = this.toCanvas(x, y);
+        if (first) { ctx.moveTo(p.x, p.y); first = false; }
+        else { ctx.lineTo(p.x, p.y); }
+      }
+      ctx.stroke();
+
+      // 2. Draw Derivative Curve f'(x) (Dashed Rose)
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      first = true;
+      for (let x = -6; x <= 6; x += 0.05) {
+        const dy = evalDeriv(x);
+        const p = this.toCanvas(x, dy);
+        if (first) { ctx.moveTo(p.x, p.y); first = false; }
+        else { ctx.lineTo(p.x, p.y); }
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 3. Tangent Line at x0: y = f(x0) + f'(x0) * (x - x0) (Emerald)
+      const y0 = evalFn(x0);
+      const dy0 = evalDeriv(x0);
+
+      const span = 2.5;
+      const pT1 = this.toCanvas(x0 - span, y0 - dy0 * span);
+      const pT2 = this.toCanvas(x0 + span, y0 + dy0 * span);
+
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(pT1.x, pT1.y);
+      ctx.lineTo(pT2.x, pT2.y);
+      ctx.stroke();
+
+      // 4. Dot at (x0, f(x0))
+      const p0 = this.toCanvas(x0, y0);
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(p0.x, p0.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Label at dot
+      ctx.font = '700 12px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#10b981';
+      ctx.fillText(`(x₀, f(x₀)) = (${x0.toFixed(1)}, ${y0.toFixed(2)})`, p0.x + 10, p0.y - 10);
+      ctx.restore();
+
+      // 5. Stats Panel
+      const isVanishing = Math.abs(dy0) < 0.05 && (act === 'sigmoid' || act === 'tanh');
+      const statsEl = document.getElementById('ai-canvas-stats');
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <div class="stat-pill"><span class="k">f(x₀):</span> <span class="v">${y0.toFixed(4)}</span> &nbsp;|&nbsp; <span class="k">Derivative f'(x₀) [Slope]:</span> <span class="v">${dy0.toFixed(4)}</span></div>
+          <div class="stat-pill"><span class="k">1st-Order Taylor Tangent:</span> y ≈ ${y0.toFixed(2)} + ${dy0.toFixed(2)}(x - ${x0.toFixed(1)})</div>
+          <div class="stat-pill ${isVanishing ? 'warn' : 'success'}">${isVanishing ? '⚠️ Vanishing Gradient Alert: Slope ≈ 0 halts backpropagation weight updates!' : 'Active Gradient: Signal propagates backward effectively.'}</div>
+          <div class="stat-pill info"><span class="k">Curves:</span> Blue = f(x), Dashed Rose = f'(x), Green = Tangent at x₀ (drag x₀ along curve)</div>
+        `;
+      }
+      return;
+    }
+
     const isBowl = this.gradState.surface === 'bowl';
 
     // 1. Draw contour ellipses of loss
@@ -1060,7 +1279,7 @@ export class AIInteractiveLab {
         <div class="stat-pill"><span class="k">Loss L(w):</span> <span class="v">${lossVal.toFixed(3)}</span></div>
         <div class="stat-pill"><span class="k">Gradient ||∇L||:</span> <span class="v">${Math.hypot(grad.dx, grad.dy).toFixed(2)}</span></div>
         <div class="stat-pill"><span class="k">Current Weight w:</span> <span class="v">(${w.x.toFixed(2)}, ${w.y.toFixed(2)})</span></div>
-        <div class="stat-pill info">Click anywhere to reposition starting parameters!</div>
+        <div class="stat-pill info">Click anywhere on landscape to reposition starting parameters!</div>
       `;
     }
   }
@@ -1188,14 +1407,23 @@ export class AIInteractiveLab {
 
     onClick('chip-mode-row', () => {
       this.sysState.mode = 'row';
-      document.getElementById('chip-mode-row').classList.add('active');
-      document.getElementById('chip-mode-col').classList.remove('active');
+      document.getElementById('chip-mode-row')?.classList.add('active');
+      document.getElementById('chip-mode-col')?.classList.remove('active');
+      document.getElementById('chip-mode-cramer')?.classList.remove('active');
     });
 
     onClick('chip-mode-col', () => {
       this.sysState.mode = 'col';
-      document.getElementById('chip-mode-col').classList.add('active');
-      document.getElementById('chip-mode-row').classList.remove('active');
+      document.getElementById('chip-mode-col')?.classList.add('active');
+      document.getElementById('chip-mode-row')?.classList.remove('active');
+      document.getElementById('chip-mode-cramer')?.classList.remove('active');
+    });
+
+    onClick('chip-mode-cramer', () => {
+      this.sysState.mode = 'cramer';
+      document.getElementById('chip-mode-cramer')?.classList.add('active');
+      document.getElementById('chip-mode-row')?.classList.remove('active');
+      document.getElementById('chip-mode-col')?.classList.remove('active');
     });
 
     onClick('chip-preset-singular', () => {
@@ -1267,6 +1495,41 @@ export class AIInteractiveLab {
     onInput('slider-query-y', (v) => { this.svdState.queryVec.y = v; document.getElementById('slider-query-y-val').innerText = v; });
 
     // 02 Controls
+    onClick('chip-calc-landscape', () => {
+      this.gradState.mode = 'landscape';
+      document.getElementById('chip-calc-landscape')?.classList.add('active');
+      document.getElementById('chip-calc-trans')?.classList.remove('active');
+      const gL = document.getElementById('group-calc-landscape');
+      const gT = document.getElementById('group-calc-trans');
+      if (gL) gL.style.display = '';
+      if (gT) gT.style.display = 'none';
+    });
+
+    onClick('chip-calc-trans', () => {
+      this.gradState.mode = 'transcendental';
+      document.getElementById('chip-calc-trans')?.classList.add('active');
+      document.getElementById('chip-calc-landscape')?.classList.remove('active');
+      const gL = document.getElementById('group-calc-landscape');
+      const gT = document.getElementById('group-calc-trans');
+      if (gL) gL.style.display = 'none';
+      if (gT) gT.style.display = '';
+    });
+
+    ['sigmoid', 'tanh', 'softplus', 'exp'].forEach((act) => {
+      onClick(`chip-act-${act}`, () => {
+        this.gradState.activation = act;
+        ['sigmoid', 'tanh', 'softplus', 'exp'].forEach((a) => {
+          const el = document.getElementById(`chip-act-${a}`);
+          if (el) el.classList.toggle('active', a === act);
+        });
+      });
+    });
+
+    onInput('slider-act-x', (v) => {
+      this.gradState.inputX = v;
+      document.getElementById('slider-act-x-val').innerText = v;
+    });
+
     onClick('chip-loss-bowl', () => {
       this.gradState.surface = 'bowl';
       this.gradState.w = { x: 2.8, y: 2.2 };

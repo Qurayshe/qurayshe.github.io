@@ -164,6 +164,44 @@ Near the fixed point, the perturbation $\Delta \mathbf{x} = \mathbf{x} - \mathbf
 
 ---
 
+### The Matrix Exponential $e^{At}$: Solving Linear Systems Exactly
+Consider a linear system of differential equations with constant matrix $A$:
+
+$$\frac{d\mathbf{x}}{dt} = A\mathbf{x}, \quad \mathbf{x}(0) = \mathbf{x}_0$$
+
+Just as the scalar equation $\frac{dy}{dt} = a y$ has solution $y(t) = e^{at} y_0$, the vector system has the exact analytical solution:
+
+$$\mathbf{x}(t) = e^{At} \mathbf{x}_0$$
+
+The **Matrix Exponential** is defined through the transcendental Taylor series:
+
+$$e^{At} = I + At + \frac{1}{2!} (At)^2 + \frac{1}{3!} (At)^3 + \dots = \sum_{k=0}^\infty \frac{(At)^k}{k!}$$
+
+#### Computing $e^{At}$ via Eigendecomposition
+If $A$ has eigendecomposition $A = V \Lambda V^{-1}$ where $\Lambda = \text{diag}(\lambda_1, \dots, \lambda_n)$:
+
+$$e^{At} = V e^{\Lambda t} V^{-1} = V \begin{bmatrix} e^{\lambda_1 t} & 0 & \cdots & 0 \\ 0 & e^{\lambda_2 t} & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & \cdots & e^{\lambda_n t} \end{bmatrix} V^{-1}$$
+
+- If $\text{Re}(\lambda_i) < 0$: $e^{\lambda_i t} \to 0$ as $t \to \infty$ $\implies$ **Stable Sink Attractor**.
+- If $\text{Re}(\lambda_i) > 0$: $e^{\lambda_i t} \to \infty$ as $t \to \infty$ $\implies$ **Unstable Divergence**.
+- If $\lambda = \alpha \pm i \beta$: Euler's formula $e^{(\alpha + i \beta)t} = e^{\alpha t}(\cos \beta t + i \sin \beta t)$ creates rotational swirling (**Spirals & Centers**).
+
+---
+
+### Taylor Series Perspective on Integrator Errors
+Why is RK4 so much more accurate than Euler? By Taylor expanding $\mathbf{y}(t_n + h)$:
+
+$$\mathbf{y}(t_n + h) = \mathbf{y}(t_n) + h \mathbf{y}'(t_n) + \frac{h^2}{2} \mathbf{y}''(t_n) + \frac{h^3}{6} \mathbf{y}'''(t_n) + \frac{h^4}{24} \mathbf{y}^{(4)}(t_n) + \mathcal{O}(h^5)$$
+
+- **Forward Euler** approximates this expansion by keeping only the first two terms ($\mathbf{y} + h \mathbf{y}'$). It completely discards the $\frac{h^2}{2} \mathbf{y}''$ term and beyond.
+  - Local truncation error: $\mathcal{O}(h^2)$
+  - Global accumulated error: $\mathcal{O}(h)$
+- **RK4** cleverly constructs four intermediate slope evaluations ($k_1, k_2, k_3, k_4$) whose Simpson's rule combination **matches all Taylor series terms exactly up to and including $h^4$**!
+  - Local truncation error: $\mathcal{O}(h^5)$
+  - Global accumulated error: $\mathcal{O}(h^4)$
+
+---
+
 ## 4. Continuous Gradient Flow & The Learning Rate Limit
 
 Consider training a model by minimizing a smooth loss function $\mathcal{L}(\mathbf{w})$ over parameters $\mathbf{w} \in \mathbb{R}^d$.

@@ -242,7 +242,44 @@ $$T(\mathbf{x}) = A(B\mathbf{x}) = (AB)\mathbf{x}$$
 
 ---
 
-## 6. Gram-Schmidt Orthogonalization (Step-by-Step)
+## 6. Special Matrices & Fundamental Matrix Algebra
+
+Before moving to orthonormal decompositions, let us establish the taxonomy of matrix types that appear constantly in machine learning:
+
+### 1. Matrix Transpose & Reversal Rule
+The transpose $A^T$ swaps rows with columns: $[A^T]_{ij} = A_{ji}$.
+- $(A + B)^T = A^T + B^T$
+- $(cA)^T = c A^T$
+- $(AB)^T = B^T A^T$ *(Order reverses! Think of putting on socks then shoes: when you invert/transpose, you remove shoes then socks!)*
+
+### 2. Symmetric Matrices ($A = A^T$)
+A matrix is symmetric if it equals its own transpose ($a_{ij} = a_{ji}$).
+- **Deep Learning Examples:** Covariance matrices $\Sigma = \frac{1}{N} X^T X$, Hessian curvature matrices $H$, and Attention gram matrices $S = Q K^T$.
+- **Spectral Theorem Guarantee:** Every real symmetric matrix has strictly real eigenvalues and can be orthogonally diagonalized: $A = Q \Lambda Q^T$.
+
+### 3. Skew-Symmetric Matrices ($A^T = -A$)
+Main diagonal entries are all zero ($a_{ii} = 0$), and $a_{ij} = -a_{ji}$.
+Every square matrix can be decomposed uniquely into a sum of symmetric and skew-symmetric parts:
+$$A = \underbrace{\frac{1}{2}(A + A^T)}_{\text{Symmetric (Energy/Loss)}} + \underbrace{\frac{1}{2}(A - A^T)}_{\text{Skew-Symmetric (Rotation/Curl)}}$$
+
+### 4. Orthogonal Matrices ($Q^T Q = Q Q^T = I_n$)
+A square matrix $Q$ is orthogonal if its transpose equals its inverse: $Q^{-1} = Q^T$.
+- **Isometry (Preserves Lengths):**
+  $$\|Q\mathbf{x}\|_2^2 = (Q\mathbf{x})^T (Q\mathbf{x}) = \mathbf{x}^T Q^T Q \mathbf{x} = \mathbf{x}^T I \mathbf{x} = \|\mathbf{x}\|_2^2$$
+- **Preserves Angles:** $(Q\mathbf{u}) \cdot (Q\mathbf{v}) = \mathbf{u} \cdot \mathbf{v}$.
+- **Determinant:** $\det(Q^T Q) = \det(Q)^2 = 1 \implies \det(Q) = \pm 1$.
+  - If $\det(Q) = +1$: Pure spatial rotation (Special Orthogonal group $\text{SO}(n)$).
+  - If $\det(Q) = -1$: Reflection (orientation-reversing).
+
+### 5. Projection Matrices ($P^2 = P$, Idempotent)
+Applying a projection once drops a point onto a subspace. Applying it a second time leaves the point unchanged ($P(P\mathbf{x}) = P\mathbf{x}$).
+- **Orthogonal Projection Matrix onto Column Space of $A$:**
+  $$P = A(A^T A)^{-1} A^T$$
+- In Ordinary Least Squares (linear regression), the predicted target values $\hat{\mathbf{y}} = X\hat{\mathbf{w}} = P \mathbf{y}$ are the orthogonal projection of ground truth $\mathbf{y}$ onto the feature subspace!
+
+---
+
+## 7. Gram-Schmidt Orthogonalization (Step-by-Step)
 
 In deep learning, working with arbitrary basis vectors leads to numerical instability and ill-conditioned gradients. An **orthonormal basis** $\{\mathbf{q}_1, \dots, \mathbf{q}_k\}$ satisfies:
 
