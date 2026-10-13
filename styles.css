@@ -170,6 +170,7 @@ a:hover {
   font-size: 0.82rem;
   color: var(--text-secondary);
   border: 1px solid transparent;
+  text-transform: lowercase;
   transition: all 0.2s ease;
 }
 
