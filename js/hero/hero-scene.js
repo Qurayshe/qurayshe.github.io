@@ -96,6 +96,8 @@ export class HeroScene {
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(dpr * this.pixelRatioScale);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
     this.renderer.domElement.style.imageRendering = 'pixelated';
@@ -104,7 +106,52 @@ export class HeroScene {
     this.container.style.position = 'relative';
     this.container.appendChild(this.renderer.domElement);
 
-    // 2b. Full-scene Dynamic ASCII Filter Overlay Canvas
+    // 2b. Chromatic Aberration Post-Processing Setup
+    this.postScene = new THREE.Scene();
+    this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.chromaMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tDiffuse: { value: null },
+        uAmount: { value: 0.0035 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uAmount;
+        varying vec2 vUv;
+        void main() {
+          vec2 dir = vUv - vec2(0.5);
+          float dist = length(dir);
+          vec2 offset = dir * (dist * uAmount * 2.2);
+          float r = texture2D(tDiffuse, vUv + offset).r;
+          float g = texture2D(tDiffuse, vUv).g;
+          float b = texture2D(tDiffuse, vUv - offset).b;
+          float a = texture2D(tDiffuse, vUv).a;
+          gl_FragColor = vec4(r, g, b, a);
+        }
+      `,
+      depthTest: false,
+      depthWrite: false
+    });
+    const postGeo = new THREE.PlaneGeometry(2, 2);
+    this.postQuad = new THREE.Mesh(postGeo, this.chromaMaterial);
+    this.postScene.add(this.postQuad);
+
+    const rw = Math.round(width * dpr * this.pixelRatioScale);
+    const rh = Math.round(height * dpr * this.pixelRatioScale);
+    this.renderTarget = new THREE.WebGLRenderTarget(rw, rh, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat
+    });
+
+    // 2c. Full-scene Dynamic ASCII Filter Overlay Canvas
     this.asciiCanvas = document.createElement('canvas');
     this.asciiCanvas.className = 'hero-ascii-canvas';
     this.asciiCanvas.style.position = 'absolute';
@@ -145,21 +192,23 @@ export class HeroScene {
     this.matrixGroup.visible = false;
     this.waveGroup.visible = false;
 
-    // 5. Studio Lights (Purple / Violet Primary)
+    // 5. Studio Lights for Abstract/Cosmic Modes
+    this.studioLightsGroup = new THREE.Group();
     const ambientLight = new THREE.AmbientLight(0x181028, 2.8);
-    this.scene.add(ambientLight);
+    this.studioLightsGroup.add(ambientLight);
 
     const pointLight1 = new THREE.PointLight(0xa855f7, 4.5, 35);
     pointLight1.position.set(10, 12, 10);
-    this.scene.add(pointLight1);
+    this.studioLightsGroup.add(pointLight1);
 
     const pointLight2 = new THREE.PointLight(0x38bdf8, 3.5, 30);
     pointLight2.position.set(-10, -10, 8);
-    this.scene.add(pointLight2);
+    this.studioLightsGroup.add(pointLight2);
 
     const pointLight3 = new THREE.PointLight(0xf43f5e, 3.0, 25);
     pointLight3.position.set(0, 12, -6);
-    this.scene.add(pointLight3);
+    this.studioLightsGroup.add(pointLight3);
+    this.scene.add(this.studioLightsGroup);
 
     // 6. Build Subsystems
     this.buildRetroPCScene();
@@ -252,24 +301,30 @@ export class HeroScene {
     const caseGeo = new THREE.BoxGeometry(11.2, 8.6, 6.5);
     const caseMesh = new THREE.Mesh(caseGeo, casingMat);
     caseMesh.position.set(0, 1.2, -1.0);
+    caseMesh.castShadow = true;
+    caseMesh.receiveShadow = true;
     monitorGroup.add(caseMesh);
 
     // CRT Rear Taper Tube
     const backGeo = new THREE.BoxGeometry(8.5, 6.8, 4.0);
     const backMesh = new THREE.Mesh(backGeo, casingDarkMat);
     backMesh.position.set(0, 1.2, -5.0);
+    backMesh.castShadow = true;
     monitorGroup.add(backMesh);
 
     // Front Outer Bezel Frame
     const frontBezelGeo = new THREE.BoxGeometry(11.4, 8.8, 0.8);
     const frontBezelMesh = new THREE.Mesh(frontBezelGeo, bezelMat);
     frontBezelMesh.position.set(0, 1.2, 2.4);
+    frontBezelMesh.castShadow = true;
+    frontBezelMesh.receiveShadow = true;
     monitorGroup.add(frontBezelMesh);
 
     // Inner Recessed Dark Screen Border
     const innerBorderGeo = new THREE.BoxGeometry(9.6, 7.35, 0.4);
     const innerBorderMesh = new THREE.Mesh(innerBorderGeo, bezelInnerMat);
     innerBorderMesh.position.set(0, 1.2, 2.7);
+    innerBorderMesh.receiveShadow = true;
     monitorGroup.add(innerBorderMesh);
 
     // CRT Screen Glass Quad with Physical Convex Curvature (Interactive Raycast Surface)
@@ -288,6 +343,7 @@ export class HeroScene {
 
     this.screenMesh = new THREE.Mesh(screenGeo, screenMat);
     this.screenMesh.position.set(0, 1.2, 2.92);
+    this.screenMesh.receiveShadow = true;
     this.screenMesh.name = 'crt-screen';
     monitorGroup.add(this.screenMesh);
 
@@ -366,11 +422,14 @@ export class HeroScene {
 
     const kbBaseGeo = new THREE.BoxGeometry(14.8, 0.55, 4.6);
     const kbBase = new THREE.Mesh(kbBaseGeo, bezelMat);
+    kbBase.castShadow = true;
+    kbBase.receiveShadow = true;
     kbGroup.add(kbBase);
 
     const kbWellGeo = new THREE.BoxGeometry(14.3, 0.15, 4.1);
     const kbWell = new THREE.Mesh(kbWellGeo, casingDarkMat);
     kbWell.position.set(0, 0.25, 0);
+    kbWell.receiveShadow = true;
     kbGroup.add(kbWell);
 
     const keyH = 0.22;
@@ -378,6 +437,8 @@ export class HeroScene {
       const g = new THREE.BoxGeometry(w, keyH, d);
       const m = new THREE.Mesh(g, mat);
       m.position.set(x, 0.38, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
       kbGroup.add(m);
       return m;
     };
@@ -504,6 +565,8 @@ export class HeroScene {
 
     const mouseGeo = new THREE.BoxGeometry(1.6, 0.6, 2.5);
     const mouseMesh = new THREE.Mesh(mouseGeo, bezelMat);
+    mouseMesh.castShadow = true;
+    mouseMesh.receiveShadow = true;
     mouseGroup.add(mouseMesh);
 
     // Mouse button split & wheel flipped towards -Z (pointing at monitor/computer)
@@ -520,22 +583,43 @@ export class HeroScene {
 
     this.pcGroup.add(mouseGroup);
 
-    // 5. Desk Surface
+    // 5. Desk Surface (Receives shadows from monitor, keyboard, and mouse)
     const deskGeo = new THREE.BoxGeometry(28, 0.6, 16);
     const desk = new THREE.Mesh(deskGeo, deskMat);
     desk.position.set(0, -4.4, 3.0);
+    desk.receiveShadow = true;
     this.pcGroup.add(desk);
 
-    // 6. Dedicated Lighting for Retro PC Scene
-    const pcDirLight = new THREE.DirectionalLight(0xfffaed, 1.4);
-    pcDirLight.position.set(5, 10, 8);
-    this.pcGroup.add(pcDirLight);
+    // 6. Workstation Lighting: 1 dim global light, 1 bright spot light, 1 medium rimlight
+    // 6a. 1 Dim Global Light (soft ambient fill for moody, deep shadows)
+    const dimGlobalLight = new THREE.AmbientLight(0x221a30, 0.55);
+    this.pcGroup.add(dimGlobalLight);
 
-    const pcAmbient = new THREE.AmbientLight(0x4a4055, 1.2);
-    this.pcGroup.add(pcAmbient);
+    // 6b. 1 Bright Spot Light (high-intensity cone casting crisp PCF soft shadows)
+    const brightSpotLight = new THREE.SpotLight(0xfff5e8, 4.8);
+    brightSpotLight.position.set(5.5, 14, 9);
+    brightSpotLight.target.position.set(0, -1.8, 2.8);
+    brightSpotLight.angle = Math.PI / 4.4;
+    brightSpotLight.penumbra = 0.45;
+    brightSpotLight.decay = 1.0;
+    brightSpotLight.distance = 42;
+    brightSpotLight.castShadow = true;
+    brightSpotLight.shadow.mapSize.width = 1024;
+    brightSpotLight.shadow.mapSize.height = 1024;
+    brightSpotLight.shadow.camera.near = 2.0;
+    brightSpotLight.shadow.camera.far = 35;
+    brightSpotLight.shadow.bias = -0.0006;
+    this.pcGroup.add(brightSpotLight);
+    this.pcGroup.add(brightSpotLight.target);
 
-    const screenGlow = new THREE.PointLight(0x7dd3fc, 0.9, 10);
-    screenGlow.position.set(0, 1.2, 4.0);
+    // 6c. 1 Medium Rimlight (contrasty cool-blue edge backlighting on monitor & keys)
+    const mediumRimLight = new THREE.DirectionalLight(0x7dd3fc, 1.8);
+    mediumRimLight.position.set(-9, 7.5, -6);
+    this.pcGroup.add(mediumRimLight);
+
+    // Soft Screen Luminescence from CRT display
+    const screenGlow = new THREE.PointLight(0x38bdf8, 0.65, 8);
+    screenGlow.position.set(0, 1.2, 3.8);
     this.pcGroup.add(screenGlow);
 
     // Initial Screen Draw
@@ -1412,19 +1496,47 @@ export class HeroScene {
       if (!this.audioCtx) this.audioCtx = new AudioCtx();
       if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
 
+      const now = this.audioCtx.currentTime;
+
+      // 1. High-frequency mechanical microswitch snap (shaped noise transient)
+      const sampleRate = this.audioCtx.sampleRate;
+      const bufferSize = Math.floor(sampleRate * 0.012); // ~12ms
+      const buffer = this.audioCtx.createBuffer(1, bufferSize, sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.16));
+      }
+      const noise = this.audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(3200, now);
+      filter.Q.setValueAtTime(3.2, now);
+
+      const noiseGain = this.audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.38, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.audioCtx.destination);
+      noise.start(now);
+
+      // 2. Low-frequency tactile plastic contact body click
       const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
+      const oscGain = this.audioCtx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(880, this.audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, this.audioCtx.currentTime + 0.05);
+      osc.frequency.setValueAtTime(640, now);
+      osc.frequency.exponentialRampToValueAtTime(65, now + 0.016);
 
-      gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
+      oscGain.gain.setValueAtTime(0.42, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
 
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start();
-      osc.stop(this.audioCtx.currentTime + 0.05);
+      osc.connect(oscGain);
+      oscGain.connect(this.audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.018);
     } catch (e) {}
   }
 
@@ -1913,6 +2025,8 @@ export class HeroScene {
       hide(this.matrixGroup);
       hide(this.waveGroup);
 
+      if (this.studioLightsGroup) this.studioLightsGroup.visible = false;
+
       if (typeof anime !== 'undefined') {
         anime({ targets: this.camera.position, x: 0, y: 0.6, z: 15.5, duration: 900, easing: 'easeInOutQuad' });
       } else {
@@ -1925,6 +2039,7 @@ export class HeroScene {
 
     } else {
       hide(this.pcGroup);
+      if (this.studioLightsGroup) this.studioLightsGroup.visible = true;
       this.screenPointer.active = false;
       this.container.style.cursor = '';
       document.body.style.cursor = '';
@@ -2344,6 +2459,13 @@ export class HeroScene {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(dpr * (this.pixelRatioScale || 0.52));
     this.renderer.domElement.style.imageRendering = 'pixelated';
+
+    const rw = Math.round(width * dpr * (this.pixelRatioScale || 0.52));
+    const rh = Math.round(height * dpr * (this.pixelRatioScale || 0.52));
+    if (this.renderTarget) {
+      this.renderTarget.setSize(rw, rh);
+    }
+
     this.resizeAsciiCanvases(width, height);
   }
 
@@ -2562,7 +2684,17 @@ export class HeroScene {
     }
 
     this.camera.lookAt(0, 0, 0);
-    this.renderer.render(this.scene, this.camera);
+
+    // Chromatic Aberration Post-Processing Pass
+    if (this.renderTarget && this.chromaMaterial) {
+      this.renderer.setRenderTarget(this.renderTarget);
+      this.renderer.render(this.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+      this.chromaMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
+      this.renderer.render(this.postScene, this.postCamera);
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
 
     if (this.asciiEnabled && this.activeMode !== 'pc') {
       this.renderAscii();
@@ -2577,6 +2709,9 @@ export class HeroScene {
       cancelAnimationFrame(this.animationFrameId);
     }
     window.removeEventListener('resize', this.onResize);
+    if (this.renderTarget) {
+      this.renderTarget.dispose();
+    }
     if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
     }
