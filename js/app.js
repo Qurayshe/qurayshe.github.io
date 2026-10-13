@@ -325,14 +325,14 @@ class App {
       });
     }
 
-    // Hero 3D Canvas Click Trigger (Triggers Shockwave & Card Elastic Ripple)
+    // Hero 3D Canvas Click Trigger (Triggers Shockwave & Card Elastic Ripple in 3D cosmic modes)
     const heroViewport = document.getElementById('hero-3d-viewport');
     if (heroViewport) {
       heroViewport.addEventListener('pointerdown', () => {
-        if (this.heroScene) {
+        if (this.heroScene && this.heroScene.activeMode !== 'pc') {
           this.heroScene.triggerShockwave();
+          this.triggerCardElasticRipple();
         }
-        this.triggerCardElasticRipple();
       });
     }
 
