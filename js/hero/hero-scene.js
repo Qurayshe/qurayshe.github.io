@@ -43,6 +43,13 @@ export class HeroScene {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
+    // Window Management & State
+    this.winState = 'normal'; // 'normal', 'maximized', 'minimized'
+    this.winRect = { x: 75, y: 35, w: 874, h: 660 };
+    this.winNormalRect = { x: 75, y: 35, w: 874, h: 660 };
+    this.winIsDragging = false;
+    this.winDragOffset = { x: 0, y: 0 };
+
     // Objects
     this.particleSystem = null;
     this.quantumMesh = null;
@@ -264,25 +271,59 @@ export class HeroScene {
     this.screenMesh.name = 'crt-screen';
     monitorGroup.add(this.screenMesh);
 
-    // Power Button & Green LED
+    // Power Button & Green LED (Centered cleanly on bottom chin bezel, well below display)
     const btnGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.2, 16);
     btnGeo.rotateX(Math.PI / 2);
     const pwrBtn = new THREE.Mesh(btnGeo, darkKeyMat);
-    pwrBtn.position.set(4.0, -2.45, 2.85);
+    pwrBtn.position.set(4.0, -2.75, 2.92);
     monitorGroup.add(pwrBtn);
 
     const ledGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 12);
     ledGeo.rotateX(Math.PI / 2);
     const ledMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
     const pwrLed = new THREE.Mesh(ledGeo, ledMat);
-    pwrLed.position.set(4.6, -2.45, 2.85);
+    pwrLed.position.set(4.55, -2.75, 2.92);
     monitorGroup.add(pwrLed);
 
-    // Monitor Brand Badge
-    const badgeGeo = new THREE.BoxGeometry(1.4, 0.35, 0.1);
-    const badgeMat = new THREE.MeshStandardMaterial({ color: 0x2e273b, roughness: 0.3 });
+    // Monitor Brand Badge with crisp embossed "qurayshe" label
+    const badgeCanvas = document.createElement('canvas');
+    badgeCanvas.width = 512;
+    badgeCanvas.height = 128;
+    const bCtx = badgeCanvas.getContext('2d');
+    const bGrad = bCtx.createLinearGradient(0, 0, 0, 128);
+    bGrad.addColorStop(0, '#151020');
+    bGrad.addColorStop(0.5, '#2c223a');
+    bGrad.addColorStop(1, '#0e0b16');
+    bCtx.fillStyle = bGrad;
+    bCtx.fillRect(0, 0, 512, 128);
+
+    bCtx.strokeStyle = '#524368';
+    bCtx.lineWidth = 6;
+    bCtx.strokeRect(6, 6, 500, 116);
+
+    bCtx.font = 'bold italic 66px "Segoe UI", Tahoma, sans-serif';
+    bCtx.textAlign = 'center';
+    bCtx.textBaseline = 'middle';
+    bCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    bCtx.fillText('qurayshe', 258, 67); // Soft drop shadow
+    bCtx.fillStyle = '#f1f5f9';
+    bCtx.fillText('qurayshe', 256, 64);
+
+    const badgeTexture = new THREE.CanvasTexture(badgeCanvas);
+    badgeTexture.minFilter = THREE.LinearFilter;
+    badgeTexture.magFilter = THREE.LinearFilter;
+
+    const badgeGeo = new THREE.BoxGeometry(1.6, 0.38, 0.12);
+    const badgeMat = new THREE.MeshStandardMaterial({
+      map: badgeTexture,
+      roughness: 0.35,
+      metalness: 0.2,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2
+    });
     const badge = new THREE.Mesh(badgeGeo, badgeMat);
-    badge.position.set(0, -2.45, 2.85);
+    badge.position.set(0, -2.75, 2.88);
     monitorGroup.add(badge);
 
     // Monitor Stand Neck & Base
@@ -298,62 +339,163 @@ export class HeroScene {
 
     this.pcGroup.add(monitorGroup);
 
-    // 3. Keyboard Assembly
+    // 3. Realistic 104-Key ANSI Keyboard (Shifted left to x = -2.6 so mouse is clearly visible)
     const kbGroup = new THREE.Group();
-    kbGroup.position.set(0, -3.8, 4.8);
+    kbGroup.position.set(-2.6, -3.8, 6.4);
     kbGroup.rotation.x = -0.12;
 
-    const kbBaseGeo = new THREE.BoxGeometry(10.6, 0.55, 3.8);
+    const kbBaseGeo = new THREE.BoxGeometry(14.8, 0.55, 4.6);
     const kbBase = new THREE.Mesh(kbBaseGeo, bezelMat);
     kbGroup.add(kbBase);
 
-    const kbWellGeo = new THREE.BoxGeometry(10.0, 0.15, 3.2);
+    const kbWellGeo = new THREE.BoxGeometry(14.3, 0.15, 4.1);
     const kbWell = new THREE.Mesh(kbWellGeo, casingDarkMat);
     kbWell.position.set(0, 0.25, 0);
     kbGroup.add(kbWell);
 
-    // Keycaps Grid
-    const keyRows = 5;
-    const keyCols = 15;
-    const keyGeo = new THREE.BoxGeometry(0.52, 0.22, 0.52);
+    const keyH = 0.22;
+    const addKey = (x, z, w, d, mat = keycapMat) => {
+      const g = new THREE.BoxGeometry(w, keyH, d);
+      const m = new THREE.Mesh(g, mat);
+      m.position.set(x, 0.38, z);
+      kbGroup.add(m);
+      return m;
+    };
 
-    for (let r = 0; r < keyRows; r++) {
-      for (let c = 0; c < keyCols; c++) {
-        if (r === 4 && c >= 4 && c <= 10) continue; // Spacebar clearance
-        const kx = (c - (keyCols - 1) / 2) * 0.62;
-        const kz = (r - (keyRows - 1) / 2) * 0.60;
-        const isSpecial = (c === 0 || c === keyCols - 1 || r === 0);
-        const kMesh = new THREE.Mesh(keyGeo, isSpecial ? darkKeyMat : keycapMat);
-        kMesh.position.set(kx, 0.38, kz);
-        kbGroup.add(kMesh);
-      }
+    // Row positions (Z coordinates from top to bottom)
+    const zFRow   = -1.65;
+    const zNumRow = -1.05;
+    const zTabRow = -0.48;
+    const zCapRow =  0.08;
+    const zSftRow =  0.64;
+    const zModRow =  1.20;
+
+    // --- SECTION 1: ALPHANUMERIC CLUSTER (Left: x from ~ -6.5 to -0.6) ---
+    // Function Row (Esc + F1-F12)
+    addKey(-6.4, zFRow, 0.46, 0.42, darkKeyMat); // Esc
+    // F1-F4
+    [-5.6, -5.05, -4.5, -3.95].forEach((kx) => addKey(kx, zFRow, 0.46, 0.42, darkKeyMat));
+    // F5-F8
+    [-3.25, -2.7, -2.15, -1.6].forEach((kx) => addKey(kx, zFRow, 0.46, 0.42, darkKeyMat));
+    // F9-F12
+    [-0.9, -0.35, 0.2, 0.75].forEach((kx) => addKey(kx, zFRow, 0.46, 0.42, darkKeyMat));
+
+    // Number Row (~, 1..0, -, =, Backspace)
+    let nx = -6.4;
+    const stdW = 0.46;
+    const stdD = 0.46;
+    for (let i = 0; i < 13; i++) {
+      addKey(nx, zNumRow, stdW, stdD);
+      nx += 0.52;
     }
+    addKey(nx + 0.22, zNumRow, 0.95, stdD, darkKeyMat); // Backspace
 
-    const spaceGeo = new THREE.BoxGeometry(4.2, 0.22, 0.52);
-    const spaceKey = new THREE.Mesh(spaceGeo, keycapMat);
-    spaceKey.position.set(0, 0.38, (4 - (keyRows - 1) / 2) * 0.60);
-    kbGroup.add(spaceKey);
+    // Tab Row (Tab, Q..P, [, ], \)
+    addKey(-6.28, zTabRow, 0.70, stdD, darkKeyMat); // Tab
+    let tx = -5.58;
+    for (let i = 0; i < 12; i++) {
+      addKey(tx, zTabRow, stdW, stdD);
+      tx += 0.52;
+    }
+    addKey(tx + 0.12, zTabRow, 0.75, stdD, darkKeyMat); // Backslash
+
+    // Caps Row (CapsLock, A..L, ;, ', Enter)
+    addKey(-6.23, zCapRow, 0.80, stdD, darkKeyMat); // CapsLock
+    let ax = -5.46;
+    for (let i = 0; i < 11; i++) {
+      addKey(ax, zCapRow, stdW, stdD);
+      ax += 0.52;
+    }
+    addKey(ax + 0.28, zCapRow, 1.08, stdD, darkKeyMat); // Enter
+
+    // Shift Row (LShift, Z..M, ,, ., /, RShift)
+    addKey(-6.13, zSftRow, 1.00, stdD, darkKeyMat); // LShift
+    let sx = -5.24;
+    for (let i = 0; i < 10; i++) {
+      addKey(sx, zSftRow, stdW, stdD);
+      sx += 0.52;
+    }
+    addKey(sx + 0.38, zSftRow, 1.30, stdD, darkKeyMat); // RShift
+
+    // Bottom Row (Ctrl, Win, Alt, Space, Alt, Win, Menu, Ctrl)
+    addKey(-6.32, zModRow, 0.62, stdD, darkKeyMat); // LCtrl
+    addKey(-5.62, zModRow, 0.55, stdD, darkKeyMat); // LWin
+    addKey(-4.95, zModRow, 0.60, stdD, darkKeyMat); // LAlt
+    addKey(-2.70, zModRow, 3.40, stdD, keycapMat);  // Spacebar
+    addKey(-0.45, zModRow, 0.60, stdD, darkKeyMat); // RAlt
+    addKey( 0.22, zModRow, 0.55, stdD, darkKeyMat); // RWin
+    addKey( 0.85, zModRow, 0.62, stdD, darkKeyMat); // RCtrl
+
+    // --- SECTION 2: NAVIGATION & ARROW CLUSTER (Middle: x from 1.6 to 2.8) ---
+    // Top Row: PrtSc, ScrLk, Pause
+    addKey(1.65, zFRow, stdW, 0.42, darkKeyMat);
+    addKey(2.20, zFRow, stdW, 0.42, darkKeyMat);
+    addKey(2.75, zFRow, stdW, 0.42, darkKeyMat);
+
+    // 3x2 Navigation Cluster: Ins, Home, PgUp / Del, End, PgDn
+    addKey(1.65, zNumRow, stdW, stdD, darkKeyMat);
+    addKey(2.20, zNumRow, stdW, stdD, darkKeyMat);
+    addKey(2.75, zNumRow, stdW, stdD, darkKeyMat);
+
+    addKey(1.65, zTabRow, stdW, stdD, darkKeyMat);
+    addKey(2.20, zTabRow, stdW, stdD, darkKeyMat);
+    addKey(2.75, zTabRow, stdW, stdD, darkKeyMat);
+
+    // Arrow Keys (T-Inverted layout)
+    addKey(2.20, zSftRow, stdW, stdD, darkKeyMat); // Up
+    addKey(1.65, zModRow, stdW, stdD, darkKeyMat); // Left
+    addKey(2.20, zModRow, stdW, stdD, darkKeyMat); // Down
+    addKey(2.75, zModRow, stdW, stdD, darkKeyMat); // Right
+
+    // --- SECTION 3: NUMERIC KEYPAD CLUSTER (Right: x from 3.7 to 5.8) ---
+    // Numpad Row 1: NumLock, /, *, -
+    addKey(3.70, zNumRow, stdW, stdD, darkKeyMat);
+    addKey(4.25, zNumRow, stdW, stdD, darkKeyMat);
+    addKey(4.80, zNumRow, stdW, stdD, darkKeyMat);
+    addKey(5.35, zNumRow, stdW, stdD, darkKeyMat);
+
+    // Numpad Row 2: 7, 8, 9, + (tall)
+    addKey(3.70, zTabRow, stdW, stdD);
+    addKey(4.25, zTabRow, stdW, stdD);
+    addKey(4.80, zTabRow, stdW, stdD);
+    addKey(5.35, (zTabRow + zCapRow) / 2, stdW, 1.02, darkKeyMat); // Numpad +
+
+    // Numpad Row 3: 4, 5, 6
+    addKey(3.70, zCapRow, stdW, stdD);
+    addKey(4.25, zCapRow, stdW, stdD);
+    addKey(4.80, zCapRow, stdW, stdD);
+
+    // Numpad Row 4: 1, 2, 3, Enter (tall)
+    addKey(3.70, zSftRow, stdW, stdD);
+    addKey(4.25, zSftRow, stdW, stdD);
+    addKey(4.80, zSftRow, stdW, stdD);
+    addKey(5.35, (zSftRow + zModRow) / 2, stdW, 1.02, darkKeyMat); // Numpad Enter
+
+    // Numpad Row 5: 0 (wide), .
+    addKey(3.97, zModRow, 1.02, stdD); // Numpad 0
+    addKey(4.80, zModRow, stdW, stdD); // Numpad .
 
     this.pcGroup.add(kbGroup);
 
-    // 4. Retro Mouse
+    // 4. Retro Mouse (Shifted to x = 5.8 to remain fully in view alongside the keyboard)
     const mouseGroup = new THREE.Group();
-    mouseGroup.position.set(6.8, -3.8, 4.8);
-    mouseGroup.rotation.y = -0.08;
+    mouseGroup.position.set(5.8, -3.8, 6.4);
+    mouseGroup.rotation.y = -0.05;
 
     const mouseGeo = new THREE.BoxGeometry(1.6, 0.6, 2.5);
     const mouseMesh = new THREE.Mesh(mouseGeo, bezelMat);
     mouseGroup.add(mouseMesh);
 
+    // Mouse button split & wheel flipped towards -Z (pointing at monitor/computer)
     const splitGeo = new THREE.BoxGeometry(0.04, 0.1, 1.1);
     const splitMesh = new THREE.Mesh(splitGeo, casingDarkMat);
-    splitMesh.position.set(0, 0.3, 0.6);
+    splitMesh.position.set(0, 0.3, -0.6);
     mouseGroup.add(splitMesh);
 
     const wheelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.18, 12);
     wheelGeo.rotateZ(Math.PI / 2);
     const wheelMesh = new THREE.Mesh(wheelGeo, bezelInnerMat);
-    wheelMesh.position.set(0, 0.32, 0.4);
+    wheelMesh.position.set(0, 0.32, -0.4);
     mouseGroup.add(wheelMesh);
 
     this.pcGroup.add(mouseGroup);
@@ -380,8 +522,31 @@ export class HeroScene {
     this.renderRetroScreen();
   }
 
+  drawRoundRect(ctx, x, y, w, h, r) {
+    let rTopLeft = 0, rTopRight = 0, rBottomRight = 0, rBottomLeft = 0;
+    if (typeof r === 'number') {
+      rTopLeft = rTopRight = rBottomRight = rBottomLeft = r;
+    } else if (Array.isArray(r)) {
+      rTopLeft = r[0] || 0;
+      rTopRight = r[1] || 0;
+      rBottomRight = r[2] || 0;
+      rBottomLeft = r[3] || 0;
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + rTopLeft, y);
+    ctx.lineTo(x + w - rTopRight, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rTopRight);
+    ctx.lineTo(x + w, y + h - rBottomRight);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rBottomRight, y + h);
+    ctx.lineTo(x + rBottomLeft, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rBottomLeft);
+    ctx.lineTo(x, y + rTopLeft);
+    ctx.quadraticCurveTo(x, y, x + rTopLeft, y);
+    ctx.closePath();
+  }
+
   /* --------------------------------------------------------------------------
-     RETRO SCREEN CANVAS RENDERER: WINDOWS XP + RETRO HTML WEBSITE
+     RETRO SCREEN CANVAS RENDERER: AUTHENTIC WINDOWS XP LUNA & IE "XPLINUX"
      -------------------------------------------------------------------------- */
   renderRetroScreen() {
     const ctx = this.screenCtx;
@@ -389,93 +554,109 @@ export class HeroScene {
     const W = 1024;
     const H = 768;
 
-    // 1. Windows XP "Bliss" Desktop Background
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, 500);
-    skyGrad.addColorStop(0, '#1c6dd0');
-    skyGrad.addColorStop(0.45, '#4a94e8');
-    skyGrad.addColorStop(1, '#a6d3fa');
+    // 1. Windows XP "Bliss" Desktop Background (Image 3)
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 520);
+    skyGrad.addColorStop(0, '#1664d8');
+    skyGrad.addColorStop(0.35, '#3a8cf0');
+    skyGrad.addColorStop(0.8, '#7cbaf8');
+    skyGrad.addColorStop(1, '#a2d2fa');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Puffy cumulus clouds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+    // Realistic cumulus clouds (as in Bliss wallpaper)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
     ctx.beginPath();
-    ctx.arc(320, 220, 90, 0, Math.PI * 2);
-    ctx.arc(430, 210, 110, 0, Math.PI * 2);
-    ctx.arc(520, 230, 80, 0, Math.PI * 2);
+    ctx.arc(280, 210, 85, 0, Math.PI * 2);
+    ctx.arc(380, 195, 105, 0, Math.PI * 2);
+    ctx.arc(480, 215, 75, 0, Math.PI * 2);
+    ctx.arc(550, 230, 55, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(780, 260, 120, 0, Math.PI * 2);
-    ctx.arc(880, 250, 95, 0, Math.PI * 2);
+    ctx.arc(740, 240, 110, 0, Math.PI * 2);
+    ctx.arc(840, 225, 90, 0, Math.PI * 2);
+    ctx.arc(920, 245, 65, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rolling green hills
-    ctx.fillStyle = '#3a9d23';
+    // Far undulating green hills
+    ctx.fillStyle = '#2c8b1a';
     ctx.beginPath();
-    ctx.moveTo(0, 470);
-    ctx.quadraticCurveTo(380, 410, W, 450);
+    ctx.moveTo(0, 480);
+    ctx.quadraticCurveTo(420, 395, W, 460);
     ctx.lineTo(W, H);
     ctx.lineTo(0, H);
     ctx.fill();
 
+    // Foreground lush green hill
     const hillGrad = ctx.createLinearGradient(0, 440, 0, 730);
-    hillGrad.addColorStop(0, '#75c832');
-    hillGrad.addColorStop(0.5, '#46a81e');
-    hillGrad.addColorStop(1, '#206d15');
+    hillGrad.addColorStop(0, '#78cb28');
+    hillGrad.addColorStop(0.4, '#48aa1c');
+    hillGrad.addColorStop(1, '#1e6812');
     ctx.fillStyle = hillGrad;
     ctx.beginPath();
-    ctx.moveTo(0, 520);
-    ctx.quadraticCurveTo(540, 440, W, 510);
+    ctx.moveTo(0, 530);
+    ctx.quadraticCurveTo(510, 435, W, 500);
     ctx.lineTo(W, H);
     ctx.lineTo(0, H);
     ctx.fill();
 
-    // 2. Desktop Icons (Left side)
-    const icons = [
-      { name: 'My Computer', color: '#38bdf8', icon: '💻' },
-      { name: 'Recycle Bin', color: '#10b981', icon: '🗑️' },
-      { name: 'Internet Explorer', color: '#2563eb', icon: '🌐' },
-      { name: 'My Documents', color: '#f59e0b', icon: '📁' }
+    // 2. Desktop Icons (Left side - Image 3)
+    const desktopIcons = [
+      { sym: '🌐', name: 'Internet Explorer', id: 'ie' },
+      { sym: '💻', name: 'My Computer', id: 'computer' },
+      { sym: '📁', name: 'My Documents', id: 'docs' },
+      { sym: '🗑️', name: 'Recycle Bin', id: 'recycle' }
     ];
 
-    icons.forEach((ic, idx) => {
-      const iy = 24 + idx * 85;
-      ctx.font = '26px sans-serif';
+    desktopIcons.forEach((di, idx) => {
+      const dix = 44;
+      const diy = 26 + idx * 82;
+      ctx.font = '28px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(ic.icon, 50, iy + 25);
+      ctx.fillText(di.sym, dix, diy + 25);
 
       ctx.font = 'bold 11px Tahoma, sans-serif';
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillText(ic.name, 51, iy + 46);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.fillText(di.name, dix + 1, diy + 45);
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(ic.name, 50, iy + 45);
+      ctx.fillText(di.name, dix, diy + 44);
     });
 
-    // 3. Windows XP Taskbar (y = 730 to 768)
-    const tbGrad = ctx.createLinearGradient(0, 730, 0, 768);
+    // 3. Authentic Windows XP Luna Taskbar (y = 730 to 768)
+    const tbY = 730;
+    const tbH = 38;
+
+    const tbGrad = ctx.createLinearGradient(0, tbY, 0, H);
     tbGrad.addColorStop(0, '#1f5fcb');
-    tbGrad.addColorStop(0.15, '#2b72e5');
+    tbGrad.addColorStop(0.18, '#2b72e5');
     tbGrad.addColorStop(1, '#1b52b3');
     ctx.fillStyle = tbGrad;
-    ctx.fillRect(0, 730, W, 38);
+    ctx.fillRect(0, tbY, W, tbH);
 
     ctx.fillStyle = '#3882f2';
-    ctx.fillRect(0, 730, W, 1);
+    ctx.fillRect(0, tbY, W, 1);
 
-    // Green Start Button
-    const startGrad = ctx.createLinearGradient(0, 730, 0, 768);
+    // Green Curved Start Button (Classic Windows XP Luna)
+    const startGrad = ctx.createLinearGradient(0, tbY, 0, H);
     startGrad.addColorStop(0, '#388e3c');
     startGrad.addColorStop(0.2, '#66bb6a');
     startGrad.addColorStop(1, '#2e7d32');
     ctx.fillStyle = startGrad;
     ctx.beginPath();
-    ctx.moveTo(0, 730);
-    ctx.lineTo(105, 730);
-    ctx.quadraticCurveTo(116, 749, 105, 768);
-    ctx.lineTo(0, 768);
+    ctx.moveTo(0, tbY);
+    ctx.lineTo(108, tbY);
+    ctx.quadraticCurveTo(120, 749, 108, H);
+    ctx.lineTo(0, H);
     ctx.closePath();
     ctx.fill();
+
+    // Start Button Bevel Highlight
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(0, tbY + 1);
+    ctx.lineTo(107, tbY + 1);
+    ctx.quadraticCurveTo(119, 749, 107, H - 1);
+    ctx.stroke();
 
     // Windows Flag 4 colors
     ctx.fillStyle = '#ef4444'; ctx.fillRect(16, 742, 6, 6);
@@ -486,326 +667,459 @@ export class HeroScene {
     ctx.font = 'bold italic 18px Tahoma, sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 2;
     ctx.fillText('start', 36, 755);
     ctx.shadowBlur = 0;
 
-    // Active Taskbar Tab
-    ctx.fillStyle = '#1446a8';
-    ctx.fillRect(122, 734, 250, 30);
-    ctx.strokeStyle = '#103688';
-    ctx.strokeRect(122, 734, 250, 30);
+    // Quick Launch Icons
+    ctx.font = '14px sans-serif';
+    ctx.fillText('🖥️ 🌐', 125, 754);
+
+    // Running Window Tab in Taskbar
+    const tabX = 168;
+    const tabY = 734;
+    const tabW = 230;
+    const tabH = 30;
+
+    if (this.winState !== 'minimized') {
+      // Active Tab (Inset darker Luna blue)
+      ctx.fillStyle = '#1446a8';
+      ctx.fillRect(tabX, tabY, tabW, tabH);
+      ctx.strokeStyle = '#0e358b';
+      ctx.strokeRect(tabX, tabY, tabW, tabH);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(tabX + 1, tabY + 1, tabW - 2, 2);
+    } else {
+      // Inactive / Minimized Tab (Raised lighter blue)
+      ctx.fillStyle = '#2365d9';
+      ctx.fillRect(tabX, tabY, tabW, tabH);
+      ctx.strokeStyle = '#4b8cfc';
+      ctx.strokeRect(tabX, tabY, tabW, tabH);
+    }
+
+    ctx.font = '14px sans-serif';
+    ctx.fillText('🌐', tabX + 8, tabY + 20);
     ctx.font = 'bold 11px Tahoma, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('🌐 ~* qurayshe\'s Web Zone *~ - Micro...', 132, 753);
+    ctx.fillText('xplinux - Microsoft Internet...', tabX + 28, tabY + 19);
 
-    // System Tray
-    const trayGrad = ctx.createLinearGradient(0, 730, 0, 768);
+    // System Tray (Right - Image 3)
+    const trayGrad = ctx.createLinearGradient(0, tbY, 0, H);
     trayGrad.addColorStop(0, '#0e358b');
     trayGrad.addColorStop(1, '#1444ab');
     ctx.fillStyle = trayGrad;
-    ctx.fillRect(880, 730, 144, 38);
+    ctx.fillRect(880, tbY, 144, tbH);
     ctx.strokeStyle = '#092566';
-    ctx.strokeRect(880, 730, 144, 38);
+    ctx.strokeRect(880, tbY, 144, tbH);
 
     ctx.font = '12px Tahoma, sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'right';
-    ctx.fillText('🔊 🛡️ 4:20 PM', 1012, 754);
+    ctx.fillText('🔊 🛡️ 15:34', 1012, 754);
 
-    // 4. The Single Open Interactive Window: Internet Explorer
-    const wx = 75;
-    const wy = 35;
-    const ww = 874;
-    const wh = 670;
+    // 4. The Internet Explorer Window (labeled "xplinux")
+    if (this.winState !== 'minimized') {
+      const isMax = (this.winState === 'maximized');
+      const wx = isMax ? 0 : this.winRect.x;
+      const wy = isMax ? 0 : this.winRect.y;
+      const ww = isMax ? W : this.winRect.w;
+      const wh = isMax ? 730 : this.winRect.h;
 
-    // Window shadow & main border
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.fillRect(wx + 8, wy + 8, ww, wh);
-
-    ctx.fillStyle = '#0050e6';
-    ctx.fillRect(wx, wy, ww, wh);
-
-    // Window Luna Blue Titlebar
-    const tbWGrad = ctx.createLinearGradient(0, wy, 0, wy + 30);
-    tbWGrad.addColorStop(0, '#0055ea');
-    tbWGrad.addColorStop(0.3, '#3b88ff');
-    tbWGrad.addColorStop(1, '#0047c8');
-    ctx.fillStyle = tbWGrad;
-    ctx.fillRect(wx + 2, wy + 2, ww - 4, 30);
-
-    ctx.font = 'bold 12px Tahoma, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'left';
-    ctx.fillText('🌐 Microsoft Internet Explorer - [~* qurayshe\'s cyber lab *~]', wx + 10, wy + 21);
-
-    // Titlebar Buttons (_, □, X)
-    ctx.fillStyle = '#2563eb';
-    ctx.fillRect(wx + ww - 68, wy + 6, 18, 18);
-    ctx.fillRect(wx + ww - 46, wy + 6, 18, 18);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(wx + ww - 24, wy + 6, 20, 18);
-
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText('_', wx + ww - 59, wy + 18);
-    ctx.fillText('□', wx + ww - 37, wy + 19);
-    ctx.fillText('✕', wx + ww - 14, wy + 19);
-
-    // Browser Menu Bar
-    ctx.fillStyle = '#ece9d8';
-    ctx.fillRect(wx + 2, wy + 32, ww - 4, 24);
-    ctx.font = '11px Tahoma, sans-serif';
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'left';
-    ctx.fillText('File    Edit    View    Favorites    Tools    Help', wx + 12, wy + 48);
-
-    // Navigation Toolbar
-    ctx.fillStyle = '#ece9d8';
-    ctx.fillRect(wx + 2, wy + 56, ww - 4, 34);
-    ctx.strokeStyle = '#d0cdc0';
-    ctx.beginPath();
-    ctx.moveTo(wx + 2, wy + 56); ctx.lineTo(wx + ww - 2, wy + 56);
-    ctx.stroke();
-
-    ctx.font = '11px Tahoma, sans-serif';
-    ctx.fillStyle = '#334155';
-    ctx.fillText('⬅ Back    ➡ Forward    ⏹ Stop    🔄 Refresh    🏠 Home    🔍 Search    ⭐ Favorites', wx + 12, wy + 78);
-
-    // Address Bar Row
-    ctx.fillStyle = '#ece9d8';
-    ctx.fillRect(wx + 2, wy + 90, ww - 4, 28);
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('Address', wx + 12, wy + 108);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(wx + 64, wy + 94, ww - 130, 20);
-    ctx.strokeStyle = '#7f9db9';
-    ctx.strokeRect(wx + 64, wy + 94, ww - 130, 20);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '12px "Courier New", monospace';
-    ctx.fillText('http://www.qurayshe.geocities.ws/cyberlab/index.html', wx + 70, wy + 108);
-
-    ctx.fillStyle = '#22c55e';
-    ctx.fillRect(wx + ww - 60, wy + 94, 52, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 11px Tahoma, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('➔ Go', wx + ww - 34, wy + 108);
-
-    // 5. Retro Website Client Area (HTML Webpage)
-    const cx = wx + 2;
-    const cy = wy + 118;
-    const cw = ww - 4;
-    const ch = wh - 146; // Leaves 28px for status bar
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(cx, cy, cw, ch);
-    ctx.clip();
-
-    // Website Background: Deep Cyber Midnight with Stars
-    ctx.fillStyle = '#060618';
-    ctx.fillRect(cx, cy, cw, ch);
-
-    // Ambient Cyber Grid
-    ctx.strokeStyle = 'rgba(168, 85, 247, 0.1)';
-    ctx.lineWidth = 1;
-    for (let gx = cx; gx < cx + cw; gx += 40) {
-      ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx, cy + ch); ctx.stroke();
-    }
-    for (let gy = cy; gy < cy + ch; gy += 40) {
-      ctx.beginPath(); ctx.moveTo(cx, gy); ctx.lineTo(cx + cw, gy); ctx.stroke();
-    }
-
-    // Scrolled Website Content
-    const contentY = cy + 18 - this.websiteScrollY;
-
-    // Animated Top Marquee
-    const mqOffset = (Date.now() * 0.08) % 1500;
-    const mqText = '★★★ WELCOME TO QURAYSHE\'S UNDERGROUND 3D SYSTEMS & WEB ZONE ★★★  [ Best viewed in 800x600, Netscape 4.0 or IE 6.0 ]  ★★★  POWERED BY PURE C & 3D WEBGL  ★★★';
-    ctx.fillStyle = '#1e1b4b';
-    ctx.fillRect(cx, contentY, cw, 24);
-    ctx.strokeStyle = '#c084fc';
-    ctx.strokeRect(cx, contentY, cw, 24);
-    ctx.font = 'bold 12px "Courier New", monospace';
-    ctx.fillStyle = '#fde047';
-    ctx.textAlign = 'left';
-    ctx.fillText(mqText, cx + 800 - mqOffset, contentY + 16);
-
-    // Big Rainbow Website Headline
-    ctx.font = '800 22px "Courier New", Georgia, serif';
-    ctx.textAlign = 'center';
-    const titleGrad = ctx.createLinearGradient(cx + 100, 0, cx + cw - 100, 0);
-    titleGrad.addColorStop(0, '#f43f5e');
-    titleGrad.addColorStop(0.25, '#fb923c');
-    titleGrad.addColorStop(0.5, '#facc15');
-    titleGrad.addColorStop(0.75, '#38bdf8');
-    titleGrad.addColorStop(1, '#c084fc');
-    ctx.fillStyle = titleGrad;
-    ctx.fillText('~*~ 3D CYBERNETICS // LOW-LEVEL SYSTEMS LAB ~*~', cx + cw / 2, contentY + 62);
-
-    // Sub-badges & Odometer Visitor Counter
-    ctx.font = '11px "Courier New", monospace';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText('[ 🌐 NETSCAPE NOW! 4.0 ]   •   [ 📝 CODED IN NOTEPAD++ ]   •   [ 🕹️ WEB RING MEMBER #042 ]', cx + cw / 2, contentY + 84);
-
-    // Visitor Counter Box
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(cx + cw / 2 - 95, contentY + 98, 190, 24);
-    ctx.strokeStyle = '#22c55e';
-    ctx.strokeRect(cx + cw / 2 - 95, contentY + 98, 190, 24);
-    ctx.font = 'bold 13px "Courier New", monospace';
-    ctx.fillStyle = '#22c55e';
-    ctx.fillText('VISITORS: [ 0 0 4 2 8 9 ]', cx + cw / 2, contentY + 115);
-
-    // Retro Nav Links
-    ctx.font = 'bold 12px "Courier New", monospace';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText('[ 🏠 HOME ]   [ ⚙ SYSTEMS ]   [ 🎮 GRAPHICS ]   [ 🌐 SERVERS ]   [ 📖 GUESTBOOK ]', cx + cw / 2, contentY + 142);
-
-    // Beveled Section Divider Line
-    ctx.strokeStyle = '#a855f7';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx + 40, contentY + 158);
-    ctx.lineTo(cx + cw - 40, contentY + 158);
-    ctx.stroke();
-
-    // Web Badges Header
-    ctx.font = 'bold 14px "Courier New", monospace';
-    ctx.fillStyle = '#facc15';
-    ctx.fillText('-=☆ OFFICIAL WEB RING & 88x31 BADGE COLLECTION ☆=-', cx + cw / 2, contentY + 180);
-
-    ctx.font = '11px "Courier New", monospace';
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('Click any badge below to test connection to affiliate servers!', cx + cw / 2, contentY + 198);
-
-    // 28 Old-School Web Buttons Grid (7 cols x 4 rows)
-    const btnCols = 7;
-    const btnW = 88;
-    const btnH = 31;
-    const gapX = 14;
-    const gapY = 13;
-    const gridTotalW = btnCols * btnW + (btnCols - 1) * gapX;
-    const startX = cx + (cw - gridTotalW) / 2;
-    const startY = contentY + 215;
-
-    this.renderedButtons = [];
-    let hoveredBtn = null;
-
-    for (let i = 0; i < this.retroButtonsList.length; i++) {
-      const bInfo = this.retroButtonsList[i];
-      const col = i % btnCols;
-      const row = Math.floor(i / btnCols);
-      const bx = startX + col * (btnW + gapX);
-      const by = startY + row * (btnH + gapY);
-
-      // Hit boundary
-      this.renderedButtons.push({ x: bx, y: by, w: btnW, h: btnH, btn: bInfo });
-
-      const isHovered = (
-        this.screenPointer.active &&
-        this.screenPointer.x >= bx &&
-        this.screenPointer.x <= bx + btnW &&
-        this.screenPointer.y >= by &&
-        this.screenPointer.y <= by + btnH
-      );
-
-      if (isHovered) {
-        hoveredBtn = bInfo;
+      // Soft window drop shadow (only when floating)
+      if (!isMax) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = '#0050e6';
+        this.drawRoundRect(ctx, wx, wy, ww, wh, [6, 6, 0, 0]);
+        ctx.fill();
+        ctx.restore();
       }
 
-      const img = this.retroButtonImages[bInfo.file];
-      if (img && img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, bx, by, btnW, btnH);
-      } else {
-        // Authentic beveled badge placeholder
-        ctx.fillStyle = '#1e1b4b';
-        ctx.fillRect(bx, by, btnW, btnH);
-        ctx.strokeStyle = '#c084fc';
-        ctx.strokeRect(bx, by, btnW, btnH);
-        ctx.font = 'bold 9px Tahoma, sans-serif';
+      ctx.save();
+      this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
+      ctx.clip();
+
+      // Outer 3px Luna Blue Window Frame Border
+      ctx.fillStyle = '#0050e6';
+      ctx.fillRect(wx, wy, ww, wh);
+
+      // 4a. Titlebar (Luna Blue with Windows XP control buttons - Image 4)
+      const titleH = 30;
+      const tbWGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+      tbWGrad.addColorStop(0, '#0058ec');
+      tbWGrad.addColorStop(0.35, '#3b88ff');
+      tbWGrad.addColorStop(1, '#0047c8');
+      ctx.fillStyle = tbWGrad;
+      ctx.fillRect(wx + 2, wy + 2, ww - 4, titleH);
+
+      // Top edge highlight
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillRect(wx + 2, wy + 2, ww - 4, 1);
+
+      // Title Icon & Label
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🌐', wx + 8, wy + 21);
+
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 2;
+      ctx.fillText('xplinux - Microsoft Internet Explorer', wx + 28, wy + 20);
+      ctx.shadowBlur = 0;
+
+      // Top-Right Control Buttons (Image 4: Minimize, Maximize/Restore, Close)
+      const btnY = wy + 5;
+      const btnH = 21;
+      const btnW = 21;
+      const bxMin = wx + ww - 75;
+      const bxMax = wx + ww - 51;
+      const bxClose = wx + ww - 27;
+
+      // 1. MINIMIZE BUTTON (_)
+      const minGrad = ctx.createLinearGradient(0, btnY, 0, btnY + btnH);
+      minGrad.addColorStop(0, '#3878f0');
+      minGrad.addColorStop(1, '#1b52c8');
+      ctx.fillStyle = minGrad;
+      this.drawRoundRect(ctx, bxMin, btnY, btnW, btnH, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#7cb3fc';
+      this.drawRoundRect(ctx, bxMin, btnY, btnW, btnH, 3);
+      ctx.stroke();
+
+      // White underline icon
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bxMin + 5, btnY + 14, 11, 2.5);
+
+      // 2. MAXIMIZE / RESTORE BUTTON (Image 4)
+      const maxGrad = ctx.createLinearGradient(0, btnY, 0, btnY + btnH);
+      maxGrad.addColorStop(0, '#3878f0');
+      maxGrad.addColorStop(1, '#1b52c8');
+      ctx.fillStyle = maxGrad;
+      this.drawRoundRect(ctx, bxMax, btnY, btnW, btnH, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#7cb3fc';
+      this.drawRoundRect(ctx, bxMax, btnY, btnW, btnH, 3);
+      ctx.stroke();
+
+      if (!isMax) {
+        // Normal Maximize Square Icon (Image 4)
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(bxMax + 4.5, btnY + 4.5, 12, 11);
         ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.fillText(bInfo.title.slice(0, 12), bx + btnW / 2, by + btnH / 2 + 3);
+        ctx.fillRect(bxMax + 4.5, btnY + 4.5, 12, 2.8);
+      } else {
+        // Restore Overlapping Windows Icon (Image 4)
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4;
+        ctx.strokeRect(bxMax + 7.5, btnY + 4.5, 8.5, 8);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(bxMax + 7.5, btnY + 4.5, 8.5, 2.2);
+        ctx.strokeRect(bxMax + 4.5, btnY + 7.5, 8.5, 8);
+        ctx.fillRect(bxMax + 4.5, btnY + 7.5, 8.5, 2.2);
       }
 
-      // Bevel border
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.strokeRect(bx, by, btnW, btnH);
+      // 3. CLOSE BUTTON (✕ - Crisp thick white X on red button, Image 4)
+      const closeGrad = ctx.createLinearGradient(0, btnY, 0, btnY + btnH);
+      closeGrad.addColorStop(0, '#e84538');
+      closeGrad.addColorStop(1, '#c5281b');
+      ctx.fillStyle = closeGrad;
+      this.drawRoundRect(ctx, bxClose, btnY, btnW + 1, btnH, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#fca5a5';
+      this.drawRoundRect(ctx, bxClose, btnY, btnW + 1, btnH, 3);
+      ctx.stroke();
 
-      // Flashy hover glow highlight on badge
-      if (isHovered) {
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bx - 2, by - 2, btnW + 4, btnH + 4);
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
-        ctx.fillRect(bx, by, btnW, btnH);
+      // Thick crisp white diagonal lines for X
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(bxClose + 6, btnY + 5.5); ctx.lineTo(bxClose + 16, btnY + 15.5);
+      ctx.moveTo(bxClose + 16, btnY + 5.5); ctx.lineTo(bxClose + 6, btnY + 15.5);
+      ctx.stroke();
+
+      // 4b. Menu Bar (y = wy + 32, h = 24)
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(wx + 2, wy + 32, ww - 4, 24);
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillStyle = '#000000';
+      ctx.textAlign = 'left';
+      ctx.fillText('File    Edit    View    Favorites    Tools    Help', wx + 12, wy + 48);
+
+      // 4c. Navigation Toolbar (Image 3 - Back, Forward, Stop, Refresh, Home, Search, Favorites)
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(wx + 2, wy + 56, ww - 4, 34);
+      ctx.strokeStyle = '#d0cdc0';
+      ctx.beginPath();
+      ctx.moveTo(wx + 2, wy + 56); ctx.lineTo(wx + ww - 2, wy + 56);
+      ctx.stroke();
+
+      // Big Circular Green Back Button (Image 3)
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(wx + 20, wy + 73, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText('⬅', wx + 20, wy + 77);
+
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillStyle = '#1e293b';
+      ctx.textAlign = 'left';
+      ctx.fillText('Back', wx + 36, wy + 77);
+      ctx.fillText('➡', wx + 70, wy + 77);
+      ctx.fillText('⏹ Stop    🔄 Refresh    🏠 Home    |    🔍 Search    ⭐ Favorites    |    🖨️ Print', wx + 92, wy + 77);
+
+      // Windows animated flag logo in top right of toolbar (Image 3)
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(wx + ww - 28, wy + 62, 5, 5);
+      ctx.fillStyle = '#22c55e'; ctx.fillRect(wx + ww - 21, wy + 62, 5, 5);
+      ctx.fillStyle = '#3b82f6'; ctx.fillRect(wx + ww - 28, wy + 69, 5, 5);
+      ctx.fillStyle = '#eab308'; ctx.fillRect(wx + ww - 21, wy + 69, 5, 5);
+
+      // 4d. Address Bar Row (Image 3)
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(wx + 2, wy + 90, ww - 4, 28);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillText('Address', wx + 12, wy + 108);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(wx + 64, wy + 94, ww - 130, 20);
+      ctx.strokeStyle = '#7f9db9';
+      ctx.strokeRect(wx + 64, wy + 94, ww - 130, 20);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '12px "Courier New", monospace';
+      ctx.fillText('http://xplinux.ws/cyberlab/index.html', wx + 72, wy + 108);
+
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(wx + ww - 60, wy + 94, 52, 20);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('➔ Go', wx + ww - 34, wy + 108);
+
+      // 4e. Vintage HTML Web Client Area (Labeled "xplinux")
+      const cx = wx + 2;
+      const cy = wy + 118;
+      const cw = ww - 4;
+      const ch = wh - 144; // Leaves 26px for status bar
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cx, cy, cw, ch);
+      ctx.clip();
+
+      // Web Page Background: Crisp vintage paper white with subtle grid
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx, cy, cw, ch);
+
+      // Light background grid
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.6)';
+      ctx.lineWidth = 1;
+      for (let gx = cx; gx < cx + cw; gx += 40) {
+        ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx, cy + ch); ctx.stroke();
       }
+      for (let gy = cy; gy < cy + ch; gy += 40) {
+        ctx.beginPath(); ctx.moveTo(cx, gy); ctx.lineTo(cx + cw, gy); ctx.stroke();
+      }
+
+      // Scrolled Web Content
+      const contentY = cy + 12 - this.websiteScrollY;
+
+      // Top Animated Marquee Banner
+      const mqOffset = (Date.now() * 0.08) % 1500;
+      const mqText = '★★★ WELCOME TO XPLINUX 3D WORKSHOP & SYSTEMS LAB ★★★ [ BEST VIEWED IN 1024x768, INTERNET EXPLORER 6.0 ] ★★★ POWERED BY C, RUST & 3D WEBGL ★★★';
+      ctx.fillStyle = '#0c1445';
+      ctx.fillRect(cx, contentY, cw, 24);
+      ctx.strokeStyle = '#c084fc';
+      ctx.strokeRect(cx, contentY, cw, 24);
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.fillStyle = '#fde047';
+      ctx.textAlign = 'left';
+      ctx.fillText(mqText, cx + 800 - mqOffset, contentY + 16);
+
+      // Big Vintage Rainbow Headline labeled "xplinux"
+      ctx.font = '800 22px "Courier New", Georgia, serif';
+      ctx.textAlign = 'center';
+      const titleGrad = ctx.createLinearGradient(cx + 80, 0, cx + cw - 80, 0);
+      titleGrad.addColorStop(0, '#e11d48');
+      titleGrad.addColorStop(0.25, '#d97706');
+      titleGrad.addColorStop(0.5, '#16a34a');
+      titleGrad.addColorStop(0.75, '#0284c7');
+      titleGrad.addColorStop(1, '#9333ea');
+      ctx.fillStyle = titleGrad;
+      ctx.fillText('~*~ xplinux // 3D GRAPHICS & EMBEDDED SYSTEMS LAB ~*~', cx + cw / 2, contentY + 58);
+
+      ctx.font = '11px "Courier New", monospace';
+      ctx.fillStyle = '#475569';
+      ctx.fillText('Low-Level C • C++ • Rust • Shaders • RTOS • FPGA • Linux Kernel • 3D Motion', cx + cw / 2, contentY + 78);
+
+      // Visitor Counter Box
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(cx + cw / 2 - 95, contentY + 92, 190, 24);
+      ctx.strokeStyle = '#22c55e';
+      ctx.strokeRect(cx + cw / 2 - 95, contentY + 92, 190, 24);
+      ctx.font = 'bold 13px "Courier New", monospace';
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText('VISITORS: [ 0 0 4 2 8 9 ]', cx + cw / 2, contentY + 108);
+
+      // Vintage Nav Links
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.fillStyle = '#0284c7';
+      ctx.fillText('[ 🏠 Home ]   [ ⚙ Systems ]   [ 🎮 3D Graphics ]   [ 🌐 Servers ]   [ 📖 Guestbook ]', cx + cw / 2, contentY + 132);
+
+      // Beveled Section Divider Line
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + 40, contentY + 148);
+      ctx.lineTo(cx + cw - 40, contentY + 148);
+      ctx.stroke();
+
+      // Badges Section Header
+      ctx.font = 'bold 14px "Courier New", monospace';
+      ctx.fillStyle = '#b45309';
+      ctx.fillText('-=☆ XPLINUX OFFICIAL WEB RING & 88x31 BADGE VAULT ☆=-', cx + cw / 2, contentY + 172);
+
+      ctx.font = '11px "Courier New", monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('Click any badge below to test connection to affiliate servers!', cx + cw / 2, contentY + 190);
+
+      // 28 Badges Grid (7 columns x 4 rows)
+      const btnCols = 7;
+      const badgeW = 88;
+      const badgeH = 31;
+      const gapX = 14;
+      const gapY = 13;
+      const gridTotalW = btnCols * badgeW + (btnCols - 1) * gapX;
+      const startX = cx + (cw - gridTotalW) / 2;
+      const startY = contentY + 208;
+
+      this.renderedButtons = [];
+      let hoveredBtn = null;
+
+      for (let i = 0; i < this.retroButtonsList.length; i++) {
+        const bInfo = this.retroButtonsList[i];
+        const col = i % btnCols;
+        const row = Math.floor(i / btnCols);
+        const bx = startX + col * (badgeW + gapX);
+        const by = startY + row * (badgeH + gapY);
+
+        this.renderedButtons.push({ x: bx, y: by, w: badgeW, h: badgeH, btn: bInfo });
+
+        const isHovered = (
+          this.screenPointer.active &&
+          this.screenPointer.x >= bx &&
+          this.screenPointer.x <= bx + badgeW &&
+          this.screenPointer.y >= by &&
+          this.screenPointer.y <= by + badgeH
+        );
+
+        if (isHovered) {
+          hoveredBtn = bInfo;
+        }
+
+        const img = this.retroButtonImages[bInfo.file];
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, bx, by, badgeW, badgeH);
+        } else {
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(bx, by, badgeW, badgeH);
+          ctx.strokeStyle = '#c084fc';
+          ctx.strokeRect(bx, by, badgeW, badgeH);
+          ctx.font = 'bold 9px Tahoma, sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(bInfo.title.slice(0, 12), bx + badgeW / 2, by + badgeH / 2 + 3);
+        }
+
+        // Authentic beveled badge border
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.strokeRect(bx, by, badgeW, badgeH);
+
+        if (isHovered) {
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx - 2, by - 2, badgeW + 4, badgeH + 4);
+          ctx.fillStyle = 'rgba(2, 132, 199, 0.2)';
+          ctx.fillRect(bx, by, badgeW, badgeH);
+        }
+      }
+
+      // Footer notice
+      ctx.font = '11px "Courier New", monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.fillText('© 2001-2026 qurayshe. Hand-coded with Notepad on xplinux. All rights reserved.', cx + cw / 2, startY + 4 * (btnH + gapY) + 24);
+
+      ctx.restore(); // End clipping client area
+
+      // Scrollbar on right edge
+      const sbX = cx + cw - 16;
+      const sbY = cy;
+      const sbW = 16;
+      const sbH = ch;
+
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(sbX, sbY, sbW, sbH);
+      ctx.strokeStyle = '#d0cdc0';
+      ctx.strokeRect(sbX, sbY, sbW, sbH);
+
+      const maxScroll = 340;
+      const thumbH = 60;
+      const thumbY = sbY + (this.websiteScrollY / maxScroll) * (sbH - thumbH);
+      ctx.fillStyle = '#d4d0c8';
+      ctx.fillRect(sbX + 1, thumbY, sbW - 2, thumbH);
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(sbX + 1, thumbY, sbW - 2, thumbH);
+
+      // 4f. Classic IE Status Bar (Image 3)
+      const stY = wy + wh - 26;
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(wx + 2, stY, ww - 4, 24);
+      ctx.strokeStyle = '#d0cdc0';
+      ctx.strokeRect(wx + 2, stY, ww - 4, 24);
+
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#1e293b';
+
+      if (hoveredBtn) {
+        ctx.fillText(`🔗 Shortcut to http://xplinux.ws/${hoveredBtn.file} (${hoveredBtn.title})`, wx + 12, stY + 16);
+      } else {
+        ctx.fillText('✅ Done', wx + 12, stY + 16);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.fillText('🌐 Internet Zone | 100%', wx + ww - 14, stY + 16);
+
+      ctx.restore(); // End clipping window
     }
 
-    // Website Footer Notice
-    ctx.font = '11px "Courier New", monospace';
-    ctx.fillStyle = '#94a3b8';
-    ctx.textAlign = 'center';
-    ctx.fillText('© 2001-2026 qurayshe. All rights reserved. Made with raw HTML & Notepad. Click anywhere to interact!', cx + cw / 2, startY + 4 * (btnH + gapY) + 25);
-
-    ctx.restore();
-
-    // Scrollbar on right edge
-    const sbX = cx + cw - 16;
-    const sbY = cy;
-    const sbW = 16;
-    const sbH = ch;
-
-    ctx.fillStyle = '#ece9d8';
-    ctx.fillRect(sbX, sbY, sbW, sbH);
-    ctx.strokeStyle = '#d0cdc0';
-    ctx.strokeRect(sbX, sbY, sbW, sbH);
-
-    // Scroll Thumb
-    const maxScroll = 320;
-    const thumbH = 60;
-    const thumbY = sbY + (this.websiteScrollY / maxScroll) * (sbH - thumbH);
-    ctx.fillStyle = '#d4d0c8';
-    ctx.fillRect(sbX + 1, thumbY, sbW - 2, thumbH);
-    ctx.strokeStyle = '#ffffff';
-    ctx.strokeRect(sbX + 1, thumbY, sbW - 2, thumbH);
-
-    // 6. Browser Status Bar (y = wy + wh - 26 to wy + wh - 4)
-    const stY = wy + wh - 26;
-    ctx.fillStyle = '#ece9d8';
-    ctx.fillRect(wx + 2, stY, ww - 4, 22);
-    ctx.strokeStyle = '#d0cdc0';
-    ctx.strokeRect(wx + 2, stY, ww - 4, 22);
-
-    ctx.font = '11px Tahoma, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#1e293b';
-
-    if (hoveredBtn) {
-      ctx.fillText(`🔗 Shortcut to http://geocities.ws/${hoveredBtn.file} (${hoveredBtn.title})`, wx + 12, stY + 15);
-    } else {
-      ctx.fillText('✅ Done', wx + 12, stY + 15);
-    }
-
-    ctx.textAlign = 'right';
-    ctx.fillText('🌐 Internet Zone | 100%', wx + ww - 14, stY + 15);
-
-    // 7. Interactive Start Menu (If Open)
+    // 5. Interactive Luna Start Menu (If Open)
     if (this.startMenuOpen) {
       const smX = 0;
       const smY = 320;
       const smW = 340;
       const smH = 410;
 
-      // Outer shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(smX + 6, smY + 6, smW, smH);
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#ffffff';
+      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
+      ctx.clip();
 
       // Start Menu Header
       const smHGrad = ctx.createLinearGradient(0, smY, smW, smY);
@@ -814,12 +1128,6 @@ export class HeroScene {
       ctx.fillStyle = smHGrad;
       ctx.fillRect(smX, smY, smW, 54);
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px Tahoma, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('qurayshe', smX + 60, smY + 34);
-
-      // User avatar circle
       ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
       ctx.arc(smX + 32, smY + 28, 18, 0, Math.PI * 2);
@@ -828,13 +1136,16 @@ export class HeroScene {
       ctx.textAlign = 'center';
       ctx.fillText('⚡', smX + 32, smY + 34);
 
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px Tahoma, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('qurayshe @ xplinux', smX + 60, smY + 34);
+
       // White Left Panel
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(smX, smY + 54, 180, smH - 96);
-
-      const leftItems = ['🌐 Internet Explorer', '📝 Notepad', '💻 Command Prompt', '🎮 Vulkan 3D Lab', '💣 Minesweeper'];
+      const leftItems = ['🌐 Internet Explorer', '📝 Notepad', '💻 Terminal Lab', '🎮 Vulkan 3D Lab', '💣 Minesweeper'];
       ctx.font = '12px Tahoma, sans-serif';
-      ctx.textAlign = 'left';
       ctx.fillStyle = '#0f172a';
       leftItems.forEach((it, i) => {
         ctx.fillText(it, smX + 10, smY + 84 + i * 40);
@@ -842,8 +1153,9 @@ export class HeroScene {
 
       // Blue Right Panel
       ctx.fillStyle = '#d3e5fa';
-      ctx.fillRect(smX + 180, smY + 54, smW - 180, smH - 96);
+      ctx.fillRect(smX, smY + 54, smW - 180, smH - 96);
       const rightItems = ['📁 My Documents', '💻 My Computer', '⚙️ Control Panel', '🔍 Search', '▶ Run...'];
+      ctx.fillStyle = '#1e3a8a';
       rightItems.forEach((it, i) => {
         ctx.fillText(it, smX + 192, smY + 84 + i * 40);
       });
@@ -854,27 +1166,29 @@ export class HeroScene {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px Tahoma, sans-serif';
       ctx.fillText('🔑 Log Off      ⏻ Turn Off Computer', smX + 20, smY + smH - 16);
+
+      ctx.restore();
     }
 
-    // 8. Interactive XP Alert Dialog (If Triggered)
+    // 6. Interactive XP Alert Dialog (If Triggered)
     if (this.activePopup) {
       const pw = 420;
       const ph = 180;
       const px = (W - pw) / 2;
       const py = (H - ph) / 2;
 
-      // Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fillRect(px + 8, py + 8, pw, ph);
-
-      // Dialog Frame
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 18;
       ctx.fillStyle = '#ece9d8';
-      ctx.fillRect(px, py, pw, ph);
-      ctx.strokeStyle = '#0055ea';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(px, py, pw, ph);
+      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      ctx.fill();
+      ctx.restore();
 
-      // Titlebar
+      ctx.save();
+      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      ctx.clip();
+
       const dlgTbGrad = ctx.createLinearGradient(0, py, 0, py + 26);
       dlgTbGrad.addColorStop(0, '#0055ea');
       dlgTbGrad.addColorStop(1, '#3b88ff');
@@ -884,9 +1198,8 @@ export class HeroScene {
       ctx.font = 'bold 12px Tahoma, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'left';
-      ctx.fillText(this.activePopup.title || 'Internet Explorer', px + 10, py + 18);
+      ctx.fillText(this.activePopup.title || 'xplinux - System Notice', px + 10, py + 18);
 
-      // Close [X]
       ctx.fillStyle = '#ef4444';
       ctx.fillRect(px + pw - 22, py + 4, 18, 18);
       ctx.font = 'bold 11px sans-serif';
@@ -894,7 +1207,9 @@ export class HeroScene {
       ctx.textAlign = 'center';
       ctx.fillText('✕', px + pw - 13, py + 17);
 
-      // Body Icon & Text
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(px, py + 26, pw, ph - 26);
+
       ctx.font = '28px sans-serif';
       ctx.fillText('ℹ️', px + 36, py + 80);
 
@@ -907,7 +1222,6 @@ export class HeroScene {
         ctx.fillText(ln, px + 70, py + 68 + lidx * 20);
       });
 
-      // [ OK ] Button
       const okW = 80;
       const okH = 26;
       const okX = px + (pw - okW) / 2;
@@ -916,22 +1230,37 @@ export class HeroScene {
       ctx.fillStyle = '#ece9d8';
       ctx.fillRect(okX, okY, okW, okH);
       ctx.strokeStyle = '#0055ea';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.8;
       ctx.strokeRect(okX, okY, okW, okH);
 
       ctx.font = 'bold 12px Tahoma, sans-serif';
       ctx.fillStyle = '#0f172a';
       ctx.textAlign = 'center';
       ctx.fillText('OK', okX + okW / 2, okY + 17);
+      ctx.restore();
     }
 
-    // 9. Windows XP Mouse Pointer
+    // 7. Windows XP Virtual Mouse Pointer
     if (this.screenPointer.active) {
       const mx = this.screenPointer.x;
       const my = this.screenPointer.y;
 
+      const isMax = (this.winState === 'maximized');
+      const wx = isMax ? 0 : this.winRect.x;
+      const wy = isMax ? 0 : this.winRect.y;
+      const ww = isMax ? W : this.winRect.w;
+
       ctx.save();
-      if (hoveredBtn || this.startMenuOpen || (my >= wy && my <= wy + 30 && mx >= wx + ww - 68)) {
+      const isHoveringControls = (
+        this.startMenuOpen ||
+        my >= 730 ||
+        (this.winState !== 'minimized' && my >= wy && my <= wy + 30 && mx >= wx + ww - 80) ||
+        (this.winState !== 'minimized' && my >= wy + 90 && my <= wy + 118) ||
+        (mx <= 90 && my <= 360) ||
+        (this.renderedButtons && this.renderedButtons.some((b) => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h))
+      );
+
+      if (isHoveringControls) {
         // Pointing Hand Cursor
         ctx.font = '22px sans-serif';
         ctx.textAlign = 'left';
@@ -970,7 +1299,7 @@ export class HeroScene {
   }
 
   /* --------------------------------------------------------------------------
-     INTERACTIVE SCREEN CLICK & AUDIO HANDLERS
+     INTERACTIVE SCREEN CLICK & AUDIO HANDLERS WITH WINDOW MANAGEMENT
      -------------------------------------------------------------------------- */
   playRetroClickSound() {
     try {
@@ -1004,8 +1333,8 @@ export class HeroScene {
       return;
     }
 
-    // 2. Start Button Toggle
-    if (x >= 0 && x <= 115 && y >= 730 && y <= 768) {
+    // 2. Start Button Toggle (x = 0..118, y = 730..768)
+    if (x >= 0 && x <= 118 && y >= 730 && y <= 768) {
       this.startMenuOpen = !this.startMenuOpen;
       return;
     }
@@ -1015,36 +1344,109 @@ export class HeroScene {
       return;
     }
 
-    // 3. Window Close Button [X] (wx = 75, wy = 35, ww = 874)
-    if (x >= 925 && x <= 948 && y >= 38 && y <= 60) {
-      this.activePopup = {
-        title: 'System Notice',
-        message: 'qurayshe.exe is a critical system process.\nWindow termination denied! 🚀'
-      };
+    // 3. Taskbar Window Tab (x = 168..398, y = 734..764) - Toggles Minimize / Restore!
+    if (x >= 168 && x <= 400 && y >= 732 && y <= 766) {
+      if (this.winState === 'minimized') {
+        this.winState = 'normal';
+      } else {
+        this.winState = 'minimized';
+      }
       return;
     }
 
-    // 4. Clicked an Old-School 88x31 Button
-    if (this.renderedButtons && this.renderedButtons.length > 0) {
-      for (let i = 0; i < this.renderedButtons.length; i++) {
-        const item = this.renderedButtons[i];
-        if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
-          this.activePopup = {
-            title: 'Internet Explorer 6.0',
-            message: `Connected to badge: ${item.btn.title}!\n[HTTP 200 OK - Affiliate Link Active]`
-          };
-          return;
-        }
+    // 4. Desktop Icons (When clicked on the left side)
+    if (x >= 20 && x <= 75 && this.winState === 'minimized') {
+      if (y >= 20 && y <= 90) {
+        // IE Icon: restore window!
+        this.winState = 'normal';
+        return;
       }
     }
 
-    // 5. Clicked Address Bar or Navigation
-    if (y >= 94 && y <= 122) {
-      this.activePopup = {
-        title: 'Geocities Cyber Lab',
-        message: 'You are visiting qurayshe\'s underground\n3D systems & graphics workshop!'
-      };
-      return;
+    // 5. Window Controls & Titlebar (If window is visible)
+    if (this.winState !== 'minimized') {
+      const isMax = (this.winState === 'maximized');
+      const wx = isMax ? 0 : this.winRect.x;
+      const wy = isMax ? 0 : this.winRect.y;
+      const ww = isMax ? 1024 : this.winRect.w;
+
+      const btnY = wy + 5;
+      const bxMin = wx + ww - 75;
+      const bxMax = wx + ww - 51;
+      const bxClose = wx + ww - 27;
+
+      // Click Minimize Button (_)
+      if (x >= bxMin && x <= bxMin + 21 && y >= btnY && y <= btnY + 21) {
+        this.winState = 'minimized';
+        return;
+      }
+
+      // Click Maximize / Restore Button (□ / ❐)
+      if (x >= bxMax && x <= bxMax + 21 && y >= btnY && y <= btnY + 21) {
+        if (this.winState === 'maximized') {
+          this.winState = 'normal';
+          this.winRect = { ...this.winNormalRect };
+        } else {
+          this.winState = 'maximized';
+        }
+        return;
+      }
+
+      // Click Close Button (✕)
+      if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 21) {
+        this.winState = 'minimized';
+        this.activePopup = {
+          title: 'xplinux System Notification',
+          message: 'Internet Explorer minimized to taskbar.\nClick taskbar tab to reopen!'
+        };
+        return;
+      }
+
+      // Titlebar drag start or double-click to toggle maximize
+      if (y >= wy && y <= wy + 30 && x >= wx && x <= wx + ww - 80) {
+        const now = performance.now();
+        if (this.lastTitleClick && (now - this.lastTitleClick) < 300) {
+          // Double-click: toggle maximize!
+          if (this.winState === 'maximized') {
+            this.winState = 'normal';
+            this.winRect = { ...this.winNormalRect };
+          } else {
+            this.winState = 'maximized';
+          }
+          this.lastTitleClick = 0;
+          return;
+        }
+        this.lastTitleClick = now;
+
+        if (this.winState === 'normal') {
+          this.winIsDragging = true;
+          this.winDragOffset = { x: x - this.winRect.x, y: y - this.winRect.y };
+        }
+        return;
+      }
+
+      // 6. Clicked an Old-School 88x31 Button
+      if (this.renderedButtons && this.renderedButtons.length > 0) {
+        for (let i = 0; i < this.renderedButtons.length; i++) {
+          const item = this.renderedButtons[i];
+          if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+            this.activePopup = {
+              title: 'xplinux Web Ring',
+              message: `Connected to badge: ${item.btn.title}!\n[HTTP 200 OK - Affiliate Link Active]`
+            };
+            return;
+          }
+        }
+      }
+
+      // 7. Clicked Address Bar or Navigation
+      if (y >= wy + 90 && y <= wy + 118) {
+        this.activePopup = {
+          title: 'xplinux Web Zone',
+          message: 'http://xplinux.ws/cyberlab/index.html\nWelcome to qurayshe\'s 3D lab!'
+        };
+        return;
+      }
     }
   }
 
@@ -1405,6 +1807,9 @@ export class HeroScene {
 
     } else {
       hide(this.pcGroup);
+      this.screenPointer.active = false;
+      this.container.style.cursor = '';
+      document.body.style.cursor = '';
 
       // Restore ASCII state based on current toggle setting
       if (this.asciiCanvas) {
@@ -1754,8 +2159,20 @@ export class HeroScene {
           this.screenPointer.x = uv.x * 1024;
           this.screenPointer.y = (1 - uv.y) * 768;
           this.screenPointer.active = true;
+          this.container.style.cursor = 'none';
+          document.body.style.cursor = 'none';
+
+          if (this.winIsDragging && this.winState === 'normal') {
+            const newX = Math.round(this.screenPointer.x - this.winDragOffset.x);
+            const newY = Math.round(this.screenPointer.y - this.winDragOffset.y);
+            this.winRect.x = Math.max(-200, Math.min(1024 - 100, newX));
+            this.winRect.y = Math.max(0, Math.min(730 - 40, newY));
+            this.winNormalRect = { ...this.winRect };
+          }
         } else {
           this.screenPointer.active = false;
+          this.container.style.cursor = '';
+          document.body.style.cursor = '';
         }
       }
     };
@@ -1768,8 +2185,15 @@ export class HeroScene {
       }
     }, { passive: true });
 
+    window.addEventListener('pointerup', () => {
+      this.winIsDragging = false;
+    });
+
     this.container.addEventListener('pointerleave', () => {
       this.screenPointer.active = false;
+      this.winIsDragging = false;
+      this.container.style.cursor = '';
+      document.body.style.cursor = '';
     });
 
     this.container.addEventListener('pointerdown', () => {
@@ -2026,6 +2450,9 @@ export class HeroScene {
   }
 
   destroy() {
+    this.screenPointer.active = false;
+    if (this.container) this.container.style.cursor = '';
+    document.body.style.cursor = '';
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
