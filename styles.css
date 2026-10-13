@@ -819,6 +819,12 @@ a:hover {
 .hero-3d-viewport:active {
   cursor: grabbing;
 }
+.hero-3d-viewport canvas {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
 
 /* ==========================================================================
    Homepage Hero Scrolling Skills Marquee

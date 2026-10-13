@@ -36,7 +36,10 @@ export class HeroScene {
     this.retroButtonsList = [];
     this.retroButtonImages = {};
     this.renderedButtons = [];
+    this.renderedNavLinks = [];
     this.websiteScrollY = 0;
+    this.blissImg = null;
+    this.pixelRatioScale = 0.52;
     this.startMenuOpen = false;
     this.activePopup = null;
     this.audioCtx = null;
@@ -83,17 +86,19 @@ export class HeroScene {
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     this.camera.position.set(0, 0, 18);
 
-    // 2. Renderer
+    // 2. Renderer with slight retro pixelization effect
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: false,
       alpha: true,
       powerPreference: 'high-performance',
       preserveDrawingBuffer: true
     });
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(dpr * this.pixelRatioScale);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
+    this.renderer.domElement.style.imageRendering = 'pixelated';
 
     this.container.innerHTML = '';
     this.container.style.position = 'relative';
@@ -226,6 +231,9 @@ export class HeroScene {
       };
     });
 
+    // Load Super-Compressed JPEG Bliss Wallpaper
+    this.loadBlissWallpaper();
+
     // Materials
     const casingMat = new THREE.MeshStandardMaterial({ color: 0xd6d0be, roughness: 0.58, metalness: 0.08 });
     const casingDarkMat = new THREE.MeshStandardMaterial({ color: 0xb5ae9c, roughness: 0.68, metalness: 0.08 });
@@ -264,8 +272,20 @@ export class HeroScene {
     innerBorderMesh.position.set(0, 1.2, 2.7);
     monitorGroup.add(innerBorderMesh);
 
-    // CRT Screen Glass Quad (Interactive Raycast Surface)
-    const screenGeo = new THREE.PlaneGeometry(9.2, 6.9);
+    // CRT Screen Glass Quad with Physical Convex Curvature (Interactive Raycast Surface)
+    const screenGeo = new THREE.PlaneGeometry(9.2, 6.9, 24, 24);
+    const pos = screenGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const px = pos.getX(i);
+      const py = pos.getY(i);
+      const nx = px / 4.6;
+      const ny = py / 3.45;
+      const distSq = nx * nx + ny * ny;
+      const zBulge = Math.max(0, 0.16 * (1 - distSq * 0.7));
+      pos.setZ(i, zBulge);
+    }
+    screenGeo.computeVertexNormals();
+
     this.screenMesh = new THREE.Mesh(screenGeo, screenMat);
     this.screenMesh.position.set(0, 1.2, 2.92);
     this.screenMesh.name = 'crt-screen';
@@ -545,8 +565,37 @@ export class HeroScene {
     ctx.closePath();
   }
 
+  loadBlissWallpaper() {
+    this.blissImg = null;
+    const raw = new Image();
+    raw.src = 'assets/img/ogbliss.webp';
+    raw.onload = () => {
+      try {
+        // Downscale to 320x240 and compress to 0.05 JPEG quality for heavy 8x8 DCT compression artifacts
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = 320;
+        offCanvas.height = 240;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.drawImage(raw, 0, 0, 320, 240);
+
+        const lowJpgUrl = offCanvas.toDataURL('image/jpeg', 0.05);
+        const compImg = new Image();
+        compImg.onload = () => {
+          this.blissImg = compImg;
+          this.renderRetroScreen();
+          if (this.screenTexture) this.screenTexture.needsUpdate = true;
+        };
+        compImg.src = lowJpgUrl;
+      } catch (e) {
+        this.blissImg = raw;
+        this.renderRetroScreen();
+        if (this.screenTexture) this.screenTexture.needsUpdate = true;
+      }
+    };
+  }
+
   /* --------------------------------------------------------------------------
-     RETRO SCREEN CANVAS RENDERER: AUTHENTIC WINDOWS XP LUNA & IE "XPLINUX"
+     RETRO SCREEN CANVAS RENDERER: AUTHENTIC WINDOWS XP LUNA & IE (qurayshe.xd)
      -------------------------------------------------------------------------- */
   renderRetroScreen() {
     const ctx = this.screenCtx;
@@ -554,51 +603,35 @@ export class HeroScene {
     const W = 1024;
     const H = 768;
 
-    // 1. Windows XP "Bliss" Desktop Background (Image 3)
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, 520);
-    skyGrad.addColorStop(0, '#1664d8');
-    skyGrad.addColorStop(0.35, '#3a8cf0');
-    skyGrad.addColorStop(0.8, '#7cbaf8');
-    skyGrad.addColorStop(1, '#a2d2fa');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, W, H);
+    // 1. Classic Windows XP Bliss (Super Super Compressed JPEG)
+    if (this.blissImg && this.blissImg.complete && this.blissImg.naturalWidth > 0) {
+      ctx.save();
+      // Render without smoothing so authentic 8x8 DCT quantization blocks are sharp and visible
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.blissImg, 0, 0, W, H);
+      ctx.restore();
+    } else {
+      // Clean sky/green hill fallback while image finishes loading
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, 520);
+      skyGrad.addColorStop(0, '#1664d8');
+      skyGrad.addColorStop(0.35, '#3a8cf0');
+      skyGrad.addColorStop(0.8, '#7cbaf8');
+      skyGrad.addColorStop(1, '#a2d2fa');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
 
-    // Realistic cumulus clouds (as in Bliss wallpaper)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.beginPath();
-    ctx.arc(280, 210, 85, 0, Math.PI * 2);
-    ctx.arc(380, 195, 105, 0, Math.PI * 2);
-    ctx.arc(480, 215, 75, 0, Math.PI * 2);
-    ctx.arc(550, 230, 55, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(740, 240, 110, 0, Math.PI * 2);
-    ctx.arc(840, 225, 90, 0, Math.PI * 2);
-    ctx.arc(920, 245, 65, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Far undulating green hills
-    ctx.fillStyle = '#2c8b1a';
-    ctx.beginPath();
-    ctx.moveTo(0, 480);
-    ctx.quadraticCurveTo(420, 395, W, 460);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.fill();
-
-    // Foreground lush green hill
-    const hillGrad = ctx.createLinearGradient(0, 440, 0, 730);
-    hillGrad.addColorStop(0, '#78cb28');
-    hillGrad.addColorStop(0.4, '#48aa1c');
-    hillGrad.addColorStop(1, '#1e6812');
-    ctx.fillStyle = hillGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, 530);
-    ctx.quadraticCurveTo(510, 435, W, 500);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.fill();
+      const hillGrad = ctx.createLinearGradient(0, 440, 0, 730);
+      hillGrad.addColorStop(0, '#78cb28');
+      hillGrad.addColorStop(0.4, '#48aa1c');
+      hillGrad.addColorStop(1, '#1e6812');
+      ctx.fillStyle = hillGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 500);
+      ctx.quadraticCurveTo(510, 415, W, 480);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.fill();
+    }
 
     // 2. Desktop Icons (Left side - Image 3)
     const desktopIcons = [
@@ -702,7 +735,7 @@ export class HeroScene {
     ctx.fillText('🌐', tabX + 8, tabY + 20);
     ctx.font = 'bold 11px Tahoma, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('xplinux - Microsoft Internet...', tabX + 28, tabY + 19);
+    ctx.fillText('qurayshe.xd - Microsoft...', tabX + 28, tabY + 19);
 
     // System Tray (Right - Image 3)
     const trayGrad = ctx.createLinearGradient(0, tbY, 0, H);
@@ -718,7 +751,7 @@ export class HeroScene {
     ctx.textAlign = 'right';
     ctx.fillText('🔊 🛡️ 15:34', 1012, 754);
 
-    // 4. The Internet Explorer Window (labeled "xplinux")
+    // 4. The Internet Explorer Window (labeled "qurayshe.xd")
     if (this.winState !== 'minimized') {
       const isMax = (this.winState === 'maximized');
       const wx = isMax ? 0 : this.winRect.x;
@@ -768,7 +801,7 @@ export class HeroScene {
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
       ctx.shadowBlur = 2;
-      ctx.fillText('xplinux - Microsoft Internet Explorer', wx + 28, wy + 20);
+      ctx.fillText('qurayshe.xd - Microsoft Internet Explorer', wx + 28, wy + 20);
       ctx.shadowBlur = 0;
 
       // Top-Right Control Buttons (Image 4: Minimize, Maximize/Restore, Close)
@@ -863,17 +896,17 @@ export class HeroScene {
       ctx.beginPath();
       ctx.arc(wx + 20, wy + 73, 11, 0, Math.PI * 2);
       ctx.fill();
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = 'bold 12px sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.fillText('⬅', wx + 20, wy + 77);
+      ctx.fillText('←', wx + 20, wy + 77);
 
       ctx.font = '11px Tahoma, sans-serif';
       ctx.fillStyle = '#1e293b';
       ctx.textAlign = 'left';
       ctx.fillText('Back', wx + 36, wy + 77);
-      ctx.fillText('➡', wx + 70, wy + 77);
-      ctx.fillText('⏹ Stop    🔄 Refresh    🏠 Home    |    🔍 Search    ⭐ Favorites    |    🖨️ Print', wx + 92, wy + 77);
+      ctx.fillText('→', wx + 70, wy + 77);
+      ctx.fillText('✕ Stop    ↻ Refresh    ⌂ Home    |    ⚲ Search    ★ Favorites    |    ⎙ Print', wx + 92, wy + 77);
 
       // Windows animated flag logo in top right of toolbar (Image 3)
       ctx.fillStyle = '#ef4444'; ctx.fillRect(wx + ww - 28, wy + 62, 5, 5);
@@ -895,16 +928,16 @@ export class HeroScene {
 
       ctx.fillStyle = '#0f172a';
       ctx.font = '12px "Courier New", monospace';
-      ctx.fillText('http://xplinux.ws/cyberlab/index.html', wx + 72, wy + 108);
+      ctx.fillText('http://qurayshe.xd', wx + 72, wy + 108);
 
       ctx.fillStyle = '#22c55e';
       ctx.fillRect(wx + ww - 60, wy + 94, 52, 20);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 11px Tahoma, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('➔ Go', wx + ww - 34, wy + 108);
+      ctx.fillText('Go', wx + ww - 34, wy + 108);
 
-      // 4e. Vintage HTML Web Client Area (Labeled "xplinux")
+      // 4e. Vintage HTML Web Client Area (qurayshe.xd)
       const cx = wx + 2;
       const cy = wy + 118;
       const cw = ww - 4;
@@ -930,76 +963,93 @@ export class HeroScene {
       }
 
       // Scrolled Web Content
-      const contentY = cy + 12 - this.websiteScrollY;
+      const contentY = cy + 14 - this.websiteScrollY;
 
-      // Top Animated Marquee Banner
-      const mqOffset = (Date.now() * 0.08) % 1500;
-      const mqText = '★★★ WELCOME TO XPLINUX 3D WORKSHOP & SYSTEMS LAB ★★★ [ BEST VIEWED IN 1024x768, INTERNET EXPLORER 6.0 ] ★★★ POWERED BY C, RUST & 3D WEBGL ★★★';
-      ctx.fillStyle = '#0c1445';
-      ctx.fillRect(cx, contentY, cw, 24);
-      ctx.strokeStyle = '#c084fc';
-      ctx.strokeRect(cx, contentY, cw, 24);
-      ctx.font = 'bold 12px "Courier New", monospace';
-      ctx.fillStyle = '#fde047';
-      ctx.textAlign = 'left';
-      ctx.fillText(mqText, cx + 800 - mqOffset, contentY + 16);
-
-      // Big Vintage Rainbow Headline labeled "xplinux"
-      ctx.font = '800 22px "Courier New", Georgia, serif';
+      // Extra short top header
+      ctx.font = 'bold 22px "Times New Roman", Georgia, serif';
+      ctx.fillStyle = '#111111';
       ctx.textAlign = 'center';
-      const titleGrad = ctx.createLinearGradient(cx + 80, 0, cx + cw - 80, 0);
-      titleGrad.addColorStop(0, '#e11d48');
-      titleGrad.addColorStop(0.25, '#d97706');
-      titleGrad.addColorStop(0.5, '#16a34a');
-      titleGrad.addColorStop(0.75, '#0284c7');
-      titleGrad.addColorStop(1, '#9333ea');
-      ctx.fillStyle = titleGrad;
-      ctx.fillText('~*~ xplinux // 3D GRAPHICS & EMBEDDED SYSTEMS LAB ~*~', cx + cw / 2, contentY + 58);
+      ctx.fillText('qurayshe.xd', cx + cw / 2, contentY + 22);
 
-      ctx.font = '11px "Courier New", monospace';
-      ctx.fillStyle = '#475569';
-      ctx.fillText('Low-Level C • C++ • Rust • Shaders • RTOS • FPGA • Linux Kernel • 3D Motion', cx + cw / 2, contentY + 78);
+      // Old-School HTML Navigation Links (blue, underlined, separated by |)
+      const navItems = ['Home', 'Projects', 'Lab', 'Links', 'Contact'];
+      this.renderedNavLinks = [];
+      ctx.font = '13px "Times New Roman", Georgia, serif';
+      ctx.textAlign = 'left';
 
-      // Visitor Counter Box
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(cx + cw / 2 - 95, contentY + 92, 190, 24);
-      ctx.strokeStyle = '#22c55e';
-      ctx.strokeRect(cx + cw / 2 - 95, contentY + 92, 190, 24);
-      ctx.font = 'bold 13px "Courier New", monospace';
-      ctx.fillStyle = '#22c55e';
-      ctx.fillText('VISITORS: [ 0 0 4 2 8 9 ]', cx + cw / 2, contentY + 108);
+      const navMetrics = navItems.map((item) => ({
+        text: item,
+        w: ctx.measureText(item).width
+      }));
+      const sepText = ' | ';
+      const sepW = ctx.measureText(sepText).width;
+      const totalNavW = navMetrics.reduce((acc, m) => acc + m.w, 0) + (navItems.length - 1) * sepW;
 
-      // Vintage Nav Links
-      ctx.font = 'bold 12px "Courier New", monospace';
-      ctx.fillStyle = '#0284c7';
-      ctx.fillText('[ 🏠 Home ]   [ ⚙ Systems ]   [ 🎮 3D Graphics ]   [ 🌐 Servers ]   [ 📖 Guestbook ]', cx + cw / 2, contentY + 132);
+      let curX = cx + (cw - totalNavW) / 2;
+      const navY = contentY + 48;
 
-      // Beveled Section Divider Line
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 2;
+      navItems.forEach((item, idx) => {
+        const itemW = navMetrics[idx].w;
+        const isHovered = (
+          this.screenPointer.active &&
+          this.screenPointer.x >= curX &&
+          this.screenPointer.x <= curX + itemW &&
+          this.screenPointer.y >= navY - 14 &&
+          this.screenPointer.y <= navY + 4
+        );
+
+        this.renderedNavLinks.push({
+          text: item,
+          x: curX,
+          y: navY - 14,
+          w: itemW,
+          h: 18,
+          url: `http://qurayshe.xd/${item.toLowerCase()}`
+        });
+
+        // Classic HTML link: blue #0000ee, red #cc0000 when hovered
+        ctx.fillStyle = isHovered ? '#cc0000' : '#0000ee';
+        ctx.fillText(item, curX, navY);
+
+        // Classic link underline
+        ctx.strokeStyle = isHovered ? '#cc0000' : '#0000ee';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(curX, navY + 2);
+        ctx.lineTo(curX + itemW, navY + 2);
+        ctx.stroke();
+
+        curX += itemW;
+        if (idx < navItems.length - 1) {
+          ctx.fillStyle = '#000000';
+          ctx.fillText(sepText, curX, navY);
+          curX += sepW;
+        }
+      });
+
+      // Classic Beveled <hr> Horizontal Rule
+      ctx.strokeStyle = '#808080';
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(cx + 40, contentY + 148);
-      ctx.lineTo(cx + cw - 40, contentY + 148);
+      ctx.moveTo(cx + 30, contentY + 66);
+      ctx.lineTo(cx + cw - 30, contentY + 66);
       ctx.stroke();
 
-      // Badges Section Header
-      ctx.font = 'bold 14px "Courier New", monospace';
-      ctx.fillStyle = '#b45309';
-      ctx.fillText('-=☆ XPLINUX OFFICIAL WEB RING & 88x31 BADGE VAULT ☆=-', cx + cw / 2, contentY + 172);
-
-      ctx.font = '11px "Courier New", monospace';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText('Click any badge below to test connection to affiliate servers!', cx + cw / 2, contentY + 190);
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(cx + 30, contentY + 67);
+      ctx.lineTo(cx + cw - 30, contentY + 67);
+      ctx.stroke();
 
       // 28 Badges Grid (7 columns x 4 rows)
       const btnCols = 7;
       const badgeW = 88;
       const badgeH = 31;
       const gapX = 14;
-      const gapY = 13;
+      const gapY = 12;
       const gridTotalW = btnCols * badgeW + (btnCols - 1) * gapX;
       const startX = cx + (cw - gridTotalW) / 2;
-      const startY = contentY + 208;
+      const startY = contentY + 82;
 
       this.renderedButtons = [];
       let hoveredBtn = null;
@@ -1056,7 +1106,7 @@ export class HeroScene {
       ctx.font = '11px "Courier New", monospace';
       ctx.fillStyle = '#64748b';
       ctx.textAlign = 'center';
-      ctx.fillText('© 2001-2026 qurayshe. Hand-coded with Notepad on xplinux. All rights reserved.', cx + cw / 2, startY + 4 * (btnH + gapY) + 24);
+      ctx.fillText('qurayshe.xd', cx + cw / 2, startY + 4 * (badgeH + gapY) + 24);
 
       ctx.restore(); // End clipping client area
 
@@ -1091,13 +1141,13 @@ export class HeroScene {
       ctx.fillStyle = '#1e293b';
 
       if (hoveredBtn) {
-        ctx.fillText(`🔗 Shortcut to http://xplinux.ws/${hoveredBtn.file} (${hoveredBtn.title})`, wx + 12, stY + 16);
+        ctx.fillText(`Shortcut to http://qurayshe.xd/${hoveredBtn.file}`, wx + 12, stY + 16);
       } else {
-        ctx.fillText('✅ Done', wx + 12, stY + 16);
+        ctx.fillText('Done', wx + 12, stY + 16);
       }
 
       ctx.textAlign = 'right';
-      ctx.fillText('🌐 Internet Zone | 100%', wx + ww - 14, stY + 16);
+      ctx.fillText('Internet Zone | 100%', wx + ww - 14, stY + 16);
 
       ctx.restore(); // End clipping window
     }
@@ -1139,7 +1189,7 @@ export class HeroScene {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px Tahoma, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('qurayshe @ xplinux', smX + 60, smY + 34);
+      ctx.fillText('qurayshe @ qurayshe.xd', smX + 60, smY + 34);
 
       // White Left Panel
       ctx.fillStyle = '#ffffff';
@@ -1257,6 +1307,7 @@ export class HeroScene {
         (this.winState !== 'minimized' && my >= wy && my <= wy + 30 && mx >= wx + ww - 80) ||
         (this.winState !== 'minimized' && my >= wy + 90 && my <= wy + 118) ||
         (mx <= 90 && my <= 360) ||
+        (this.renderedNavLinks && this.renderedNavLinks.some((l) => mx >= l.x && mx <= l.x + l.w && my >= l.y && my <= l.y + l.h)) ||
         (this.renderedButtons && this.renderedButtons.some((b) => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h))
       );
 
@@ -1296,6 +1347,59 @@ export class HeroScene {
       }
       ctx.restore();
     }
+
+    // =========================================================================
+    // 8. AUTHENTIC CRT MONITOR SCREEN EFFECTS (Scanlines, Phosphors, Vignette & Glare)
+    // =========================================================================
+    ctx.save();
+
+    // 8a. Horizontal Scanlines
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    for (let sy = 0; sy < H; sy += 3) {
+      ctx.fillRect(0, sy, W, 1);
+    }
+
+    // 8b. Subtle Phosphor Aperture Mask (Vertical subpixel triad lines)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+    for (let sx = 0; sx < W; sx += 3) {
+      ctx.fillRect(sx, 0, 1, H);
+    }
+
+    // 8c. CRT Tube Glass Radial Vignette (Curved cathode tube edge & corner darkening)
+    const tubeVignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.38, W / 2, H / 2, W * 0.68);
+    tubeVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    tubeVignette.addColorStop(0.68, 'rgba(0, 5, 20, 0.12)');
+    tubeVignette.addColorStop(0.9, 'rgba(0, 2, 12, 0.36)');
+    tubeVignette.addColorStop(1, 'rgba(0, 0, 10, 0.68)');
+    ctx.fillStyle = tubeVignette;
+    ctx.fillRect(0, 0, W, H);
+
+    // 8d. Deep Bezel Inset Glass Shadows & Bottom Rim Highlight
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(0, 0, W, 5); // top shadow
+    ctx.fillRect(0, 0, 5, H); // left shadow
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(0, H - 4, W, 4); // bottom edge reflection
+    ctx.fillRect(W - 4, 0, 4, H); // right edge reflection
+
+    // 8e. Convex Glass Sheen / Tube Glare Reflection
+    const glassGlare = ctx.createLinearGradient(0, 0, W * 0.65, H * 0.65);
+    glassGlare.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+    glassGlare.addColorStop(0.2, 'rgba(255, 255, 255, 0.03)');
+    glassGlare.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glassGlare;
+    ctx.fillRect(0, 0, W, H);
+
+    // 8f. Dynamic Cathode Scan Beam Sync Roll
+    const rollY = (Date.now() * 0.035) % (H + 100) - 50;
+    const rollGrad = ctx.createLinearGradient(0, rollY, 0, rollY + 50);
+    rollGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    rollGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.03)');
+    rollGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = rollGrad;
+    ctx.fillRect(0, rollY, W, 50);
+
+    ctx.restore();
   }
 
   /* --------------------------------------------------------------------------
@@ -1396,7 +1500,7 @@ export class HeroScene {
       if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 21) {
         this.winState = 'minimized';
         this.activePopup = {
-          title: 'xplinux System Notification',
+          title: 'qurayshe.xd',
           message: 'Internet Explorer minimized to taskbar.\nClick taskbar tab to reopen!'
         };
         return;
@@ -1425,25 +1529,39 @@ export class HeroScene {
         return;
       }
 
-      // 6. Clicked an Old-School 88x31 Button
-      if (this.renderedButtons && this.renderedButtons.length > 0) {
-        for (let i = 0; i < this.renderedButtons.length; i++) {
-          const item = this.renderedButtons[i];
-          if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+      // 6. Clicked an Old-School HTML Navigation Link
+      if (this.renderedNavLinks && this.renderedNavLinks.length > 0) {
+        for (let i = 0; i < this.renderedNavLinks.length; i++) {
+          const l = this.renderedNavLinks[i];
+          if (x >= l.x && x <= l.x + l.w && y >= l.y && y <= l.y + l.h) {
             this.activePopup = {
-              title: 'xplinux Web Ring',
-              message: `Connected to badge: ${item.btn.title}!\n[HTTP 200 OK - Affiliate Link Active]`
+              title: 'qurayshe.xd',
+              message: `Navigating to ${l.url}...\n[HTTP 200 OK - Link Active]`
             };
             return;
           }
         }
       }
 
-      // 7. Clicked Address Bar or Navigation
+      // 7. Clicked an Old-School 88x31 Button
+      if (this.renderedButtons && this.renderedButtons.length > 0) {
+        for (let i = 0; i < this.renderedButtons.length; i++) {
+          const item = this.renderedButtons[i];
+          if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+            this.activePopup = {
+              title: 'qurayshe.xd',
+              message: `Badge: ${item.btn.title}!\nhttp://qurayshe.xd/badges/${item.btn.file}`
+            };
+            return;
+          }
+        }
+      }
+
+      // 8. Clicked Address Bar or Navigation
       if (y >= wy + 90 && y <= wy + 118) {
         this.activePopup = {
-          title: 'xplinux Web Zone',
-          message: 'http://xplinux.ws/cyberlab/index.html\nWelcome to qurayshe\'s 3D lab!'
+          title: 'qurayshe.xd',
+          message: 'http://qurayshe.xd\n[HTTP 200 OK - Host Connected]'
         };
         return;
       }
@@ -2222,8 +2340,10 @@ export class HeroScene {
     const height = this.container.clientHeight || 500;
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(dpr * (this.pixelRatioScale || 0.52));
+    this.renderer.domElement.style.imageRendering = 'pixelated';
     this.resizeAsciiCanvases(width, height);
   }
 
