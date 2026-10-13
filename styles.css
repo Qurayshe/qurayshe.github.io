@@ -214,12 +214,25 @@ a:hover {
 }
 
 .search-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0px;
-  padding: 1px 5px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.search-kbd-mod {
+  font-size: 0.68rem;
+}
+
+.search-kbd-key {
+  font-size: 0.7rem;
 }
 
 /* ==========================================================================
@@ -575,7 +588,7 @@ a:hover {
    Homepage & 3D Interactive Hero
    ========================================================================== */
 .home-container {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 clamp(1.2rem, 4vw, 3.5rem);
 }
@@ -583,11 +596,11 @@ a:hover {
 .hero-grid {
   position: relative;
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1fr 1.25fr;
   align-items: center;
-  gap: 2.5rem;
-  min-height: 80vh;
-  padding: 3rem 0;
+  gap: 3rem;
+  min-height: 84vh;
+  padding: 2.5rem 0 2rem;
 }
 
 .hero-copy-col {
@@ -633,7 +646,12 @@ a:hover {
 .gradient-text {
   background: linear-gradient(135deg, #ffffff 20%, var(--accent-purple-light) 60%, #a855f7 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+  display: inline-block;
+  vertical-align: baseline;
+  padding-right: 0.12em;
+  margin-right: -0.12em;
 }
 
 .hero-lead-text {
@@ -776,19 +794,20 @@ a:hover {
   box-shadow: none;
 }
 
-/* 3D Stage Container */
+/* 3D Stage Container (Enlarged) */
 .hero-3d-col {
   position: relative;
   width: 100%;
-  height: 520px;
+  height: clamp(600px, 72vh, 760px);
+  min-height: 600px;
   border-radius: 0px;
   border: 1px solid var(--border-subtle);
   background:
-    radial-gradient(circle at center, rgba(168, 85, 247, 0.08), transparent 70%),
-    rgba(14, 11, 22, 0.8);
+    radial-gradient(circle at center, rgba(168, 85, 247, 0.1), transparent 70%),
+    rgba(14, 11, 22, 0.85);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.6),
-    0 0 45px rgba(168, 85, 247, 0.12);
+    0 28px 90px rgba(0, 0, 0, 0.65),
+    0 0 55px rgba(168, 85, 247, 0.16);
   overflow: hidden;
 }
 
@@ -799,6 +818,78 @@ a:hover {
 }
 .hero-3d-viewport:active {
   cursor: grabbing;
+}
+
+/* ==========================================================================
+   Homepage Hero Scrolling Skills Marquee
+   ========================================================================== */
+.hero-marquee-section {
+  position: relative;
+  width: 100%;
+  margin: 1.5rem 0 4rem;
+  padding: 1.25rem 0;
+  background: rgba(13, 10, 20, 0.78);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+
+.hero-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marqueeScroll 60s linear infinite;
+}
+
+.hero-marquee-section:hover .hero-marquee-track {
+  animation-play-state: paused;
+}
+
+.hero-marquee-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: clamp(1.05rem, 1.4vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding-right: 0.85rem;
+}
+
+.ticker-item {
+  display: inline-block;
+  color: #ede9fe;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.ticker-item:hover {
+  color: #fff;
+  text-shadow: 0 0 14px var(--accent-purple-glow);
+}
+
+.ticker-dot {
+  display: inline-block;
+  color: var(--accent-purple-light);
+  margin: 0 0.95rem;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 
@@ -3002,6 +3093,7 @@ code[class*="language-"] {
   z-index: 9999;
   background: rgba(5, 4, 8, 0.75);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: none;
   align-items: flex-start;
   justify-content: center;
@@ -3031,25 +3123,60 @@ code[class*="language-"] {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
+  background: rgba(18, 14, 28, 0.95);
   color: var(--text-muted);
+}
+
+.search-icon-svg {
+  flex-shrink: 0;
+  color: var(--accent-purple-light);
 }
 
 .search-modal-input {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   font-family: var(--font-sans);
-  font-size: 1.05rem;
+  font-size: 1rem;
+  color: #fff !important;
+  padding: 0;
+}
+
+.search-modal-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.search-modal-kbd {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0px;
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.search-modal-kbd:hover {
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .search-modal-results {
   max-height: 380px;
   overflow-y: auto;
   padding: 0.5rem;
+  background: #100d18;
 }
 
 .search-result-item {
@@ -3060,33 +3187,70 @@ code[class*="language-"] {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
+  border: 1px solid transparent;
 }
 .search-result-item:hover,
 .search-result-item.selected {
   background: rgba(168, 85, 247, 0.16);
+  border-color: rgba(168, 85, 247, 0.3);
 }
 
-.result-item-icon {
-  font-size: 1.1rem;
+.result-item-icon,
+.result-icon-wrap {
+  font-size: 1rem;
+  color: var(--accent-purple-light);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
 }
-.result-item-main {
+
+.result-item-main,
+.result-info {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
 }
-.result-item-title {
-  font-size: 0.9rem;
+
+.result-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.2rem;
+}
+
+.result-item-title,
+.result-title {
+  font-size: 0.88rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.result-item-desc {
+
+.result-category {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-purple-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.result-item-desc,
+.result-desc {
   font-size: 0.76rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.search-result-item .stage-tag {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
 }
 
 .search-empty-state {
@@ -3099,12 +3263,28 @@ code[class*="language-"] {
 .search-modal-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0.6rem 1.25rem;
   background: rgba(7, 6, 11, 0.8);
   border-top: 1px solid var(--border-subtle);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.search-footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.search-modal-footer kbd {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0px;
+  padding: 1px 5px;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
 }
 
 /* ==========================================================================
@@ -3164,9 +3344,15 @@ code[class*="language-"] {
   .hero-grid {
     grid-template-columns: 1fr;
     min-height: auto;
+    gap: 2rem;
   }
   .hero-3d-col {
-    height: 400px;
+    height: 480px;
+    min-height: 420px;
+  }
+  .hero-marquee-section {
+    margin: 1rem 0 3rem;
+    padding: 1rem 0;
   }
   .lab-layout {
     grid-template-columns: 1fr;

@@ -17,6 +17,23 @@ export class SearchModal {
     this.buildSearchIndex();
     this.renderModal();
     this.bindEvents();
+    this.updatePlatformShortcut();
+  }
+
+  updatePlatformShortcut() {
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/i.test(
+      navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || ''
+    );
+
+    const kbdMod = document.querySelector('.search-kbd-mod');
+    const navBtn = document.getElementById('btn-nav-search');
+
+    if (kbdMod) {
+      kbdMod.textContent = isMac ? '⌘' : 'Ctrl';
+    }
+    if (navBtn) {
+      navBtn.title = isMac ? 'Search all topics (⌘K)' : 'Search all topics (Ctrl+K)';
+    }
   }
 
   buildSearchIndex() {
@@ -235,14 +252,14 @@ export class SearchModal {
 
   renderModal() {
     const modalHtml = `
-      <div class="search-modal-backdrop" id="search-modal-backdrop" style="display: none;">
-        <div class="search-modal-container" id="search-modal-container">
-          <div class="search-modal-input-row">
+      <div class="search-modal-backdrop" id="search-modal-backdrop">
+        <div class="search-modal-box" id="search-modal-container">
+          <div class="search-modal-input-wrap">
             <svg class="search-icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" id="modal-search-input" class="modal-search-input" placeholder="Search 50+ systems lessons, servers, 3D demos (e.g. malloc, axum, galaxy, atomics)..." autocomplete="off" />
-            <kbd class="search-modal-kbd">ESC</kbd>
+            <input type="text" id="modal-search-input" class="search-modal-input" placeholder="Search 50+ systems lessons, servers, 3D demos (e.g. malloc, axum, galaxy, atomics)..." autocomplete="off" />
+            <kbd class="search-modal-kbd" id="search-modal-close-btn" title="Close (ESC)">ESC</kbd>
           </div>
 
           <div class="search-modal-results" id="search-modal-results">
@@ -250,9 +267,9 @@ export class SearchModal {
           </div>
 
           <div class="search-modal-footer">
-            <div class="search-footer-hint"><kbd>↑</kbd> <kbd>↓</kbd> Navigate</div>
-            <div class="search-footer-hint"><kbd>ENTER</kbd> Select</div>
-            <div class="search-footer-hint"><kbd>ESC</kbd> Close</div>
+            <div class="search-footer-hint"><kbd>↑</kbd> <kbd>↓</kbd> <span>Navigate</span></div>
+            <div class="search-footer-hint"><kbd>ENTER</kbd> <span>Select</span></div>
+            <div class="search-footer-hint"><kbd>ESC</kbd> <span>Close</span></div>
           </div>
         </div>
       </div>
@@ -288,6 +305,11 @@ export class SearchModal {
       });
     }
 
+    const closeBtn = document.getElementById('search-modal-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.close());
+    }
+
     const input = document.getElementById('modal-search-input');
     if (input) {
       input.addEventListener('input', (e) => {
@@ -320,7 +342,10 @@ export class SearchModal {
     this.isOpen = true;
     const backdrop = document.getElementById('search-modal-backdrop');
     const input = document.getElementById('modal-search-input');
-    if (backdrop) backdrop.style.display = 'flex';
+    if (backdrop) {
+      backdrop.classList.add('open');
+      backdrop.style.display = 'flex';
+    }
     if (input) {
       input.value = '';
       this.query = '';
@@ -333,7 +358,10 @@ export class SearchModal {
   close() {
     this.isOpen = false;
     const backdrop = document.getElementById('search-modal-backdrop');
-    if (backdrop) backdrop.style.display = 'none';
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.style.display = 'none';
+    }
   }
 
   toggle() {
@@ -377,13 +405,13 @@ export class SearchModal {
         const isSelected = index === this.selectedIndex;
         return `
           <div class="search-result-item ${isSelected ? 'selected' : ''}" data-index="${index}">
-            <div class="result-icon-wrap">${item.icon}</div>
-            <div class="result-info">
+            <div class="result-item-icon result-icon-wrap">${item.icon}</div>
+            <div class="result-item-main result-info">
               <div class="result-title-row">
-                <span class="result-title">${escapeHtml(item.title)}</span>
+                <span class="result-item-title result-title">${escapeHtml(item.title)}</span>
                 <span class="result-category">${escapeHtml(item.category)}</span>
               </div>
-              <div class="result-desc">${escapeHtml(item.desc)}</div>
+              <div class="result-item-desc result-desc">${escapeHtml(item.desc)}</div>
             </div>
             <span class="stage-tag ${item.badgeClass}">${item.badge}</span>
           </div>

@@ -112,7 +112,7 @@
       <button class="btn-search-trigger" id="btn-nav-search" title="Search all topics (Ctrl+K)">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <span>Search</span>
-        <kbd class="search-kbd">⌘K</kbd>
+        <kbd class="search-kbd" id="nav-search-kbd"><span class="search-kbd-mod">Ctrl</span><span class="search-kbd-key">K</span></kbd>
       </button>
 
       <!-- GitHub Profile Link -->
@@ -171,6 +171,118 @@
           <!-- 3D Interactive Hero Canvas -->
           <div class="hero-3d-col">
             <div id="hero-3d-viewport" class="hero-3d-viewport"></div>
+          </div>
+        </div>
+
+        <!-- Big Scrolling Keywords Marquee (Core Engineering Skills & Tech) -->
+        <div class="hero-marquee-section" aria-label="Core Engineering Skills and Technologies">
+          <div class="hero-marquee-track">
+            <div class="hero-marquee-group">
+              <span class="ticker-item">C</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">C++</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Python</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Rust</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">VHDL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Verilog</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">FPGA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Embedded Linux</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">RTOS</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">STM32</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">ESP32</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">ARM Cortex-M</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">UART</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">SPI</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">I²C</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CAN Bus</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PCB Design</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">KiCad</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Signal Processing</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">TensorFlow</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PyTorch</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Machine Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Deep Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">LLMs</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">RAG</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Computer Vision</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">OpenCV</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Reinforcement Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Edge AI</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CUDA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">NVIDIA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Vulkan 1.3</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">OpenGL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">WebGPU</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Three.js</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">GLSL Shaders</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Docker</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Kubernetes</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">AWS</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Azure</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Linux</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Git</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CI/CD</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PostgreSQL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Distributed Systems</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">System Architecture</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Tokio Async</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Go</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Reverse Engineering</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">x86-64 ASM</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">SIMD AVX2</span><span class="ticker-dot">•</span>
+            </div>
+            <div class="hero-marquee-group" aria-hidden="true">
+              <span class="ticker-item">C</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">C++</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Python</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Rust</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">VHDL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Verilog</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">FPGA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Embedded Linux</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">RTOS</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">STM32</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">ESP32</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">ARM Cortex-M</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">UART</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">SPI</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">I²C</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CAN Bus</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PCB Design</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">KiCad</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Signal Processing</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">TensorFlow</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PyTorch</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Machine Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Deep Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">LLMs</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">RAG</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Computer Vision</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">OpenCV</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Reinforcement Learning</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Edge AI</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CUDA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">NVIDIA</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Vulkan 1.3</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">OpenGL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">WebGPU</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Three.js</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">GLSL Shaders</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Docker</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Kubernetes</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">AWS</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Azure</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Linux</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Git</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">CI/CD</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">PostgreSQL</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Distributed Systems</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">System Architecture</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Tokio Async</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Go</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">Reverse Engineering</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">x86-64 ASM</span><span class="ticker-dot">•</span>
+              <span class="ticker-item">SIMD AVX2</span><span class="ticker-dot">•</span>
+            </div>
           </div>
         </div>
 
