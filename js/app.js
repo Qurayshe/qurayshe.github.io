@@ -326,15 +326,11 @@ class App {
 
     // ASCII Filter Mode Toggle Button
     const asciiBtn = document.getElementById('btn-hero-ascii');
-    const asciiStatus = document.getElementById('hero-ascii-status');
     if (asciiBtn) {
       asciiBtn.addEventListener('click', () => {
         if (this.heroScene) {
           const isEnabled = this.heroScene.toggleAscii();
           asciiBtn.classList.toggle('active', isEnabled);
-          if (asciiStatus) {
-            asciiStatus.textContent = isEnabled ? 'ASCII: ON' : 'ASCII: OFF';
-          }
         }
       });
     }

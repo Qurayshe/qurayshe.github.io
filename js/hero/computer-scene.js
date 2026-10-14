@@ -8,6 +8,8 @@
  *  - Floating in page space with no desk, no container background, and clean unshadowed lighting
  */
 
+import { DoomEngine } from './doom-engine.js';
+
 export class ComputerScene {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -33,20 +35,31 @@ export class ComputerScene {
     this.renderedNavLinks = [];
     this.websiteScrollY = 0;
     this.blissImg = null;
+    this.handCursorImg = new Image();
+    this.handCursorImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACQ0lEQVR4nO2WTWgTQRTH/8l212pJhHFs8QO/DiNaWsVeVUSoVASLIBU9VEEIFLSXerAULAjaHjwoiPEQclDqIa2CIsWDHxSEnoSoUet6kkqwZF2oREKyaUfeYkIqqSTd7HrJD2Z5LLv7fszbeTM+lIFxcRJAH4A0gLBp6M/gJYyLF1NT03Jy8rlkXDz2NDnBuMjn83mZzeZky8ZWktDgEg3L3FcURaELrJwF09Bzbgn48Z9pqOQhxsUYAJqFMIAFGqahxz0TuBu+ccayLFzsH0T7ntZziwuLSCQwCMBeHbWSKcK4kAX+jjOZjJydTVL89eChbkmDcTEELwS27uhYcj+d/iWTye8Uf3O1BOUIBANoalpjDwCb4NYqUDW1GDc3c7gGK2k2pdNOU1xgfv5nMX756vWScqw0r49xcYL6vqqpnVbOGgUwDCD7I/W54o+sW7+TVoJvpSXomxiPduqfphEK9V72K0oWHuIHoKmqhmAwgJFrQ3gYi2Lb9i3eGTAuTu1uOyDn5lLFmpbGleDkH7BhXFw5euy0vftVC73DuHBeNsbFzYFLw1ULFLqiYwGCcRG5dz9WlUBs/In8s1k5h3HRsWFzu5yZ+VKxwJGuHhLYXxMBgnFxgTaY0qazHJHoGCW/g1rDuBjZu++wjMcTZRPTce366C3JW3aRQJuTXL5/SJxf1dgYOdvbg+7jXXafMFIm3ic+YuLRU7x7++E2gKumoadcESAYF6sBhADQMX0tAEpGh48HpqG/sR+qU6dOHTjjN/IqQLUUCVBFAAAAAElFTkSuQmCC';
     this.pixelRatioScale = 0.52;
     this.startMenuOpen = false;
     this.activePopup = null;
-    this.audioCtx = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
     // Window Management & State
+    this.activeWindow = 'ie'; // 'ie' or 'doom'
     this.winState = 'normal'; // 'normal', 'maximized', 'minimized'
     this.winRect = { x: 75, y: 35, w: 874, h: 660 };
     this.winNormalRect = { x: 75, y: 35, w: 874, h: 660 };
     this.winIsDragging = false;
     this.winDragOffset = { x: 0, y: 0 };
     this.lastTitleClick = 0;
+
+    // Doom Engine & Window State
+    this.doomEngine = new DoomEngine();
+    this.doomState = 'closed'; // 'closed', 'loading', 'normal', 'minimized', 'maximized'
+    this.doomRect = { x: 190, y: 70, w: 660, h: 480 };
+    this.doomNormalRect = { x: 190, y: 70, w: 660, h: 480 };
+    this.doomIsDragging = false;
+    this.doomDragOffset = { x: 0, y: 0 };
+    this.lastDoomTitleClick = 0;
 
     this.onResize = this.onResize.bind(this);
 
@@ -603,6 +616,7 @@ export class ComputerScene {
     // 2. Desktop Icons (Left side - Image 3)
     const desktopIcons = [
       { sym: '🌐', name: 'Internet Explorer', id: 'ie' },
+      { sym: '👹', name: 'DOOM.exe', id: 'doom' },
       { sym: '💻', name: 'My Computer', id: 'computer' },
       { sym: '📁', name: 'My Documents', id: 'docs' },
       { sym: '🗑️', name: 'Recycle Bin', id: 'recycle' }
@@ -610,7 +624,7 @@ export class ComputerScene {
 
     desktopIcons.forEach((di, idx) => {
       const dix = 44;
-      const diy = 26 + idx * 82;
+      const diy = 20 + idx * 72;
       ctx.font = '28px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(di.sym, dix, diy + 25);
@@ -676,13 +690,15 @@ export class ComputerScene {
     ctx.font = '14px sans-serif';
     ctx.fillText('🖥️ 🌐', 125, 754);
 
-    // Running Window Tab in Taskbar
+    // Running Window Tabs in Taskbar
     const tabX = 168;
     const tabY = 734;
-    const tabW = 230;
+    const tabW = 195;
     const tabH = 30;
 
-    if (this.winState !== 'minimized') {
+    // 1. IE Tab
+    const ieIsActive = (this.winState !== 'minimized' && this.activeWindow === 'ie');
+    if (ieIsActive) {
       // Active Tab (Inset darker Luna blue)
       ctx.fillStyle = '#1446a8';
       ctx.fillRect(tabX, tabY, tabW, tabH);
@@ -704,6 +720,32 @@ export class ComputerScene {
     ctx.fillStyle = '#ffffff';
     ctx.fillText('qurayshe.xd - Microsoft...', tabX + 28, tabY + 19);
 
+    // 2. DOOM Tab (When open or minimized)
+    if (this.doomState !== 'closed') {
+      const tab2X = tabX + tabW + 6;
+      const tab2W = 195;
+      const doomIsActive = (this.doomState !== 'minimized' && this.activeWindow === 'doom');
+      if (doomIsActive) {
+        ctx.fillStyle = '#1446a8';
+        ctx.fillRect(tab2X, tabY, tab2W, tabH);
+        ctx.strokeStyle = '#0e358b';
+        ctx.strokeRect(tab2X, tabY, tab2W, tabH);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(tab2X + 1, tabY + 1, tab2W - 2, 2);
+      } else {
+        ctx.fillStyle = '#2365d9';
+        ctx.fillRect(tab2X, tabY, tab2W, tabH);
+        ctx.strokeStyle = '#4b8cfc';
+        ctx.strokeRect(tab2X, tabY, tab2W, tabH);
+      }
+
+      ctx.font = '14px sans-serif';
+      ctx.fillText('👹', tab2X + 8, tabY + 20);
+      ctx.font = 'bold 11px Tahoma, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(this.doomState === 'loading' ? 'Loading DOOM...' : 'C:\\DOOM\\DOOM.EXE', tab2X + 28, tabY + 19);
+    }
+
     // System Tray (Right - Image 3)
     const trayGrad = ctx.createLinearGradient(0, tbY, 0, H);
     trayGrad.addColorStop(0, '#0e358b');
@@ -718,42 +760,371 @@ export class ComputerScene {
     ctx.textAlign = 'right';
     ctx.fillText('🔊 🛡️ 15:34', 1012, 754);
 
-    // 4. The Internet Explorer Window (labeled "qurayshe.xd")
-    if (this.winState !== 'minimized') {
+    // 4. Application Windows (Render inactive window below, active window on top)
+    if (this.activeWindow === 'doom') {
+      if (this.winState !== 'minimized') this.renderIEWindow(ctx, W, H);
+      if (this.doomState !== 'closed' && this.doomState !== 'minimized') this.renderDoomWindow(ctx, W, H);
+    } else {
+      if (this.doomState !== 'closed' && this.doomState !== 'minimized') this.renderDoomWindow(ctx, W, H);
+      if (this.winState !== 'minimized') this.renderIEWindow(ctx, W, H);
+    }
+
+
+    // 5. Interactive Luna Start Menu (If Open)
+    if (this.startMenuOpen) {
+      const smX = 0;
+      const smY = 320;
+      const smW = 340;
+      const smH = 410;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#ffffff';
+      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
+      ctx.clip();
+
+      // Start Menu Header
+      const smHGrad = ctx.createLinearGradient(0, smY, smW, smY);
+      smHGrad.addColorStop(0, '#1955b5');
+      smHGrad.addColorStop(1, '#3884e9');
+      ctx.fillStyle = smHGrad;
+      ctx.fillRect(smX, smY, smW, 54);
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(smX + 32, smY + 28, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = '18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚡', smX + 32, smY + 34);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px Tahoma, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('qurayshe @ qurayshe.xd', smX + 60, smY + 34);
+
+      // White Left Panel
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(smX, smY + 54, 180, smH - 96);
+      const leftItems = ['🌐 Internet Explorer', '👹 DOOM', '📝 Notepad', '💻 Terminal Lab', '💣 Minesweeper'];
+      ctx.font = '12px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      leftItems.forEach((it, i) => {
+        ctx.fillText(it, smX + 10, smY + 84 + i * 40);
+      });
+
+      // Blue Right Panel
+      ctx.fillStyle = '#d3e5fa';
+      ctx.fillRect(smX, smY + 54, smW - 180, smH - 96);
+      const rightItems = ['📁 My Documents', '💻 My Computer', '⚙️ Control Panel', '🔍 Search', '▶ Run...'];
+      ctx.fillStyle = '#1e3a8a';
+      rightItems.forEach((it, i) => {
+        ctx.fillText(it, smX + 192, smY + 84 + i * 40);
+      });
+
+      // Bottom Bar
+      ctx.fillStyle = '#1e57c8';
+      ctx.fillRect(smX, smY + smH - 42, smW, 42);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.fillText('🔑 Log Off      ⏻ Turn Off Computer', smX + 20, smY + smH - 16);
+
+      ctx.restore();
+    }
+
+    // 6. Interactive XP Alert Dialog (If Triggered)
+    if (this.activePopup) {
+      const pw = 420;
+      const ph = 180;
+      const px = (W - pw) / 2;
+      const py = (H - ph) / 2;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = '#ece9d8';
+      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      ctx.clip();
+
+      const dlgTbGrad = ctx.createLinearGradient(0, py, 0, py + 26);
+      dlgTbGrad.addColorStop(0, '#0055ea');
+      dlgTbGrad.addColorStop(1, '#3b88ff');
+      ctx.fillStyle = dlgTbGrad;
+      ctx.fillRect(px, py, pw, 26);
+
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.fillText(this.activePopup.title || 'xplinux - System Notice', px + 10, py + 18);
+
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(px + pw - 22, py + 4, 18, 18);
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText('✕', px + pw - 13, py + 17);
+
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(px, py + 26, pw, ph - 26);
+
+      ctx.font = '28px sans-serif';
+      ctx.fillText('ℹ️', px + 36, py + 80);
+
+      ctx.font = '12px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'left';
+
+      const lines = this.activePopup.message.split('\n');
+      lines.forEach((ln, lidx) => {
+        ctx.fillText(ln, px + 70, py + 68 + lidx * 20);
+      });
+
+      const okW = 80;
+      const okH = 26;
+      const okX = px + (pw - okW) / 2;
+      const okY = py + ph - 42;
+
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(okX, okY, okW, okH);
+      ctx.strokeStyle = '#0055ea';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(okX, okY, okW, okH);
+
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.fillText('OK', okX + okW / 2, okY + 17);
+      ctx.restore();
+    }
+
+    // 7. Windows XP Virtual Mouse Pointer
+    if (this.screenPointer.active) {
+      const mx = this.screenPointer.x;
+      const my = this.screenPointer.y;
+
       const isMax = (this.winState === 'maximized');
       const wx = isMax ? 0 : this.winRect.x;
       const wy = isMax ? 0 : this.winRect.y;
       const ww = isMax ? W : this.winRect.w;
-      const wh = isMax ? 730 : this.winRect.h;
 
-      // Soft window drop shadow (only when floating)
-      if (!isMax) {
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-        ctx.shadowBlur = 20;
-        ctx.shadowOffsetY = 8;
-        ctx.fillStyle = '#0050e6';
-        this.drawRoundRect(ctx, wx, wy, ww, wh, [6, 6, 0, 0]);
-        ctx.fill();
-        ctx.restore();
-      }
+      const isDoomMax = (this.doomState === 'maximized');
+      const dwx = isDoomMax ? 0 : this.doomRect.x;
+      const dwy = isDoomMax ? 0 : this.doomRect.y;
+      const dww = isDoomMax ? W : this.doomRect.w;
+      const dwh = isDoomMax ? 730 : this.doomRect.h;
+
+      const isHoveringDoom = (
+        this.doomState !== 'closed' && this.doomState !== 'minimized' && (
+          (my >= dwy && my <= dwy + 30 && mx >= dwx + dww - 80) ||
+          (my >= dwy + 30 && my <= dwy + dwh && mx >= dwx && mx <= dwx + dww)
+        )
+      );
 
       ctx.save();
-      this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
-      ctx.clip();
+      const isHoveringControls = (
+        this.startMenuOpen ||
+        my >= 730 ||
+        isHoveringDoom ||
+        (this.winState !== 'minimized' && my >= wy && my <= wy + 30 && mx >= wx + ww - 80) ||
+        (this.winState !== 'minimized' && my >= wy + 90 && my <= wy + 118) ||
+        (mx <= 90 && my <= 440) ||
+        (this.renderedNavLinks && this.renderedNavLinks.some((l) => mx >= l.x && mx <= l.x + l.w && my >= l.y && my <= l.y + l.h)) ||
+        (this.renderedButtons && this.renderedButtons.some((b) => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h))
+      );
 
-      // Outer 3px Luna Blue Window Frame Border
+      if (isHoveringControls) {
+        // Classic White Windows Pointing Hand Cursor
+        if (this.handCursorImg && this.handCursorImg.complete && this.handCursorImg.naturalWidth > 0) {
+          ctx.drawImage(this.handCursorImg, mx - 6, my);
+        } else {
+          // Clean vector fallback
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.beginPath();
+          ctx.moveTo(mx + 2, my + 2);
+          ctx.lineTo(mx + 6, my + 2);
+          ctx.lineTo(mx + 6, my + 10);
+          ctx.lineTo(mx + 10, my + 10);
+          ctx.lineTo(mx + 10, my + 12);
+          ctx.lineTo(mx + 13, my + 12);
+          ctx.lineTo(mx + 13, my + 14);
+          ctx.lineTo(mx + 16, my + 14);
+          ctx.lineTo(mx + 16, my + 20);
+          ctx.lineTo(mx + 14, my + 24);
+          ctx.lineTo(mx + 6, my + 24);
+          ctx.lineTo(mx + 4, my + 20);
+          ctx.lineTo(mx, my + 16);
+          ctx.lineTo(mx - 2, my + 16);
+          ctx.lineTo(mx - 2, my + 13);
+          ctx.lineTo(mx + 2, my + 13);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(mx, my);
+          ctx.lineTo(mx + 4, my);
+          ctx.lineTo(mx + 4, my + 8);
+          ctx.lineTo(mx + 8, my + 8);
+          ctx.lineTo(mx + 8, my + 10);
+          ctx.lineTo(mx + 11, my + 10);
+          ctx.lineTo(mx + 11, my + 12);
+          ctx.lineTo(mx + 14, my + 12);
+          ctx.lineTo(mx + 14, my + 18);
+          ctx.lineTo(mx + 12, my + 22);
+          ctx.lineTo(mx + 4, my + 22);
+          ctx.lineTo(mx + 2, my + 18);
+          ctx.lineTo(mx - 2, my + 14);
+          ctx.lineTo(mx - 4, my + 14);
+          ctx.lineTo(mx - 4, my + 11);
+          ctx.lineTo(mx, my + 11);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      } else {
+        // Classic White Windows Arrow Cursor
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(mx + 2, my + 2);
+        ctx.lineTo(mx + 2, my + 18);
+        ctx.lineTo(mx + 6, my + 14);
+        ctx.lineTo(mx + 11, my + 21);
+        ctx.lineTo(mx + 14, my + 19);
+        ctx.lineTo(mx + 9, my + 12);
+        ctx.lineTo(mx + 15, my + 12);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx, my + 16);
+        ctx.lineTo(mx + 4, my + 12);
+        ctx.lineTo(mx + 9, my + 19);
+        ctx.lineTo(mx + 12, my + 17);
+        ctx.lineTo(mx + 7, my + 10);
+        ctx.lineTo(mx + 13, my + 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // =========================================================================
+    // 8. AUTHENTIC CRT MONITOR SCREEN EFFECTS (Scanlines, Phosphors, Vignette & Glare)
+    // =========================================================================
+    ctx.save();
+
+    // 8a. Horizontal Scanlines
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    for (let sy = 0; sy < H; sy += 3) {
+      ctx.fillRect(0, sy, W, 1);
+    }
+
+    // 8b. Subtle Phosphor Aperture Mask (Vertical subpixel triad lines)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+    for (let sx = 0; sx < W; sx += 3) {
+      ctx.fillRect(sx, 0, 1, H);
+    }
+
+    // 8c. CRT Tube Glass Radial Vignette (Curved cathode tube edge & corner darkening)
+    const tubeVignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.38, W / 2, H / 2, W * 0.68);
+    tubeVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    tubeVignette.addColorStop(0.68, 'rgba(0, 5, 20, 0.12)');
+    tubeVignette.addColorStop(0.9, 'rgba(0, 2, 12, 0.36)');
+    tubeVignette.addColorStop(1, 'rgba(0, 0, 10, 0.68)');
+    ctx.fillStyle = tubeVignette;
+    ctx.fillRect(0, 0, W, H);
+
+    // 8d. Deep Bezel Inset Glass Shadows & Bottom Rim Highlight
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(0, 0, W, 5); // top shadow
+    ctx.fillRect(0, 0, 5, H); // left shadow
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(0, H - 4, W, 4); // bottom edge reflection
+    ctx.fillRect(W - 4, 0, 4, H); // right edge reflection
+
+    // 8e. Convex Glass Sheen / Tube Glare Reflection
+    const glassGlare = ctx.createLinearGradient(0, 0, W * 0.65, H * 0.65);
+    glassGlare.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+    glassGlare.addColorStop(0.2, 'rgba(255, 255, 255, 0.03)');
+    glassGlare.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glassGlare;
+    ctx.fillRect(0, 0, W, H);
+
+    // 8f. Dynamic Cathode Scan Beam Sync Roll
+    const rollY = (Date.now() * 0.035) % (H + 100) - 50;
+    const rollGrad = ctx.createLinearGradient(0, rollY, 0, rollY + 50);
+    rollGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    rollGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.03)');
+    rollGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = rollGrad;
+    ctx.fillRect(0, rollY, W, 50);
+
+    ctx.restore();
+  }
+
+
+  renderIEWindow(ctx, W, H) {
+    if (this.winState === 'minimized') return;
+
+    const isMax = (this.winState === 'maximized');
+    const isActive = (this.activeWindow === 'ie');
+    const wx = isMax ? 0 : this.winRect.x;
+    const wy = isMax ? 0 : this.winRect.y;
+    const ww = isMax ? W : this.winRect.w;
+    const wh = isMax ? 730 : this.winRect.h;
+
+    // Soft window drop shadow (only when floating)
+    if (!isMax) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 8;
       ctx.fillStyle = '#0050e6';
-      ctx.fillRect(wx, wy, ww, wh);
+      this.drawRoundRect(ctx, wx, wy, ww, wh, [6, 6, 0, 0]);
+      ctx.fill();
+      ctx.restore();
+    }
 
-      // 4a. Titlebar (Luna Blue with Windows XP control buttons - Image 4)
-      const titleH = 30;
-      const tbWGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+    ctx.save();
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
+    ctx.clip();
+
+    // Outer 3px Luna Blue Window Frame Border
+    ctx.fillStyle = isActive ? '#0050e6' : '#5a78c4';
+    ctx.fillRect(wx, wy, ww, wh);
+
+    // 4a. Titlebar (Luna Blue with Windows XP control buttons - Image 4)
+    const titleH = 30;
+    const tbWGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+    if (isActive) {
       tbWGrad.addColorStop(0, '#0058ec');
       tbWGrad.addColorStop(0.35, '#3b88ff');
       tbWGrad.addColorStop(1, '#0047c8');
-      ctx.fillStyle = tbWGrad;
-      ctx.fillRect(wx + 2, wy + 2, ww - 4, titleH);
+    } else {
+      tbWGrad.addColorStop(0, '#7697e7');
+      tbWGrad.addColorStop(0.35, '#8ba7ef');
+      tbWGrad.addColorStop(1, '#6688dd');
+    }
+    ctx.fillStyle = tbWGrad;
+    ctx.fillRect(wx + 2, wy + 2, ww - 4, titleH);
 
       // Top edge highlight
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
@@ -1117,317 +1488,298 @@ export class ComputerScene {
       ctx.fillText('Internet Zone | 100%', wx + ww - 14, stY + 16);
 
       ctx.restore(); // End clipping window
-    }
+  }
 
-    // 5. Interactive Luna Start Menu (If Open)
-    if (this.startMenuOpen) {
-      const smX = 0;
-      const smY = 320;
-      const smW = 340;
-      const smH = 410;
+  renderDoomWindow(ctx, W, H) {
+    if (this.doomState === 'closed' || this.doomState === 'minimized') return;
 
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-      ctx.shadowBlur = 16;
-      ctx.fillStyle = '#ffffff';
-      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
-      ctx.fill();
-      ctx.restore();
+    if (this.doomState === 'loading') {
+      // Authentic Windows XP Setup & Loading Dialog
+      const dw = 460;
+      const dh = 190;
+      const dx = Math.round((W - dw) / 2);
+      const dy = Math.round((H - dh) / 2);
 
-      ctx.save();
-      this.drawRoundRect(ctx, smX, smY, smW, smH, [6, 6, 0, 0]);
-      ctx.clip();
-
-      // Start Menu Header
-      const smHGrad = ctx.createLinearGradient(0, smY, smW, smY);
-      smHGrad.addColorStop(0, '#1955b5');
-      smHGrad.addColorStop(1, '#3884e9');
-      ctx.fillStyle = smHGrad;
-      ctx.fillRect(smX, smY, smW, 54);
-
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.arc(smX + 32, smY + 28, 18, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.font = '18px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('⚡', smX + 32, smY + 34);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px Tahoma, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('qurayshe @ qurayshe.xd', smX + 60, smY + 34);
-
-      // White Left Panel
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(smX, smY + 54, 180, smH - 96);
-      const leftItems = ['🌐 Internet Explorer', '📝 Notepad', '💻 Terminal Lab', '🎮 Vulkan 3D Lab', '💣 Minesweeper'];
-      ctx.font = '12px Tahoma, sans-serif';
-      ctx.fillStyle = '#0f172a';
-      leftItems.forEach((it, i) => {
-        ctx.fillText(it, smX + 10, smY + 84 + i * 40);
-      });
-
-      // Blue Right Panel
-      ctx.fillStyle = '#d3e5fa';
-      ctx.fillRect(smX, smY + 54, smW - 180, smH - 96);
-      const rightItems = ['📁 My Documents', '💻 My Computer', '⚙️ Control Panel', '🔍 Search', '▶ Run...'];
-      ctx.fillStyle = '#1e3a8a';
-      rightItems.forEach((it, i) => {
-        ctx.fillText(it, smX + 192, smY + 84 + i * 40);
-      });
-
-      // Bottom Bar
-      ctx.fillStyle = '#1e57c8';
-      ctx.fillRect(smX, smY + smH - 42, smW, 42);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Tahoma, sans-serif';
-      ctx.fillText('🔑 Log Off      ⏻ Turn Off Computer', smX + 20, smY + smH - 16);
-
-      ctx.restore();
-    }
-
-    // 6. Interactive XP Alert Dialog (If Triggered)
-    if (this.activePopup) {
-      const pw = 420;
-      const ph = 180;
-      const px = (W - pw) / 2;
-      const py = (H - ph) / 2;
-
+      // Window shadow
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       ctx.shadowBlur = 18;
       ctx.fillStyle = '#ece9d8';
-      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      this.drawRoundRect(ctx, dx, dy, dw, dh, 4);
       ctx.fill();
       ctx.restore();
 
       ctx.save();
-      this.drawRoundRect(ctx, px, py, pw, ph, 4);
+      this.drawRoundRect(ctx, dx, dy, dw, dh, 4);
       ctx.clip();
 
-      const dlgTbGrad = ctx.createLinearGradient(0, py, 0, py + 26);
+      // Titlebar
+      const dlgTbGrad = ctx.createLinearGradient(0, dy, 0, dy + 28);
       dlgTbGrad.addColorStop(0, '#0055ea');
       dlgTbGrad.addColorStop(1, '#3b88ff');
       ctx.fillStyle = dlgTbGrad;
-      ctx.fillRect(px, py, pw, 26);
+      ctx.fillRect(dx, dy, dw, 28);
+
+      ctx.font = '14px sans-serif';
+      ctx.fillText('👹', dx + 8, dy + 20);
 
       ctx.font = 'bold 12px Tahoma, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'left';
-      ctx.fillText(this.activePopup.title || 'xplinux - System Notice', px + 10, py + 18);
+      ctx.fillText('C:\\DOOM\\DOOM.EXE - Setup & Launch', dx + 28, dy + 19);
 
-      ctx.fillStyle = '#ef4444';
-      ctx.fillRect(px + pw - 22, py + 4, 18, 18);
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText('✕', px + pw - 13, py + 17);
-
+      // Dialog body
       ctx.fillStyle = '#ece9d8';
-      ctx.fillRect(px, py + 26, pw, ph - 26);
+      ctx.fillRect(dx, dy + 28, dw, dh - 28);
 
-      ctx.font = '28px sans-serif';
-      ctx.fillText('ℹ️', px + 36, py + 80);
+      // Icon & Message
+      ctx.font = '32px sans-serif';
+      ctx.fillText('💾', dx + 24, dy + 85);
+
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText('Loading id Software DOOM v1.10 (WASM)...', dx + 74, dy + 68);
+
+      const pct = Math.round((this.doomEngine ? this.doomEngine.loadProgress : 0) * 100);
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillStyle = '#475569';
+      ctx.fillText(`Decompressing shareware engine & DOOM1.WAD... ${pct}%`, dx + 74, dy + 88);
+
+      // Progress bar
+      const pbx = dx + 74;
+      const pby = dy + 104;
+      const pbw = dw - 100;
+      const pbh = 18;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(pbx, pby, pbw, pbh);
+      ctx.strokeStyle = '#7f9db9';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pbx, pby, pbw, pbh);
+
+      // Segmented XP progress blocks
+      const fillW = Math.max(0, Math.min(pbw - 4, (pbw - 4) * (pct / 100)));
+      if (fillW > 0) {
+        const pGrad = ctx.createLinearGradient(0, pby, 0, pby + pbh);
+        pGrad.addColorStop(0, '#66bb6a');
+        pGrad.addColorStop(0.5, '#43a047');
+        pGrad.addColorStop(1, '#2e7d32');
+        ctx.fillStyle = pGrad;
+        ctx.fillRect(pbx + 2, pby + 2, fillW, pbh - 4);
+      }
+
+      // Cancel button
+      const btnW = 75;
+      const btnH = 24;
+      const btnX = dx + dw - 95;
+      const btnY = dy + dh - 36;
+      ctx.fillStyle = '#ece9d8';
+      ctx.fillRect(btnX, btnY, btnW, btnH);
+      ctx.strokeStyle = '#0055ea';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(btnX, btnY, btnW, btnH);
 
       ctx.font = '12px Tahoma, sans-serif';
       ctx.fillStyle = '#0f172a';
-      ctx.textAlign = 'left';
-
-      const lines = this.activePopup.message.split('\n');
-      lines.forEach((ln, lidx) => {
-        ctx.fillText(ln, px + 70, py + 68 + lidx * 20);
-      });
-
-      const okW = 80;
-      const okH = 26;
-      const okX = px + (pw - okW) / 2;
-      const okY = py + ph - 42;
-
-      ctx.fillStyle = '#ece9d8';
-      ctx.fillRect(okX, okY, okW, okH);
-      ctx.strokeStyle = '#0055ea';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(okX, okY, okW, okH);
-
-      ctx.font = 'bold 12px Tahoma, sans-serif';
-      ctx.fillStyle = '#0f172a';
       ctx.textAlign = 'center';
-      ctx.fillText('OK', okX + okW / 2, okY + 17);
+      ctx.fillText('Cancel', btnX + btnW / 2, btnY + 16);
+
       ctx.restore();
+      return;
     }
 
-    // 7. Windows XP Virtual Mouse Pointer
-    if (this.screenPointer.active) {
-      const mx = this.screenPointer.x;
-      const my = this.screenPointer.y;
+    // Normal or Maximized DOOM Window
+    const isMax = (this.doomState === 'maximized');
+    const isActive = (this.activeWindow === 'doom');
+    const wx = isMax ? 0 : this.doomRect.x;
+    const wy = isMax ? 0 : this.doomRect.y;
+    const ww = isMax ? W : this.doomRect.w;
+    const wh = isMax ? 730 : this.doomRect.h;
 
-      const isMax = (this.winState === 'maximized');
-      const wx = isMax ? 0 : this.winRect.x;
-      const wy = isMax ? 0 : this.winRect.y;
-      const ww = isMax ? W : this.winRect.w;
-
+    // Drop shadow
+    if (!isMax) {
       ctx.save();
-      const isHoveringControls = (
-        this.startMenuOpen ||
-        my >= 730 ||
-        (this.winState !== 'minimized' && my >= wy && my <= wy + 30 && mx >= wx + ww - 80) ||
-        (this.winState !== 'minimized' && my >= wy + 90 && my <= wy + 118) ||
-        (mx <= 90 && my <= 360) ||
-        (this.renderedNavLinks && this.renderedNavLinks.some((l) => mx >= l.x && mx <= l.x + l.w && my >= l.y && my <= l.y + l.h)) ||
-        (this.renderedButtons && this.renderedButtons.some((b) => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h))
-      );
-
-      if (isHoveringControls) {
-        // Pointing Hand Cursor
-        ctx.font = '22px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('👆', mx - 4, my + 14);
-      } else {
-        // Classic White Windows Arrow Cursor
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.beginPath();
-        ctx.moveTo(mx + 2, my + 2);
-        ctx.lineTo(mx + 2, my + 18);
-        ctx.lineTo(mx + 6, my + 14);
-        ctx.lineTo(mx + 11, my + 21);
-        ctx.lineTo(mx + 14, my + 19);
-        ctx.lineTo(mx + 9, my + 12);
-        ctx.lineTo(mx + 15, my + 12);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(mx, my);
-        ctx.lineTo(mx, my + 16);
-        ctx.lineTo(mx + 4, my + 12);
-        ctx.lineTo(mx + 9, my + 19);
-        ctx.lineTo(mx + 12, my + 17);
-        ctx.lineTo(mx + 7, my + 10);
-        ctx.lineTo(mx + 13, my + 10);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = '#0050e6';
+      this.drawRoundRect(ctx, wx, wy, ww, wh, [6, 6, 0, 0]);
+      ctx.fill();
       ctx.restore();
     }
 
-    // =========================================================================
-    // 8. AUTHENTIC CRT MONITOR SCREEN EFFECTS (Scanlines, Phosphors, Vignette & Glare)
-    // =========================================================================
     ctx.save();
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
+    ctx.clip();
 
-    // 8a. Horizontal Scanlines
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-    for (let sy = 0; sy < H; sy += 3) {
-      ctx.fillRect(0, sy, W, 1);
+    // Outer frame border
+    ctx.fillStyle = isActive ? '#0050e6' : '#5a78c4';
+    ctx.fillRect(wx, wy, ww, wh);
+
+    // Titlebar
+    const titleH = 30;
+    const tbWGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+    if (isActive) {
+      tbWGrad.addColorStop(0, '#0058ec');
+      tbWGrad.addColorStop(0.35, '#3b88ff');
+      tbWGrad.addColorStop(1, '#0047c8');
+    } else {
+      tbWGrad.addColorStop(0, '#7697e7');
+      tbWGrad.addColorStop(0.35, '#8ba7ef');
+      tbWGrad.addColorStop(1, '#6688dd');
+    }
+    ctx.fillStyle = tbWGrad;
+    ctx.fillRect(wx + 2, wy + 2, ww - 4, titleH);
+
+    // Title highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fillRect(wx + 2, wy + 2, ww - 4, 1);
+
+    // Title text
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('👹', wx + 8, wy + 21);
+
+    ctx.font = 'bold 12px Tahoma, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 2;
+    ctx.fillText('C:\\DOOM\\DOOM.EXE - Episode 1: Knee-Deep in the Dead', wx + 28, wy + 20);
+    ctx.shadowBlur = 0;
+
+    // Window control buttons [ _ □ ✕ ]
+    const btnY = wy + 5;
+    const btnH = 21;
+    const btnW = 21;
+    const bxMin = wx + ww - 75;
+    const bxMax = wx + ww - 51;
+    const bxClose = wx + ww - 27;
+
+    const minGrad = ctx.createLinearGradient(0, btnY, 0, btnY + btnH);
+    minGrad.addColorStop(0, '#3878f0');
+    minGrad.addColorStop(1, '#1b52c8');
+
+    // Minimize (_)
+    ctx.fillStyle = minGrad;
+    this.drawRoundRect(ctx, bxMin, btnY, btnW, btnH, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#7cb3fc';
+    this.drawRoundRect(ctx, bxMin, btnY, btnW, btnH, 3);
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(bxMin + 5, btnY + 14, 11, 2.5);
+
+    // Maximize (□)
+    ctx.fillStyle = minGrad;
+    this.drawRoundRect(ctx, bxMax, btnY, btnW, btnH, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#7cb3fc';
+    this.drawRoundRect(ctx, bxMax, btnY, btnW, btnH, 3);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = isMax ? 1.4 : 1.8;
+    if (!isMax) {
+      ctx.strokeRect(bxMax + 4.5, btnY + 4.5, 12, 11);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bxMax + 4.5, btnY + 4.5, 12, 2.8);
+    } else {
+      ctx.strokeRect(bxMax + 7, btnY + 3.5, 9, 8);
+      ctx.fillStyle = '#1b52c8';
+      ctx.fillRect(bxMax + 4, btnY + 6.5, 9, 9);
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(bxMax + 4, btnY + 6.5, 9, 9);
     }
 
-    // 8b. Subtle Phosphor Aperture Mask (Vertical subpixel triad lines)
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
-    for (let sx = 0; sx < W; sx += 3) {
-      ctx.fillRect(sx, 0, 1, H);
+    // Close (✕)
+    const closeGrad = ctx.createLinearGradient(0, btnY, 0, btnY + btnH);
+    closeGrad.addColorStop(0, '#e85a42');
+    closeGrad.addColorStop(1, '#c02e16');
+    ctx.fillStyle = closeGrad;
+    this.drawRoundRect(ctx, bxClose, btnY, btnW, btnH, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#ffa291';
+    this.drawRoundRect(ctx, bxClose, btnY, btnW, btnH, 3);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bxClose + 6, btnY + 6);
+    ctx.lineTo(bxClose + 15, btnY + 15);
+    ctx.moveTo(bxClose + 15, btnY + 6);
+    ctx.lineTo(bxClose + 6, btnY + 15);
+    ctx.stroke();
+
+    // Content Area (DOOM Canvas)
+    const barH = 24;
+    const contentX = wx + 3;
+    const contentY = wy + 30;
+    const contentW = ww - 6;
+    const contentH = wh - 30 - barH - 3;
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(contentX, contentY, contentW, contentH);
+
+    if (this.doomEngine && this.doomEngine.canvas) {
+      ctx.drawImage(this.doomEngine.canvas, contentX, contentY, contentW, contentH);
     }
 
-    // 8c. CRT Tube Glass Radial Vignette (Curved cathode tube edge & corner darkening)
-    const tubeVignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.38, W / 2, H / 2, W * 0.68);
-    tubeVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    tubeVignette.addColorStop(0.68, 'rgba(0, 5, 20, 0.12)');
-    tubeVignette.addColorStop(0.9, 'rgba(0, 2, 12, 0.36)');
-    tubeVignette.addColorStop(1, 'rgba(0, 0, 10, 0.68)');
-    ctx.fillStyle = tubeVignette;
-    ctx.fillRect(0, 0, W, H);
+    // Bottom Controls & Status Bar
+    const sbarY = wy + wh - barH - 3;
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(contentX, sbarY, contentW, barH);
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(contentX, sbarY, contentW, barH);
 
-    // 8d. Deep Bezel Inset Glass Shadows & Bottom Rim Highlight
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    ctx.fillRect(0, 0, W, 5); // top shadow
-    ctx.fillRect(0, 0, 5, H); // left shadow
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.fillRect(0, H - 4, W, 4); // bottom edge reflection
-    ctx.fillRect(W - 4, 0, 4, H); // right edge reflection
+    ctx.font = 'bold 11px "JetBrains Mono", Consolas, monospace';
+    ctx.fillStyle = '#22c55e';
+    ctx.textAlign = 'left';
+    ctx.fillText('[WASD/Arrows]: Move  [Space]: Use  [Ctrl/Click]: Shoot  [Enter]: Start', contentX + 8, sbarY + 16);
 
-    // 8e. Convex Glass Sheen / Tube Glare Reflection
-    const glassGlare = ctx.createLinearGradient(0, 0, W * 0.65, H * 0.65);
-    glassGlare.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
-    glassGlare.addColorStop(0.2, 'rgba(255, 255, 255, 0.03)');
-    glassGlare.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = glassGlare;
-    ctx.fillRect(0, 0, W, H);
-
-    // 8f. Dynamic Cathode Scan Beam Sync Roll
-    const rollY = (Date.now() * 0.035) % (H + 100) - 50;
-    const rollGrad = ctx.createLinearGradient(0, rollY, 0, rollY + 50);
-    rollGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    rollGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.03)');
-    rollGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = rollGrad;
-    ctx.fillRect(0, rollY, W, 50);
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'right';
+    ctx.fillText(isActive ? '● PLAYING (Focused)' : '○ Click window to play', contentX + contentW - 10, sbarY + 16);
 
     ctx.restore();
   }
 
 
+
+
   /* --------------------------------------------------------------------------
-     INTERACTIVE SCREEN CLICK & AUDIO HANDLERS WITH WINDOW MANAGEMENT
+     INTERACTIVE SCREEN CLICK & WINDOW MANAGEMENT
      -------------------------------------------------------------------------- */
-  playRetroClickSound() {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      if (!this.audioCtx) this.audioCtx = new AudioCtx();
-      if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+  openDoom() {
+    this.activeWindow = 'doom';
+    if (this.doomState === 'minimized') {
+      this.doomState = 'normal';
+      return;
+    }
+    if (this.doomState === 'normal' || this.doomState === 'maximized') {
+      return;
+    }
 
-      const now = this.audioCtx.currentTime;
-
-      // 1. High-frequency mechanical microswitch snap (shaped noise transient)
-      const sampleRate = this.audioCtx.sampleRate;
-      const bufferSize = Math.floor(sampleRate * 0.012); // ~12ms
-      const buffer = this.audioCtx.createBuffer(1, bufferSize, sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.16));
-      }
-      const noise = this.audioCtx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = this.audioCtx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(3200, now);
-      filter.Q.setValueAtTime(3.2, now);
-
-      const noiseGain = this.audioCtx.createGain();
-      noiseGain.gain.setValueAtTime(0.38, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
-
-      noise.connect(filter);
-      filter.connect(noiseGain);
-      noiseGain.connect(this.audioCtx.destination);
-      noise.start(now);
-
-      // 2. Low-frequency tactile plastic contact body click
-      const osc = this.audioCtx.createOscillator();
-      const oscGain = this.audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(640, now);
-      osc.frequency.exponentialRampToValueAtTime(65, now + 0.016);
-
-      oscGain.gain.setValueAtTime(0.42, now);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
-
-      osc.connect(oscGain);
-      oscGain.connect(this.audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.018);
-    } catch (e) {}
+    if (!this.doomEngine.loaded && !this.doomEngine.loading) {
+      this.doomState = 'loading';
+      this.doomEngine.onLoadComplete = () => {
+        if (this.doomState === 'loading') {
+          this.doomState = 'normal';
+        }
+      };
+      this.doomEngine.load().catch((err) => {
+        console.error('Failed to load Doom:', err);
+        this.activePopup = {
+          title: 'DOOM.EXE - Error',
+          message: 'Failed to initialize DOOM engine:\n' + (err.message || 'Network error')
+        };
+        this.doomState = 'closed';
+      });
+    } else if (this.doomEngine.loaded) {
+      this.doomState = 'normal';
+    }
   }
 
-
   handleScreenClick(x, y) {
-    this.playRetroClickSound();
-
     // 1. Dismiss Active Alert Dialog
     if (this.activePopup) {
       this.activePopup = null;
@@ -1441,127 +1793,308 @@ export class ComputerScene {
     }
 
     if (this.startMenuOpen) {
+      const smX = 0;
+      const smY = 320;
+      // Clicked on left items
+      if (x >= smX + 10 && x <= smX + 180) {
+        // Item 0: IE (y = smY + 84 + 0 * 40 - 20 .. +20 = 384..424)
+        if (y >= smY + 64 && y <= smY + 104) {
+          this.winState = 'normal';
+          this.activeWindow = 'ie';
+          this.startMenuOpen = false;
+          return;
+        }
+        // Item 1: DOOM (y = smY + 84 + 1 * 40 - 20 .. +20 = 424..464)
+        if (y >= smY + 104 && y <= smY + 144) {
+          this.openDoom();
+          this.startMenuOpen = false;
+          return;
+        }
+      }
       this.startMenuOpen = false;
       return;
     }
 
-    // 3. Taskbar Window Tab (x = 168..398, y = 734..764) - Toggles Minimize / Restore!
-    if (x >= 168 && x <= 400 && y >= 732 && y <= 766) {
+    // 3. Taskbar Window Tabs
+    // 3a. IE Tab (x = 168..363, y = 732..766)
+    if (x >= 168 && x <= 363 && y >= 732 && y <= 766) {
       if (this.winState === 'minimized') {
         this.winState = 'normal';
-      } else {
+        this.activeWindow = 'ie';
+      } else if (this.activeWindow === 'ie') {
         this.winState = 'minimized';
+        if (this.doomState !== 'closed' && this.doomState !== 'minimized') {
+          this.activeWindow = 'doom';
+        }
+      } else {
+        this.activeWindow = 'ie';
+      }
+      return;
+    }
+
+    // 3b. DOOM Tab (x = 369..564, y = 732..766)
+    if (this.doomState !== 'closed' && x >= 369 && x <= 564 && y >= 732 && y <= 766) {
+      if (this.doomState === 'minimized') {
+        this.doomState = 'normal';
+        this.activeWindow = 'doom';
+      } else if (this.activeWindow === 'doom') {
+        this.doomState = 'minimized';
+        if (this.winState !== 'minimized') {
+          this.activeWindow = 'ie';
+        }
+      } else {
+        this.activeWindow = 'doom';
       }
       return;
     }
 
     // 4. Desktop Icons (When clicked on the left side)
-    if (x >= 20 && x <= 75 && this.winState === 'minimized') {
-      if (y >= 20 && y <= 90) {
-        // IE Icon: restore window!
+    if (x >= 10 && x <= 78) {
+      if (y >= 15 && y <= 85) {
+        // IE Icon
         this.winState = 'normal';
+        this.activeWindow = 'ie';
+        return;
+      }
+      if (y >= 88 && y <= 158) {
+        // DOOM.exe
+        this.openDoom();
+        return;
+      }
+      if (y >= 160 && y <= 230) {
+        // My Computer
+        this.activePopup = {
+          title: 'My Computer',
+          message: 'System: AMD64 Retro Rig\nOS: Windows XP Luna SP3\nDrive C: 40 GB [DOOM Installed]'
+        };
+        return;
+      }
+      if (y >= 232 && y <= 302) {
+        // My Documents
+        this.activePopup = {
+          title: 'My Documents',
+          message: 'Folders:\n- C:\\DOOM\\DOOM1.WAD\n- C:\\qurayshe.xd\n- C:\\projects'
+        };
+        return;
+      }
+      if (y >= 304 && y <= 374) {
+        // Recycle Bin
+        this.activePopup = {
+          title: 'Recycle Bin',
+          message: 'Recycle Bin is empty.'
+        };
         return;
       }
     }
 
-    // 5. Window Controls & Titlebar (If window is visible)
-    if (this.winState !== 'minimized') {
-      const isMax = (this.winState === 'maximized');
-      const wx = isMax ? 0 : this.winRect.x;
-      const wy = isMax ? 0 : this.winRect.y;
-      const ww = isMax ? 1024 : this.winRect.w;
-
-      const btnY = wy + 5;
-      const bxMin = wx + ww - 75;
-      const bxMax = wx + ww - 51;
-      const bxClose = wx + ww - 27;
-
-      // Click Minimize Button (_)
-      if (x >= bxMin && x <= bxMin + 21 && y >= btnY && y <= btnY + 21) {
-        this.winState = 'minimized';
-        return;
-      }
-
-      // Click Maximize / Restore Button (□ / ❐)
-      if (x >= bxMax && x <= bxMax + 21 && y >= btnY && y <= btnY + 21) {
-        if (this.winState === 'maximized') {
-          this.winState = 'normal';
-          this.winRect = { ...this.winNormalRect };
-        } else {
-          this.winState = 'maximized';
+    // Helper to handle DOOM window click
+    const handleDoomClick = () => {
+      if (this.doomState === 'loading') {
+        const dw = 460, dh = 190;
+        const dx = Math.round((1024 - dw) / 2);
+        const dy = Math.round((768 - dh) / 2);
+        const btnX = dx + dw - 95;
+        const btnY = dy + dh - 36;
+        if (x >= btnX && x <= btnX + 75 && y >= btnY && y <= btnY + 24) {
+          this.doomState = 'closed';
+          return true;
         }
-        return;
+        return (x >= dx && x <= dx + dw && y >= dy && y <= dy + dh);
       }
 
-      // Click Close Button (✕)
-      if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 21) {
-        this.winState = 'minimized';
-        this.activePopup = {
-          title: 'qurayshe.xd',
-          message: 'Internet Explorer minimized to taskbar.\nClick taskbar tab to reopen!'
-        };
-        return;
-      }
+      if (this.doomState !== 'closed' && this.doomState !== 'minimized') {
+        const isMax = (this.doomState === 'maximized');
+        const dwx = isMax ? 0 : this.doomRect.x;
+        const dwy = isMax ? 0 : this.doomRect.y;
+        const dww = isMax ? 1024 : this.doomRect.w;
+        const dwh = isMax ? 730 : this.doomRect.h;
 
-      // Titlebar drag start or double-click to toggle maximize
-      if (y >= wy && y <= wy + 30 && x >= wx && x <= wx + ww - 80) {
-        const now = performance.now();
-        if (this.lastTitleClick && (now - this.lastTitleClick) < 300) {
-          // Double-click: toggle maximize!
-          if (this.winState === 'maximized') {
-            this.winState = 'normal';
-            this.winRect = { ...this.winNormalRect };
-          } else {
-            this.winState = 'maximized';
+        if (x >= dwx && x <= dwx + dww && y >= dwy && y <= dwy + dwh) {
+          this.activeWindow = 'doom';
+
+          const btnY = dwy + 5;
+          const bxMin = dwx + dww - 75;
+          const bxMax = dwx + dww - 51;
+          const bxClose = dwx + dww - 27;
+
+          // Minimize
+          if (x >= bxMin && x <= bxMin + 21 && y >= btnY && y <= btnY + 21) {
+            this.doomState = 'minimized';
+            if (this.winState !== 'minimized') this.activeWindow = 'ie';
+            return true;
           }
-          this.lastTitleClick = 0;
-          return;
-        }
-        this.lastTitleClick = now;
 
-        if (this.winState === 'normal') {
-          this.winIsDragging = true;
-          this.winDragOffset = { x: x - this.winRect.x, y: y - this.winRect.y };
+          // Maximize / Restore
+          if (x >= bxMax && x <= bxMax + 21 && y >= btnY && y <= btnY + 21) {
+            if (this.doomState === 'maximized') {
+              this.doomState = 'normal';
+              this.doomRect = { ...this.doomNormalRect };
+            } else {
+              this.doomState = 'maximized';
+            }
+            return true;
+          }
+
+          // Close
+          if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 21) {
+            this.doomState = 'closed';
+            if (this.winState !== 'minimized') this.activeWindow = 'ie';
+            return true;
+          }
+
+          // Titlebar Drag
+          if (y >= dwy && y <= dwy + 30 && x >= dwx && x <= dwx + dww - 80) {
+            const now = performance.now();
+            if (this.lastDoomTitleClick && (now - this.lastDoomTitleClick) < 300) {
+              if (this.doomState === 'maximized') {
+                this.doomState = 'normal';
+                this.doomRect = { ...this.doomNormalRect };
+              } else {
+                this.doomState = 'maximized';
+              }
+              this.lastDoomTitleClick = 0;
+              return true;
+            }
+            this.lastDoomTitleClick = now;
+
+            if (this.doomState === 'normal') {
+              this.doomIsDragging = true;
+              this.doomDragOffset = { x: x - this.doomRect.x, y: y - this.doomRect.y };
+            }
+            return true;
+          }
+
+          // Content Area Click (Shooting / Enter)
+          if (y >= dwy + 30 && y <= dwy + dwh - 24) {
+            if (this.doomEngine) {
+              this.doomEngine.simulateFire();
+            }
+            return true;
+          }
+
+          return true;
         }
-        return;
       }
+      return false;
+    };
 
-      // 6. Clicked an Old-School HTML Navigation Link
-      if (this.renderedNavLinks && this.renderedNavLinks.length > 0) {
-        for (let i = 0; i < this.renderedNavLinks.length; i++) {
-          const l = this.renderedNavLinks[i];
-          if (x >= l.x && x <= l.x + l.w && y >= l.y && y <= l.y + l.h) {
+    // Helper to handle IE window click
+    const handleIEClick = () => {
+      if (this.winState !== 'minimized') {
+        const isMax = (this.winState === 'maximized');
+        const wx = isMax ? 0 : this.winRect.x;
+        const wy = isMax ? 0 : this.winRect.y;
+        const ww = isMax ? 1024 : this.winRect.w;
+        const wh = isMax ? 730 : this.winRect.h;
+
+        if (x >= wx && x <= wx + ww && y >= wy && y <= wy + wh) {
+          this.activeWindow = 'ie';
+
+          const btnY = wy + 5;
+          const bxMin = wx + ww - 75;
+          const bxMax = wx + ww - 51;
+          const bxClose = wx + ww - 27;
+
+          // Click Minimize Button (_)
+          if (x >= bxMin && x <= bxMin + 21 && y >= btnY && y <= btnY + 21) {
+            this.winState = 'minimized';
+            if (this.doomState !== 'closed' && this.doomState !== 'minimized') this.activeWindow = 'doom';
+            return true;
+          }
+
+          // Click Maximize / Restore Button (□ / ❐)
+          if (x >= bxMax && x <= bxMax + 21 && y >= btnY && y <= btnY + 21) {
+            if (this.winState === 'maximized') {
+              this.winState = 'normal';
+              this.winRect = { ...this.winNormalRect };
+            } else {
+              this.winState = 'maximized';
+            }
+            return true;
+          }
+
+          // Click Close Button (✕)
+          if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 21) {
+            this.winState = 'minimized';
             this.activePopup = {
               title: 'qurayshe.xd',
-              message: `Navigating to ${l.url}...\n[HTTP 200 OK - Link Active]`
+              message: 'Internet Explorer minimized to taskbar.\nClick taskbar tab to reopen!'
             };
-            return;
+            return true;
           }
-        }
-      }
 
-      // 7. Clicked an Old-School 88x31 Button
-      if (this.renderedButtons && this.renderedButtons.length > 0) {
-        for (let i = 0; i < this.renderedButtons.length; i++) {
-          const item = this.renderedButtons[i];
-          if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+          // Titlebar drag start or double-click to toggle maximize
+          if (y >= wy && y <= wy + 30 && x >= wx && x <= wx + ww - 80) {
+            const now = performance.now();
+            if (this.lastTitleClick && (now - this.lastTitleClick) < 300) {
+              if (this.winState === 'maximized') {
+                this.winState = 'normal';
+                this.winRect = { ...this.winNormalRect };
+              } else {
+                this.winState = 'maximized';
+              }
+              this.lastTitleClick = 0;
+              return true;
+            }
+            this.lastTitleClick = now;
+
+            if (this.winState === 'normal') {
+              this.winIsDragging = true;
+              this.winDragOffset = { x: x - this.winRect.x, y: y - this.winRect.y };
+            }
+            return true;
+          }
+
+          // Clicked an Old-School HTML Navigation Link
+          if (this.renderedNavLinks && this.renderedNavLinks.length > 0) {
+            for (let i = 0; i < this.renderedNavLinks.length; i++) {
+              const l = this.renderedNavLinks[i];
+              if (x >= l.x && x <= l.x + l.w && y >= l.y && y <= l.y + l.h) {
+                this.activePopup = {
+                  title: 'qurayshe.xd',
+                  message: `Navigating to ${l.url}...\n[HTTP 200 OK - Link Active]`
+                };
+                return true;
+              }
+            }
+          }
+
+          // Clicked an Old-School 88x31 Button
+          if (this.renderedButtons && this.renderedButtons.length > 0) {
+            for (let i = 0; i < this.renderedButtons.length; i++) {
+              const item = this.renderedButtons[i];
+              if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+                this.activePopup = {
+                  title: 'qurayshe.xd',
+                  message: `Badge: ${item.btn.title}!\nhttp://qurayshe.xd/badges/${item.btn.file}`
+                };
+                return true;
+              }
+            }
+          }
+
+          // Clicked Address Bar or Navigation
+          if (y >= wy + 90 && y <= wy + 118) {
             this.activePopup = {
               title: 'qurayshe.xd',
-              message: `Badge: ${item.btn.title}!\nhttp://qurayshe.xd/badges/${item.btn.file}`
+              message: 'http://qurayshe.xd\n[HTTP 200 OK - Host Connected]'
             };
-            return;
+            return true;
           }
+
+          return true;
         }
       }
+      return false;
+    };
 
-      // 8. Clicked Address Bar or Navigation
-      if (y >= wy + 90 && y <= wy + 118) {
-        this.activePopup = {
-          title: 'qurayshe.xd',
-          message: 'http://qurayshe.xd\n[HTTP 200 OK - Host Connected]'
-        };
-        return;
-      }
+    // Dispatch click to topmost window first
+    if (this.activeWindow === 'doom') {
+      if (handleDoomClick()) return;
+      if (handleIEClick()) return;
+    } else {
+      if (handleIEClick()) return;
+      if (handleDoomClick()) return;
     }
   }
 
@@ -1598,6 +2131,13 @@ export class ComputerScene {
             this.winRect.y = Math.max(0, Math.min(730 - 40, newY));
             this.winNormalRect = { ...this.winRect };
           }
+          if (this.doomIsDragging && this.doomState === 'normal') {
+            const newX = Math.round(this.screenPointer.x - this.doomDragOffset.x);
+            const newY = Math.round(this.screenPointer.y - this.doomDragOffset.y);
+            this.doomRect.x = Math.max(-200, Math.min(1024 - 100, newX));
+            this.doomRect.y = Math.max(0, Math.min(730 - 40, newY));
+            this.doomNormalRect = { ...this.doomRect };
+          }
         } else {
           this.screenPointer.active = false;
           this.container.style.cursor = '';
@@ -1616,11 +2156,13 @@ export class ComputerScene {
 
     window.addEventListener('pointerup', () => {
       this.winIsDragging = false;
+      this.doomIsDragging = false;
     });
 
     this.container.addEventListener('pointerleave', () => {
       this.screenPointer.active = false;
       this.winIsDragging = false;
+      this.doomIsDragging = false;
       this.container.style.cursor = '';
       document.body.style.cursor = '';
     });
@@ -1628,6 +2170,32 @@ export class ComputerScene {
     this.container.addEventListener('pointerdown', () => {
       if (this.screenPointer.active) {
         this.handleScreenClick(this.screenPointer.x, this.screenPointer.y);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (this.doomState !== 'closed' && this.doomState !== 'minimized' && this.activeWindow === 'doom') {
+        const gameKeys = [
+          'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+          'KeyW', 'KeyA', 'KeyS', 'KeyD',
+          'Space', 'ControlLeft', 'ControlRight', 'KeyE',
+          'Enter', 'NumpadEnter', 'Escape', 'Tab',
+          'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7'
+        ];
+        if (gameKeys.includes(e.code)) {
+          e.preventDefault();
+        }
+        if (this.doomEngine) {
+          this.doomEngine.handleKeyDown(e);
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (this.doomState !== 'closed' && this.doomState !== 'minimized' && this.activeWindow === 'doom') {
+        if (this.doomEngine) {
+          this.doomEngine.handleKeyUp(e);
+        }
       }
     });
 
@@ -1670,6 +2238,11 @@ export class ComputerScene {
       this.pcGroup.rotation.z = 0;
     }
 
+    // Step Doom engine if running
+    if (this.doomEngine && this.doomEngine.loaded && this.doomEngine.running) {
+      this.doomEngine.step();
+    }
+
     // Realtime screen rendering & dynamic canvas texture update
     this.renderRetroScreen();
     if (this.screenTexture) {
@@ -1692,6 +2265,9 @@ export class ComputerScene {
 
   destroy() {
     this.screenPointer.active = false;
+    if (this.doomEngine) {
+      this.doomEngine.running = false;
+    }
     if (this.container) this.container.style.cursor = '';
     document.body.style.cursor = '';
     if (this.animationFrameId) {
