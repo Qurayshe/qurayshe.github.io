@@ -10,6 +10,7 @@
  */
 
 import { HeroScene } from './hero/hero-scene.js';
+import { ComputerScene } from './hero/computer-scene.js';
 import { Router } from './modules/router.js';
 import { SystemsViewer } from './modules/systems-viewer.js';
 import { GraphicsViewer } from './modules/graphics-viewer.js';
@@ -22,6 +23,7 @@ import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, 
 
 class App {
   constructor() {
+    this.computerScene = null;
     this.heroScene = null;
     this.systemsViewer = null;
     this.graphicsViewer = null;
@@ -36,8 +38,17 @@ class App {
   }
 
   init() {
-    // 1. Initialize Hero 3D Scene
-    this.heroScene = new HeroScene('hero-3d-viewport');
+    // 1a. Initialize Floating Retro PC Scene (Independent canvas on the left)
+    const pcViewport = document.getElementById('hero-pc-viewport');
+    if (pcViewport) {
+      this.computerScene = new ComputerScene('hero-pc-viewport');
+    }
+
+    // 1b. Initialize Hero 3D Scene (Other 3D displays on the right)
+    const heroViewport = document.getElementById('hero-3d-viewport');
+    if (heroViewport) {
+      this.heroScene = new HeroScene('hero-3d-viewport');
+    }
 
     // 2. Initialize Lab Viewers
     const systemsContainer = document.getElementById('systems-container');
@@ -99,6 +110,9 @@ class App {
   }
 
   onHomeActive() {
+    if (this.computerScene && !this.computerScene.animationFrameId) {
+      this.computerScene.animate();
+    }
     if (this.heroScene && !this.heroScene.animationFrameId) {
       this.heroScene.animate();
     }
@@ -329,7 +343,7 @@ class App {
     const heroViewport = document.getElementById('hero-3d-viewport');
     if (heroViewport) {
       heroViewport.addEventListener('pointerdown', () => {
-        if (this.heroScene && this.heroScene.activeMode !== 'pc') {
+        if (this.heroScene) {
           this.heroScene.triggerShockwave();
           this.triggerCardElasticRipple();
         }
@@ -396,24 +410,17 @@ class App {
       duration: 800
     }, '-=600')
     .add({
-      targets: '.hero-cta-group .btn',
+      targets: '.hero-pc-col',
       opacity: [0, 1],
-      translateY: [20, 0],
-      delay: anime.stagger(90),
-      duration: 700
+      scale: [0.94, 1],
+      duration: 900
     }, '-=500')
-    .add({
-      targets: '.hero-mode-bar',
-      opacity: [0, 1],
-      translateY: [15, 0],
-      duration: 600
-    }, '-=400')
     .add({
       targets: '.hero-3d-col',
       opacity: [0, 1],
       scale: [0.94, 1],
-      duration: 1000
-    }, '-=800');
+      duration: 900
+    }, '-=700');
   }
 
   bindMarkdownLinkInteractions() {

@@ -142,35 +142,41 @@
          ==================================================================== -->
     <section id="section-home" class="app-section active">
       <div class="home-container">
-        <!-- Hero Grid -->
+        <!-- Hero Header -->
+        <div class="hero-header">
+          <h1 class="hero-title-main">
+            <span class="gradient-text">3D everything</span>, from dies to integration to animation.
+          </h1>
+
+          <p class="hero-lead-text">
+            All in the name of work and play.
+          </p>
+        </div>
+
+        <!-- Hero Grid: Left (Floating Computer) vs Right (Other 3D Displays) -->
         <div class="hero-grid">
-          <div class="hero-copy-col">
-            <h1 class="hero-title-main">
-              <span class="gradient-text">3D everything</span>, from dies to integration to animation.
-            </h1>
-
-            <p class="hero-lead-text">
-              All in the name of work and play.
-            </p>
-
-            <!-- Hero 3D Mode Controller -->
-            <div class="hero-mode-bar">
-              <span class="hero-mode-label">Scene:</span>
-              <button class="hero-mode-btn active" data-mode="pc">Retro PC</button>
-              <button class="hero-mode-btn" data-mode="vortex">Vortex</button>
-              <button class="hero-mode-btn" data-mode="geometry">Polyhedron</button>
-              <button class="hero-mode-btn" data-mode="matrix">Matrix Grid</button>
-              <button class="hero-mode-btn" data-mode="wave">Wave</button>
-              <div class="hero-mode-divider"></div>
-              <button class="hero-mode-btn hero-ascii-btn active" id="btn-hero-ascii" title="Toggle ASCII shader filter (default: ON)">
-                <span class="ascii-dot"></span>
-                <span id="hero-ascii-status">ASCII: ON</span>
-              </button>
-            </div>
+          <!-- Independent Floating Computer View (Left) -->
+          <div class="hero-pc-col">
+            <div id="hero-pc-viewport" class="hero-pc-viewport"></div>
           </div>
 
-          <!-- 3D Interactive Hero Canvas -->
+          <!-- 3D Interactive Hero Canvas (Right) -->
           <div class="hero-3d-col">
+            <div class="hero-3d-top-bar">
+              <!-- Hero 3D Mode Controller -->
+              <div class="hero-mode-bar">
+                <span class="hero-mode-label">Scene:</span>
+                <button class="hero-mode-btn active" data-mode="vortex">Vortex</button>
+                <button class="hero-mode-btn" data-mode="geometry">Polyhedron</button>
+                <button class="hero-mode-btn" data-mode="matrix">Matrix Grid</button>
+                <button class="hero-mode-btn" data-mode="wave">Wave</button>
+                <div class="hero-mode-divider"></div>
+                <button class="hero-mode-btn hero-ascii-btn active" id="btn-hero-ascii" title="Toggle ASCII shader filter (default: ON)">
+                  <span class="ascii-dot"></span>
+                  <span id="hero-ascii-status">ASCII: ON</span>
+                </button>
+              </div>
+            </div>
             <div id="hero-3d-viewport" class="hero-3d-viewport"></div>
           </div>
         </div>
