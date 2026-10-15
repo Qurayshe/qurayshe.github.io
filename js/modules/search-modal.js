@@ -248,6 +248,19 @@ export class SearchModal {
       keywords: 'blorbo character stats card maker doodle spider radar chart ms paint silly oc misc',
       route: '#misc/blorbo'
     });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '⬡',
+      badge: 'Token Tool',
+      badgeClass: 'badge-c',
+      id: 'misc-lancer',
+      title: 'Lancer Token Tool',
+      desc: 'vtt hex token tool',
+      keywords: 'lancer ttrpg token builder tool hex hexagon mech square retrograde minis vtt foundry roll20 3d bevel misc',
+      route: '#misc/lancer'
+    });
   }
 
   renderModal() {

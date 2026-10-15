@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lancer Token Tool</title>
+  
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Top Tactical Header Bar -->
+  <header class="lancer-header">
+    <div class="brand-wrap">
+      <svg class="brand-hex-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"/>
+      </svg>
+      <div class="brand-titles">
+        <div class="brand-title">
+          <span>Lancer Token Tool</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-quick-actions">
+      <button class="btn btn-secondary btn-sm" id="btnRandomColors" title="Randomize border color &amp; style">
+        <span>Palette</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btnResetAll" title="Reset all settings to default">
+        <span>↺ Reset</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Master App Container -->
+  <main class="app-container">
+
+    <!-- ====================================================================
+         STAGE VIEWPORT (Left Column)
+         ==================================================================== -->
+    <section class="viewport-stage" id="viewportStage" aria-label="Interactive Canvas Viewport">
+      
+      <!-- Floating HUD Toolbar -->
+      <div class="viewport-toolbar">
+        <div class="toolbar-group">
+          <button class="btn btn-secondary btn-icon" id="btnZoomIn" title="Zoom in (+)">➕</button>
+          <button class="btn btn-secondary btn-icon" id="btnZoomOut" title="Zoom out (-)">➖</button>
+          <button class="btn btn-secondary btn-icon" id="btnResetZoom" title="Fit to viewport">⛶</button>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="btn btn-secondary btn-sm" id="btnToggle3D" title="Toggle 3D Tabletop Perspective View">
+            <span id="label3D">🎲 3D View</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnToggleMaskGuide" title="Toggle Pop-Out Cutoff Guide Line">
+            <span id="labelMaskGuide">✂ Guide: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Perspective Canvas Stage -->
+      <div class="canvas-perspective-wrapper" id="canvasPerspectiveWrapper">
+        <div class="tabletop-grid-overlay" id="tabletopGrid"></div>
+        
+        <div class="canvas-transform-box" id="canvasTransformBox">
+          <canvas id="tokenCanvas" width="500" height="500"></canvas>
+        </div>
+      </div>
+
+      <!-- ended up not using this -->
+      <div class="viewport-info-bar">
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TACTICAL SIDEBAR (Right Column)
+         ==================================================================== -->
+    <aside class="control-sidebar" aria-label="Token Configuration Sidebar">
+      
+      <!-- Navigation Tabs: 5 Dedicated Tabs -->
+      <nav class="sidebar-tabs" role="tablist">
+        <button class="sidebar-tab-btn active" data-tab="tab-frame" role="tab" aria-selected="true">
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+              <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"/>
+            </svg>
+          </span>
+          <span>Border</span>
+        </button>
+        <button class="sidebar-tab-btn" data-tab="tab-mech" role="tab" aria-selected="false">
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </span>
+          <span>Image</span>
+        </button>
+        <button class="sidebar-tab-btn" data-tab="tab-popout" role="tab" aria-selected="false">
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+              <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+            </svg>
+          </span>
+          <span>Pop-Out</span>
+        </button>
+        <button class="sidebar-tab-btn" data-tab="tab-3d" role="tab" aria-selected="false">
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+          </span>
+          <span>3D &amp; FX</span>
+        </button>
+        <button class="sidebar-tab-btn" data-tab="tab-retro" role="tab" aria-selected="false">
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M6 3h2v2H6V3zm10 0h2v2h-2V3zm-8 4h8v2H8V7zm-4 4h2v2H4v-2zm14 0h2v2h-2v-2zm-12 2h12v4H6v-4zm2 4h2v2H8v-2zm6 0h2v2h-2v-2zm-6 2h2v2H8v-2zm6 0h2v2h-2v-2z"/>
+            </svg>
+          </span>
+          <span>Retro</span>
+        </button>
+      </nav>
+
+      <!-- Tab Content Area -->
+      <div class="tab-content-area">
+
+        <!-- ==============================================================
+             TAB 1: BORDER, GEOMETRY & CANVAS EXTENSIONS
+             ============================================================== -->
+        <div class="tab-pane active" id="tab-frame" role="tabpanel">
+          
+          <!-- Token Canvas Size -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Token Size</span>
+              <span class="slider-val-badge" id="lblTokenSize">500 px</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="tokenSize" min="200" max="2048" step="10" value="500">
+              <input type="number" id="tokenSizeNum" min="100" max="4096" value="500" style="width: 80px;">
+            </div>
+            <!-- Quick preset resolution pills -->
+            <div class="segmented-group">
+              <button class="segmented-btn" data-preset-res="256">256 px</button>
+              <button class="segmented-btn active" data-preset-res="500">500 px</button>
+              <button class="segmented-btn" data-preset-res="1024">1024 HD</button>
+              <button class="segmented-btn" data-preset-res="2048">2048 4K</button>
+            </div>
+          </div>
+
+          <!-- Shape & Size -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Pattern &amp; Size</span>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="isSquare">
+                <span class="control-label">Square Token:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="isSquare">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+            
+            <div class="control-row" id="rowBorderSize">
+              <div class="control-col">
+                <label class="control-label" for="borderSize">Size:</label>
+                <select id="borderSize">
+                  <option value="0.5">Size 1/2</option>
+                  <option value="1" selected>Size 1</option>
+                  <option value="2">Size 2</option>
+                  <option value="3">Size 3</option>
+                  <option value="4">Size 4</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="control-row" id="rowBorderHorizontal" style="margin-top: 4px;">
+              <label class="toggle-row" for="borderHorizontal">
+                <span class="control-label">Horizontal:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="borderHorizontal">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-row" id="rowSnapOffset">
+              <label class="toggle-row" for="borderSnapOffset">
+                <span class="control-label">Flip Orientation:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="borderSnapOffset">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-row" id="rowSubHexGrid">
+              <label class="toggle-row" for="showSubHexGrid">
+                <span class="control-label">Sub-Grid:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="showSubHexGrid">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Border Styling & Dual Colors -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Border</span>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="borderWidth">Width:</label>
+                <span class="slider-val-badge" id="lblBorderWidth">10 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="borderWidth" min="1" max="60" value="10">
+                <input type="number" id="borderWidthNum" min="1" max="100" value="10" style="width: 70px;">
+              </div>
+            </div>
+
+            <div class="control-row">
+              <div class="control-col">
+                <label class="control-label" for="borderStyle">Style:</label>
+                <select id="borderStyle">
+                  <option value="solid" selected>Solid</option>
+                  <option value="double">Double</option>
+                  <option value="glow">Neon Glow</option>
+                  <option value="chiseled">Chiseled</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="borderColor">Primary Color:</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="borderColor" value="#c21f25">
+                <input type="text" id="borderColorText" value="#c21f25" style="width: 100px;">
+              </div>
+            </div>
+
+            <div class="control-row" id="rowBorderColor2">
+              <label class="control-label" for="borderColor2">Secondary Color:</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="borderColor2" value="#ffffff">
+                <input type="text" id="borderColor2Text" value="#ffffff" style="width: 100px;">
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="borderInFront">
+                <span class="control-label">In Front:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="borderInFront" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Canvas Edge Extensions & VTT Grid Alignment -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Edge Padding</span>
+              <button class="btn btn-secondary btn-sm" id="btnResetPadding">Reset</button>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="linkPaddings">
+                <span class="control-label">Uniform Padding:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="linkPaddings">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="grid-edges-layout">
+              <div class="control-col">
+                <label class="control-label" for="padTop">Top:</label>
+                <input type="number" id="padTop" min="0" max="400" value="0">
+              </div>
+              <div class="control-col">
+                <label class="control-label" for="padBottom">Bottom:</label>
+                <input type="number" id="padBottom" min="0" max="400" value="0">
+              </div>
+              <div class="control-col">
+                <label class="control-label" for="padLeft">Left:</label>
+                <input type="number" id="padLeft" min="0" max="400" value="0">
+              </div>
+              <div class="control-col">
+                <label class="control-label" for="padRight">Right:</label>
+                <input type="number" id="padRight" min="0" max="400" value="0">
+              </div>
+            </div>
+
+            <div class="control-row" style="margin-top: 4px;">
+              <div class="control-col">
+                <label class="control-label" for="gridOffsetX">Offset X:</label>
+                <input type="number" id="gridOffsetX" min="-300" max="300" value="0">
+              </div>
+              <div class="control-col">
+                <label class="control-label" for="gridOffsetY">Offset Y:</label>
+                <input type="number" id="gridOffsetY" min="-300" max="300" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Background Settings -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Background</span>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="bgTransparent">
+                <span class="control-label">Transparent:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="bgTransparent">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-row" id="rowBgColor">
+              <label class="control-label" for="bgColor">Color:</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="bgColor" value="#12161f">
+                <input type="text" id="bgColorText" value="#12161f" style="width: 100px;">
+              </div>
+            </div>
+
+            <div class="control-row">
+              <div class="control-col">
+                <label class="control-label" for="bgPattern">Pattern:</label>
+                <select id="bgPattern">
+                  <option value="solid" selected>Solid</option>
+                  <option value="radial">Radial Glow</option>
+                  <option value="hexgrid">Hex Lattice</option>
+                  <option value="carbon">Carbon Fiber</option>
+                  <option value="circuit">Circuit</option>
+                  <option value="hangar">Grate</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="cropBackground">
+                <span class="control-label">Crop to Token:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="cropBackground" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 2: IMAGE & UPLOAD CONTROLS
+             ============================================================== -->
+        <div class="tab-pane" id="tab-mech" role="tabpanel">
+          
+          <!-- File Upload Dropzone -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Image</span>
+              <button class="btn btn-danger btn-sm" id="btnClearImage" style="display: none;" title="Remove current image">✕ Clear</button>
+            </div>
+            <label class="upload-dropzone" id="uploadDropzone">
+              <span class="dropzone-icon">📁</span>
+              <div>
+                <strong>Choose File</strong> or drag &amp; drop
+              </div>
+              <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+            </label>
+            <div id="imageStatusInfo" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+              No image loaded
+            </div>
+          </div>
+
+          <!-- Transform Controls -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Transform</span>
+              <button class="btn btn-secondary btn-sm" id="btnResetTransform">Center &amp; Fit</button>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="imageScale">Scale:</label>
+                <span class="slider-val-badge" id="lblImageScale">1.00×</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="imageScale" min="0.1" max="4.0" step="0.02" value="1.0">
+                <input type="number" id="imageScaleNum" min="0.1" max="10.0" step="0.05" value="1.0" style="width: 70px;">
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="imageRotation">Rotation:</label>
+                <span class="slider-val-badge" id="lblImageRotation">0°</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="imageRotation" min="-180" max="180" step="1" value="0">
+                <button class="btn btn-secondary btn-icon" id="btnRotateCCW" title="Rotate 90° CCW">↺</button>
+                <button class="btn btn-secondary btn-icon" id="btnRotateCW" title="Rotate 90° CW">↻</button>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <button class="btn btn-secondary btn-sm" id="btnFlipH" style="flex: 1;">↔ Flip H</button>
+              <button class="btn btn-secondary btn-sm" id="btnFlipV" style="flex: 1;">↕ Flip V</button>
+            </div>
+          </div>
+
+          <!-- Base Crop Checkbox -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Clipping</span>
+            </div>
+            <div class="control-row">
+              <label class="toggle-row" for="cropImage">
+                <span class="control-label">Clip to Token:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="cropImage" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 3: POP-OUT & MASKING
+             ============================================================== -->
+        <div class="tab-pane" id="tab-popout" role="tabpanel">
+          
+          <!-- Master Pop-Out Mode -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Pop-Out</span>
+              <label class="toggle-switch" for="popoutBreach">
+                <input type="checkbox" id="popoutBreach">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row" id="rowPopoutMode" style="margin-top: 4px;">
+              <div class="control-col">
+                <label class="control-label" for="popoutMode">Mask Mode:</label>
+                <select id="popoutMode">
+                  <option value="cutoff" selected>Cutoff Line</option>
+                  <option value="brush">Brush</option>
+                  <option value="both">Combined</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linear Cutoff Plane Controls -->
+          <div class="control-card" id="cardLinearCutoff">
+            <div class="card-title">
+              <span>Cutoff Line</span>
+              <label class="toggle-row" for="popoutShowGuide" style="width: auto;">
+                <span class="control-label" style="font-size: 10px;">Guide Line:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="popoutShowGuide" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="popoutCutoff">Position Y:</label>
+                <span class="slider-val-badge" id="lblPopoutCutoff">35%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="popoutCutoff" min="5" max="95" value="35">
+              </div>
+            </div>
+
+            <div class="control-col" style="margin-top: 6px;">
+              <div class="control-row">
+                <label class="control-label" for="popoutAngle">Angle:</label>
+                <span class="slider-val-badge" id="lblPopoutAngle">0°</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="popoutAngle" min="-90" max="90" value="0">
+              </div>
+            </div>
+
+            <div class="control-row" style="margin-top: 6px;">
+              <label class="toggle-row" for="popoutFlip">
+                <span class="control-label">Flip Direction:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="popoutFlip">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-col" style="margin-top: 6px;">
+              <div class="control-row">
+                <label class="control-label" for="popoutFeather">Feather:</label>
+                <span class="slider-val-badge" id="lblPopoutFeather">0 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="popoutFeather" min="0" max="40" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Mask Brush / Painting Tools -->
+          <div class="control-card" id="cardBrushMask">
+            <div class="card-title">
+              <span>Brush Mask</span>
+            </div>
+
+            <div class="segmented-group">
+              <button class="segmented-btn active" id="btnBrushReveal">🖌 Reveal</button>
+              <button class="segmented-btn" id="btnBrushClip">🧹 Erase</button>
+            </div>
+
+            <div class="control-col" style="margin-top: 6px;">
+              <div class="control-row">
+                <label class="control-label" for="brushSize">Size:</label>
+                <span class="slider-val-badge" id="lblBrushSize">30 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="brushSize" min="5" max="90" value="30">
+              </div>
+            </div>
+
+            <div class="control-row" style="margin-top: 8px;">
+              <button class="btn btn-secondary btn-sm" id="btnInvertMask" style="flex: 1;">⇄ Invert</button>
+              <button class="btn btn-danger btn-sm" id="btnClearMask" style="flex: 1;">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 4: 3D & SHADOWS
+             ============================================================== -->
+        <div class="tab-pane" id="tab-3d" role="tabpanel">
+          
+          <!-- 3D Bevel & Emboss -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Bevel</span>
+              <label class="toggle-switch" for="enableBevel">
+                <input type="checkbox" id="enableBevel" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-col bevel-ctrl" id="panelBevelCtrls">
+              <div class="control-row">
+                <div class="control-col">
+                  <label class="control-label" for="bevelStyle">Style:</label>
+                  <select id="bevelStyle">
+                    <option value="chisel">Chisel</option>
+                    <option value="smooth" selected>Smooth</option>
+                    <option value="pillow">Pillow</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="control-row" style="margin-top: 6px;">
+                <label class="control-label" for="bevelDepth">Depth:</label>
+                <span class="slider-val-badge" id="lblBevelDepth">8 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="bevelDepth" min="1" max="25" value="8">
+              </div>
+
+              <div class="control-row" style="margin-top: 6px;">
+                <label class="control-label" for="bevelAngle">Angle:</label>
+                <span class="slider-val-badge" id="lblBevelAngle">135°</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="bevelAngle" min="0" max="360" value="135">
+              </div>
+            </div>
+          </div>
+
+          <!-- Drop Shadow -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Drop Shadow</span>
+              <label class="toggle-switch" for="enableDropShadow">
+                <input type="checkbox" id="enableDropShadow" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-col shadow-ctrl" id="panelShadowCtrls">
+              <div class="control-row">
+                <label class="control-label" for="shadowBlur">Blur:</label>
+                <span class="slider-val-badge" id="lblShadowBlur">18 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="shadowBlur" min="0" max="50" value="18">
+              </div>
+
+              <div class="control-row" style="margin-top: 6px;">
+                <label class="control-label" for="shadowDistance">Distance:</label>
+                <span class="slider-val-badge" id="lblShadowDistance">12 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="shadowDistance" min="0" max="60" value="12">
+              </div>
+
+              <div class="control-row" style="margin-top: 6px;">
+                <label class="control-label" for="shadowAngle">Angle:</label>
+                <span class="slider-val-badge" id="lblShadowAngle">90°</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="shadowAngle" min="0" max="360" value="90">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 5: RETRO & SHADERS
+             ============================================================== -->
+        <div class="tab-pane" id="tab-retro" role="tabpanel">
+          
+          <!-- Pixel Art Filter -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Pixelate</span>
+              <label class="toggle-switch" for="enablePixelate">
+                <input type="checkbox" id="enablePixelate">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-col pixel-ctrl" id="panelPixelCtrls">
+              <div class="control-row">
+                <label class="control-label" for="pixelSize">Pixel Size:</label>
+                <span class="slider-val-badge" id="lblPixelSize">4 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="pixelSize" min="2" max="20" step="1" value="4">
+              </div>
+
+              <div class="control-row" style="margin-top: 6px;">
+                <div class="control-col">
+                  <label class="control-label" for="colorPalette">Palette:</label>
+                  <select id="colorPalette">
+                    <option value="none" selected>Truecolor</option>
+                    <option value="mech16">Tactical 16</option>
+                    <option value="cyber32">Cyberpunk 32</option>
+                    <option value="cga">CGA</option>
+                    <option value="gameboy">Game Boy</option>
+                    <option value="terminal">CRT Amber</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CRT Scanlines & Shaders -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Shaders</span>
+            </div>
+
+            <div class="control-row">
+              <label class="toggle-row" for="enableScanlines">
+                <span class="control-label">Scanlines:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="enableScanlines">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="chromaticAberration">Glitch:</label>
+                <span class="slider-val-badge" id="lblGlitch">0 px</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="chromaticAberration" min="0" max="15" value="0">
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="filmGrain">Film Grain:</label>
+                <span class="slider-val-badge" id="lblGrain">0%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="filmGrain" min="0" max="50" value="0">
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="vignette">Vignette:</label>
+                <span class="slider-val-badge" id="lblVignette">0%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="vignette" min="0" max="100" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Color Grading -->
+          <div class="control-card">
+            <div class="card-title">
+              <span>Color Grading</span>
+            </div>
+
+            <div class="control-row">
+              <div class="control-col">
+                <label class="control-label" for="filterTint">Preset:</label>
+                <select id="filterTint">
+                  <option value="none" selected>None</option>
+                  <option value="ha">Harrison Armory</option>
+                  <option value="ipsn">IPS-N</option>
+                  <option value="ssc">SSC</option>
+                  <option value="horus">HORUS</option>
+                  <option value="stealth">Stealth</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="brightness">Brightness:</label>
+                <span class="slider-val-badge" id="lblBrightness">100%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="brightness" min="40" max="180" value="100">
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="contrast">Contrast:</label>
+                <span class="slider-val-badge" id="lblContrast">100%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="contrast" min="50" max="200" value="100">
+              </div>
+            </div>
+
+            <div class="control-col">
+              <div class="control-row">
+                <label class="control-label" for="saturation">Saturation:</label>
+                <span class="slider-val-badge" id="lblSaturation">100%</span>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" id="saturation" min="0" max="220" value="100">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- end tab-content-area -->
+
+      <!-- Sidebar Sticky Download Footer -->
+      <footer class="sidebar-footer">
+        <div class="footer-btn-row">
+          <button class="btn btn-primary" id="btnDownloadPNG" style="font-size: 13px; padding: 12px 16px;">
+            <span>⬇ Download PNG</span>
+          </button>
+          <button class="btn btn-secondary" id="btnCopyClipboard" title="Copy to clipboard">
+            <span>📋 Copy</span>
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Export Scale:
+          </div>
+          <div class="segmented-group" style="width: auto;">
+            <button class="segmented-btn active" data-export-mult="1">1×</button>
+            <button class="segmented-btn" data-export-mult="2">2×</button>
+            <button class="segmented-btn" data-export-mult="4">4×</button>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btnDownloadWebP" title="Export compressed WebP">
+            <span>WebP</span>
+          </button>
+        </div>
+      </footer>
+
+    </aside>
+
+  </main>
+
+  <!-- Modular App Scripts -->
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
