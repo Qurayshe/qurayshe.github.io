@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="heart locket gif & video maker — put photos or text inside a 3D pink heart locket that opens and closes. move, flip, scale & rotate your images. inspired by makesweet" />
+  <meta name="theme-color" content="#2a1220" />
+  <title>heart locket maker 💝</title>
+
+  <!-- Google Fonts: romantic display + clean UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>💝 heart locket</span>
+        <span style="font-size: 20px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          photos inside a tiny pink heart that opens &amp; closes — download as gif or video
+        </div>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener" title="Back to main site">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: 3D PREVIEW & PLAYBACK
+           ================================================================ -->
+      <section class="panel-card" aria-label="Preview Section">
+        <div class="card-header-badge badge-gold">
+          <span>👀 preview</span>
+        </div>
+
+        <div class="stage-wrap">
+          <canvas id="glcanvas" class="gl-canvas" tabindex="1" title="drag a photo to move it · click a side to select it"></canvas>
+          <div id="recordingOverlay" class="recording-overlay" hidden>
+            <span class="rec-dot"></span> recording…
+          </div>
+        </div>
+
+        <div class="playback-controls">
+          <button id="prev" class="love-btn sm" type="button" title="Step back">⏮</button>
+          <button id="play" class="love-btn sm pink" type="button" title="Pause / Play animation">
+            <span class="btn-playback-pause">⏸ pause</span>
+            <span class="btn-playback-play">▶ play</span>
+          </button>
+          <button id="next" class="love-btn sm" type="button" title="Step forward">⏭</button>
+          <div class="time-label">
+            <span id="timeIndicator">0.0s</span> / <span id="durationLabel">6.0s</span>
+          </div>
+        </div>
+
+        <div class="scrub-wrap">
+          <input id="scrub" class="love-range" type="range" min="0" max="1000" value="0" title="Scrub the animation" />
+        </div>
+
+        <div class="hint-row">
+          <span id="sideIndicator" class="side-chip">editing: <strong id="sideChipName">left photo</strong></span>
+          <span class="hint-text">drag on the canvas to move · arrow keys nudge · shift = 10×</span>
+        </div>
+      </section>
+      <!-- ================================================================
+           COLUMN 2: CONTROLS
+           ================================================================ -->
+      <section class="panel-card" aria-label="Controls Section">
+        <div class="card-header-badge badge-rose">
+          <span>🎀 decorate</span>
+        </div>
+
+        <!-- SIDE A (left / inside back) -->
+        <div class="control-block" id="sideABlock">
+          <div class="block-title">
+            <button class="side-select-btn active" id="selectA" type="button" title="Edit the left photo">1️⃣ left photo</button>
+          </div>
+          <div class="mode-row" role="radiogroup" aria-label="Left side content type">
+            <label class="mode-opt"><input type="radio" name="modeA" value="photo" checked /> 🖼️ photo</label>
+            <label class="mode-opt"><input type="radio" name="modeA" value="text" /> ✏️ text</label>
+            <label class="mode-opt"><input type="radio" name="modeA" value="empty" /> ⭕ empty</label>
+          </div>
+          <div class="mode-panel" id="photoPanelA">
+            <button class="love-btn upload" id="uploadA" type="button">📎 upload photo</button>
+            <input type="file" id="fileA" accept="image/*" hidden />
+            <span class="file-name" id="fileNameA">no file yet</span>
+          </div>
+          <div class="mode-panel" id="textPanelA" hidden>
+            <input type="text" id="textInputA" class="love-text-input" maxlength="140" placeholder="my beloved" value="my beloved" />
+            <div class="sub-row">
+              <label class="mini-label">font
+                <select id="fontA" class="love-select">
+                  <option value="serif">serif</option>
+                  <option value="cursive" selected>fancy script</option>
+                  <option value="sans">sans</option>
+                </select>
+              </label>
+              <label class="mini-label">color <input type="color" id="textColorA" class="love-color" value="#6b2737" /></label>
+              <label class="mini-label">size <input type="range" id="textSizeA" class="love-range mini" min="12" max="90" value="52" /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDE B (right / inside lid) -->
+        <div class="control-block" id="sideBBlock">
+          <div class="block-title">
+            <button class="side-select-btn" id="selectB" type="button" title="Edit the right photo">2️⃣ right photo</button>
+          </div>
+          <div class="mode-row" role="radiogroup" aria-label="Right side content type">
+            <label class="mode-opt"><input type="radio" name="modeB" value="photo" checked /> 🖼️ photo</label>
+            <label class="mode-opt"><input type="radio" name="modeB" value="text" /> ✏️ text</label>
+            <label class="mode-opt"><input type="radio" name="modeB" value="empty" /> ⭕ empty</label>
+          </div>
+          <div class="mode-panel" id="photoPanelB">
+            <button class="love-btn upload" id="uploadB" type="button">📎 upload photo</button>
+            <input type="file" id="fileB" accept="image/*" hidden />
+            <span class="file-name" id="fileNameB">no file yet</span>
+          </div>
+          <div class="mode-panel" id="textPanelB" hidden>
+            <input type="text" id="textInputB" class="love-text-input" maxlength="140" placeholder="ask me why i love you" value="ask me why i love you" />
+            <div class="sub-row">
+              <label class="mini-label">font
+                <select id="fontB" class="love-select">
+                  <option value="serif">serif</option>
+                  <option value="cursive" selected>fancy script</option>
+                  <option value="sans">sans</option>
+                </select>
+              </label>
+              <label class="mini-label">color <input type="color" id="textColorB" class="love-color" value="#6b2737" /></label>
+              <label class="mini-label">size <input type="range" id="textSizeB" class="love-range mini" min="12" max="90" value="44" /></label>
+            </div>
+          </div>
+        </div>
+        <!-- ADJUST (applies to selected side) -->
+        <div class="control-block adjust-block">
+          <div class="block-title"><span>🔧 adjust <em class="adjust-target">(left photo)</em></span></div>
+          <div class="control-row">
+            <label class="control-label" for="scale">size</label>
+            <input id="scale" class="love-range" type="range" min="20" max="160" value="95" />
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="rotate">rotate</label>
+            <input id="rotate" class="love-range" type="range" min="-180" max="180" value="0" />
+          </div>
+          <div class="btn-row">
+            <button id="flipH" class="love-btn sm" type="button" title="Mirror horizontally">↔ flip H</button>
+            <button id="flipV" class="love-btn sm" type="button" title="Mirror vertically">↕ flip V</button>
+            <button id="resetAdj" class="love-btn sm" type="button" title="Reset position, size, rotation & flips">reset</button>
+          </div>
+        </div>
+
+        <!-- LOCKET STYLE -->
+        <div class="control-block">
+          <div class="block-title"><span>🪙 locket</span></div>
+          <div class="control-row">
+            <label class="control-label" for="metal">finish</label>
+            <select id="metal" class="love-select">
+              <option value="pink" selected>pink (matte)</option>
+              <option value="gold">gold</option>
+              <option value="rosegold">rose gold</option>
+              <option value="silver">silver</option>
+              <option value="enamel">red enamel</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="bgcolor">backdrop</label>
+            <input type="color" id="bgcolor" class="love-color wide" value="#2a1220" />
+            <label class="mini-check"><input type="checkbox" id="sparkle" checked /> ✨ sparkle</label>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="speed">speed</label>
+            <input id="speed" class="love-range" type="range" min="50" max="200" value="100" />
+          </div>
+        </div>
+
+        <!-- EXPORT -->
+        <div class="control-block">
+          <div class="block-title"><span>💾 export</span></div>
+          <div class="control-row">
+            <label class="control-label" for="expsize">size</label>
+            <select id="expsize" class="love-select">
+              <option value="400x300" selected>400 × 300 (fast)</option>
+              <option value="800x600">800 × 600 (hi-res)</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="expfps">gif fps</label>
+            <select id="expfps" class="love-select">
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div class="btn-row">
+            <button id="exportGif" class="love-btn pink" type="button">💗 download GIF</button>
+            <button id="exportVideo" class="love-btn" type="button">🎬 download video</button>
+          </div>
+          <div class="export-status" id="exportStatus" hidden>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span id="progressText">encoding… 0%</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer / Credits -->
+    <footer class="footer-credit">
+      <p>
+        inspired by the legendary
+        <a href="https://makesweet.com/my/heart-locket" target="_blank" rel="noopener"><strong>makesweet heart locket</strong></a>
+        — this is an original, from-scratch rebuild (procedural geometry, no assets copied)
+        because makesweet's templates are PolyForm-Noncommercial.
+        locket modeled live in <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a>,
+        gifs encoded with <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener">gif.js</a>.
+      </p>
+      <div class="bottom-links">
+        <a href="https://makesweet.com/my/heart-locket" target="_blank" rel="noopener" class="love-btn sm">💝 makesweet original</a>
+        <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener" class="love-btn sm">🎞️ gif.js</a>
+        <a href="https://threejs.org/" target="_blank" rel="noopener" class="love-btn sm">🧊 three.js</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- External Script Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="./vendor/gif.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+/* ==========================================================================
+   Heart Locket Maker — romantic plum & gold theme
+   Self-contained: no dependency on the parent site's stylesheet.
+   ========================================================================== */
+
+:root {
+  --bg-deep: #1a0c14;
+  --bg-plum: #2a1220;
+  --bg-card: #35182a;
+  --bg-inset: #241019;
+  --rose: #ff6b9d;
+  --rose-soft: #ffa3c1;
+  --gold: #f5c542;
+  --gold-deep: #c99a2e;
+  --cream: #ffe9f0;
+  --text: #f4d9e2;
+  --text-dim: #c49aab;
+  --radius: 14px;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(255, 107, 157, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(245, 197, 66, 0.10), transparent 60%),
+    var(--bg-deep);
+}
+
+.main-wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 20px 40px;
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.title-badge {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--cream);
+  background: linear-gradient(135deg, rgba(255, 107, 157, 0.25), rgba(245, 197, 66, 0.20));
+  border: 1.5px solid rgba(245, 197, 66, 0.45);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  box-shadow: var(--shadow);
+  user-select: none;
+}
+
+.subtitle-badge {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--bg-inset);
+  border: 1px solid rgba(255, 107, 157, 0.25);
+  border-radius: 999px;
+  padding: 6px 13px;
+}
+
+.site-link-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bg-plum);
+  background: linear-gradient(135deg, var(--gold), var(--rose-soft));
+  border-radius: 999px;
+  padding: 7px 14px;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.site-link-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245, 197, 66, 0.35); }
+
+/* --------------------------------------------------------------------------
+   Card grid
+   -------------------------------------------------------------------------- */
+.card-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) minmax(340px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+.panel-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 107, 157, 0.18);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 20px 18px 18px;
+  box-shadow: var(--shadow);
+}
+
+.card-header-badge {
+  position: absolute;
+  top: -13px;
+  left: 16px;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  color: var(--bg-plum);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.badge-gold { background: linear-gradient(135deg, var(--gold), #ffe28a); }
+.badge-rose { background: linear-gradient(135deg, var(--rose), var(--rose-soft)); }
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+.love-btn {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--cream);
+  background: var(--bg-inset);
+  border: 1.5px solid rgba(255, 107, 157, 0.4);
+  border-radius: 11px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+  user-select: none;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.love-btn:hover { border-color: var(--rose); transform: translateY(-1px); }
+.love-btn:active { transform: translateY(0); }
+
+.love-btn.sm { padding: 5px 10px; font-size: 12.5px; border-radius: 9px; }
+
+.love-btn.pink {
+  background: linear-gradient(135deg, var(--rose), #d94a78);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.love-btn.pink:hover { filter: brightness(1.08); }
+
+.love-btn.upload { border-color: rgba(245, 197, 66, 0.5); }
+.love-btn.upload:hover { border-color: var(--gold); }
+
+/* play/pause state toggle */
+#play .btn-playback-play { display: none; }
+#play.paused .btn-playback-pause { display: none; }
+#play.paused .btn-playback-play { display: inline; }
+
+/* --------------------------------------------------------------------------
+   Form controls
+   -------------------------------------------------------------------------- */
+.love-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 107, 157, 0.55), rgba(245, 197, 66, 0.45));
+  outline: none;
+  cursor: pointer;
+}
+
+.love-range.mini { width: 90px; }
+
+.love-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 2.5px solid var(--rose);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+
+.love-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 2.5px solid var(--rose);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+
+.love-text-input {
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  color: var(--cream);
+  background: var(--bg-inset);
+  border: 1.5px solid rgba(255, 107, 157, 0.35);
+  border-radius: 10px;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.love-text-input:focus { border-color: var(--rose); }
+
+.love-select {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  color: var(--cream);
+  background: var(--bg-inset);
+  border: 1.5px solid rgba(255, 107, 157, 0.35);
+  border-radius: 9px;
+  padding: 6px 9px;
+  outline: none;
+  cursor: pointer;
+}
+
+.love-select:focus { border-color: var(--rose); }
+
+.love-color {
+  width: 34px;
+  height: 28px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  cursor: pointer;
+  padding: 1px;
+}
+
+.love-color.wide { width: 46px; }
+
+.mini-check {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   3D preview stage
+   -------------------------------------------------------------------------- */
+.stage-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #120a0f;
+  border: 1px solid rgba(245, 197, 66, 0.22);
+}
+
+.gl-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+.gl-canvas:active { cursor: grabbing; }
+
+.recording-overlay {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(217, 74, 120, 0.85);
+  border-radius: 999px;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+}
+
+.recording-overlay[hidden] { display: none; }
+
+.rec-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  animation: recPulse 1s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.time-label {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.scrub-wrap { margin-top: 8px; }
+
+.hint-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.side-chip {
+  font-size: 12px;
+  color: var(--bg-plum);
+  background: linear-gradient(135deg, var(--gold), #ffe28a);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+
+.hint-text {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Control blocks (right column)
+   -------------------------------------------------------------------------- */
+.control-block {
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  margin-bottom: 12px;
+}
+
+.block-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--cream);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adjust-target {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+}
+
+.side-select-btn {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.side-select-btn:hover { border-color: var(--rose); color: var(--cream); }
+
+.side-select-btn.active {
+  color: var(--bg-plum);
+  background: linear-gradient(135deg, var(--rose), var(--rose-soft));
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mode-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.mode-opt {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--bg-inset);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.1s ease;
+}
+
+.mode-opt:has(input:checked) {
+  color: var(--cream);
+  border-color: var(--rose);
+  background: rgba(255, 107, 157, 0.14);
+}
+
+.mode-opt input { accent-color: var(--rose); margin: 0; }
+
+.mode-panel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.mini-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.control-row:last-child { margin-bottom: 2px; }
+
+.control-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  min-width: 66px;
+}
+
+.control-row .love-range { flex: 1; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Export status
+   -------------------------------------------------------------------------- */
+.export-status {
+  margin-top: 11px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-status[hidden] { display: none; }
+
+.progress-track {
+  flex: 1;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rose), var(--gold));
+  transition: width 0.15s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.footer-credit {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.footer-credit p { max-width: 760px; margin: 0 auto 12px; line-height: 1.6; }
+
+.footer-credit a { color: var(--rose-soft); text-decoration: none; }
+.footer-credit a:hover { text-decoration: underline; }
+
+.bottom-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+
+
