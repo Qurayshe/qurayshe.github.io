@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="heart locket gif & video maker — put photos or text inside a 3D pink heart locket that opens and closes. move, flip, scale & rotate your images. inspired by makesweet" />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>heart locket maker 💝</title>
+
+  <!-- Google Fonts: blorbo doodle fonts + the script/UI faces used inside the locket -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Comic+Neue:wght@400;700&family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Inter:wght@400;500;600;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- ====================================================================
+       TOP CREDIT SECTION (makesweet)
+       ==================================================================== -->
+  <aside class="credit-banner top-credit" aria-label="Attribution">
+    <span class="sparkle-icon">✨</span>
+    <span>
+      Inspired by the legendary
+      <a href="https://makesweet.com/my/heart-locket" target="_blank" rel="noopener"><strong>makesweet heart locket</strong></a>
+      — an original from-scratch rebuild (procedural geometry, no assets copied)
+    </span>
+    <span class="sparkle-icon">💝</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>💝 heart locket</span>
+        <span style="font-size: 20px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          photos inside a tiny pink heart that opens &amp; closes — download as gif or video
+        </div>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener" title="Back to main site">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: 3D PREVIEW & PLAYBACK
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Preview Section">
+        <div class="card-header-badge badge-yellow">
+          <span>👀 preview</span>
+        </div>
+
+        <div class="stage-wrap">
+          <canvas id="glcanvas" class="gl-canvas" tabindex="1" title="drag a photo to move it · click a side to select it"></canvas>
+          <div id="recordingOverlay" class="recording-overlay" hidden>
+            <span class="rec-dot"></span> recording…
+          </div>
+        </div>
+
+        <div class="playback-controls">
+          <button id="prev" class="sketchy-btn sm" type="button" title="Step back">⏮</button>
+          <button id="play" class="sketchy-btn sm pink" type="button" title="Pause / Play animation">
+            <span class="btn-playback-pause">⏸ pause</span>
+            <span class="btn-playback-play">▶ play</span>
+          </button>
+          <button id="next" class="sketchy-btn sm" type="button" title="Step forward">⏭</button>
+          <div class="time-label">
+            <span id="timeIndicator">0.0s</span> / <span id="durationLabel">6.0s</span>
+          </div>
+        </div>
+
+        <div class="scrub-wrap">
+          <input id="scrub" class="sketchy-range" type="range" min="0" max="1000" value="0" title="Scrub the animation" />
+        </div>
+
+        <div class="hint-row">
+          <span id="sideIndicator" class="side-chip">editing: <strong id="sideChipName">left photo</strong></span>
+          <span class="hint-text">drag on the canvas to move · arrow keys nudge · shift = 10×</span>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           COLUMN 2: CONTROLS
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Controls Section">
+        <div class="card-header-badge badge-pink">
+          <span>🎀 decorate</span>
+        </div>
+
+        <!-- SIDE A (left / inside back) -->
+        <div class="control-block" id="sideABlock">
+          <div class="block-title">
+            <button class="side-select-btn active" id="selectA" type="button" title="Edit the left photo">1️⃣ left photo</button>
+          </div>
+          <div class="mode-row" role="radiogroup" aria-label="Left side content type">
+            <label class="mode-opt"><input type="radio" name="modeA" value="photo" checked /> 🖼️ photo</label>
+            <label class="mode-opt"><input type="radio" name="modeA" value="text" /> ✏️ text</label>
+            <label class="mode-opt"><input type="radio" name="modeA" value="empty" /> ⭕ empty</label>
+          </div>
+          <div class="mode-panel" id="photoPanelA">
+            <input type="file" id="fileA" accept="image/*" hidden />
+            <div class="dropzone" id="dropA" role="button" tabindex="0"
+                 aria-label="Add a photo: drop an image, paste an image or image URL, or click to upload">
+              <span class="dz-icon" aria-hidden="true">📷</span>
+              <span class="dz-body">
+                <span class="dz-text"><strong>drop image</strong>, paste image, paste URL, or click to upload</span>
+                <span class="dz-hint">png · jpg · webp · animated gif ok — pastes go to the selected side</span>
+              </span>
+            </div>
+            <span class="file-name" id="fileNameA">no file yet</span>
+          </div>
+          <div class="mode-panel" id="textPanelA" hidden>
+            <input type="text" id="textInputA" class="sketchy-input" maxlength="140" placeholder="my beloved" value="my beloved" />
+            <div class="sub-row">
+              <label class="mini-label">font
+                <select id="fontA" class="sketchy-select">
+                  <option value="serif">serif</option>
+                  <option value="cursive" selected>fancy script</option>
+                  <option value="sans">sans</option>
+                  <option value="comic">comic sans</option>
+                </select>
+              </label>
+              <label class="mini-label">color <input type="color" id="textColorA" class="sketchy-color" value="#6b2737" /></label>
+              <label class="mini-label">size <input type="range" id="textSizeA" class="sketchy-range mini" min="12" max="90" value="52" /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDE B (right / inside lid) -->
+        <div class="control-block" id="sideBBlock">
+          <div class="block-title">
+            <button class="side-select-btn" id="selectB" type="button" title="Edit the right photo">2️⃣ right photo</button>
+          </div>
+          <div class="mode-row" role="radiogroup" aria-label="Right side content type">
+            <label class="mode-opt"><input type="radio" name="modeB" value="photo" checked /> 🖼️ photo</label>
+            <label class="mode-opt"><input type="radio" name="modeB" value="text" /> ✏️ text</label>
+            <label class="mode-opt"><input type="radio" name="modeB" value="empty" /> ⭕ empty</label>
+          </div>
+          <div class="mode-panel" id="photoPanelB">
+            <input type="file" id="fileB" accept="image/*" hidden />
+            <div class="dropzone" id="dropB" role="button" tabindex="0"
+                 aria-label="Add a photo: drop an image, paste an image or image URL, or click to upload">
+              <span class="dz-icon" aria-hidden="true">📷</span>
+              <span class="dz-body">
+                <span class="dz-text"><strong>drop image</strong>, paste image, paste URL, or click to upload</span>
+                <span class="dz-hint">png · jpg · webp · animated gif ok — pastes go to the selected side</span>
+              </span>
+            </div>
+            <span class="file-name" id="fileNameB">no file yet</span>
+          </div>
+          <div class="mode-panel" id="textPanelB" hidden>
+            <input type="text" id="textInputB" class="sketchy-input" maxlength="140" placeholder="ask me why i love you" value="ask me why i love you" />
+            <div class="sub-row">
+              <label class="mini-label">font
+                <select id="fontB" class="sketchy-select">
+                  <option value="serif">serif</option>
+                  <option value="cursive" selected>fancy script</option>
+                  <option value="sans">sans</option>
+                  <option value="comic">comic sans</option>
+                </select>
+              </label>
+              <label class="mini-label">color <input type="color" id="textColorB" class="sketchy-color" value="#6b2737" /></label>
+              <label class="mini-label">size <input type="range" id="textSizeB" class="sketchy-range mini" min="12" max="90" value="44" /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADJUST (applies to selected side) -->
+        <div class="control-block adjust-block">
+          <div class="block-title"><span>🔧 adjust <em class="adjust-target">(left photo)</em></span></div>
+          <div class="control-row">
+            <label class="control-label" for="scale">size</label>
+            <input id="scale" class="sketchy-range" type="range" min="20" max="160" value="95" />
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="rotate">rotate</label>
+            <input id="rotate" class="sketchy-range" type="range" min="-180" max="180" value="0" />
+          </div>
+          <div class="btn-row">
+            <button id="flipH" class="sketchy-btn sm" type="button" title="Mirror horizontally">↔ flip H</button>
+            <button id="flipV" class="sketchy-btn sm" type="button" title="Mirror vertically">↕ flip V</button>
+            <button id="resetAdj" class="sketchy-btn sm" type="button" title="Reset position, size, rotation & flips">reset</button>
+          </div>
+        </div>
+
+        <!-- LOCKET STYLE -->
+        <div class="control-block">
+          <div class="block-title"><span>💖 locket</span></div>
+          <div class="control-row">
+            <label class="control-label" for="metal">finish</label>
+            <select id="metal" class="sketchy-select">
+              <option value="pink" selected>pink (matte)</option>
+              <option value="gold">gold</option>
+              <option value="rosegold">rose gold</option>
+              <option value="silver">silver</option>
+              <option value="enamel">red enamel</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="bgcolor">backdrop</label>
+            <input type="color" id="bgcolor" class="sketchy-color wide" value="#2a1220" />
+            <label class="mini-check">✨ sparkle
+              <span class="sketchy-toggle">
+                <input type="checkbox" id="sparkle" checked />
+                <span class="toggle-slider"></span>
+              </span>
+            </label>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="transparentBg">no bg</label>
+            <label class="sketchy-toggle" title="Hide the backdrop — the GIF export keeps a transparent background">
+              <input type="checkbox" id="transparentBg" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="hint-text">transparent backdrop (gif export keeps the alpha)</span>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="timeSlider">time</label>
+            <input id="timeSlider" class="sketchy-range" type="range" min="0.6" max="12" step="0.1" value="6" />
+            <span class="num-pill" id="durationPill">6.0s</span>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="speedInput">speed</label>
+            <input id="speedInput" class="sketchy-input num" type="number" min="0.5" max="10" step="0.05" value="1" />
+            <span class="mini-label">× loop speed</span>
+          </div>
+          <p class="helper-text">photo sides show the finish colour inside the heart — text sides keep the cream lining. photos can be static images or animated gifs (they loop with the locket).</p>
+        </div>
+
+        <!-- EXPORT -->
+        <div class="control-block">
+          <div class="block-title"><span>💾 export</span></div>
+          <div class="control-row">
+            <label class="control-label" for="expsize">size</label>
+            <select id="expsize" class="sketchy-select">
+              <option value="400x300" selected>400 × 300 (fast)</option>
+              <option value="800x600">800 × 600 (hi-res)</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="expfps">gif fps</label>
+            <select id="expfps" class="sketchy-select">
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="expcompress">compress</label>
+            <label class="sketchy-toggle" title="Put the whole loop on one shared palette — much smaller gifs, but smooth gradients can shimmer or flicker">
+              <input type="checkbox" id="expcompress" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="hint-text">off = classic per-frame palette (smooth, bigger)</span>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="expcolors">colors</label>
+            <select id="expcolors" class="sketchy-select" title="Palette size — fewer colours make a much smaller gif">
+              <option value="256" selected>256 (best)</option>
+              <option value="128">128</option>
+              <option value="64">64</option>
+              <option value="32">32 (tiny)</option>
+            </select>
+          </div>
+          <p class="helper-text">compress shares one palette across the whole loop (tiny files) — turn it off if you see shimmer or flicker. fewer colours = smaller still; the locket's flat colours survive 64 easily.</p>
+          <div class="btn-row">
+            <button id="exportGif" class="sketchy-btn pink" type="button">💗 download GIF</button>
+            <button id="exportVideo" class="sketchy-btn" type="button">🎬 download video</button>
+          </div>
+          <div class="export-status" id="exportStatus" hidden>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span id="progressText">encoding… 0%</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer / Credits -->
+    <footer class="bottom-credit-card">
+      <div class="bottom-credit-title">💝 made with three.js &amp; gif.js</div>
+      <p class="bottom-credit-text">
+        inspired by the legendary
+        <a href="https://makesweet.com/my/heart-locket" target="_blank" rel="noopener"><strong>makesweet heart locket</strong></a>
+        — this is an original, from-scratch rebuild (procedural geometry, no assets copied)
+        because makesweet's templates are PolyForm-Noncommercial.
+        locket modeled live in <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a>,
+        gifs encoded with <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener">gif.js</a>.
+      </p>
+      <div class="bottom-links">
+        <a href="https://makesweet.com/my/heart-locket" target="_blank" rel="noopener" class="sketchy-btn sm pink">💝 makesweet original</a>
+        <a href="https://github.com/jnordberg/gif.js" target="_blank" rel="noopener" class="sketchy-btn sm">🎞️ gif.js</a>
+        <a href="https://threejs.org/" target="_blank" rel="noopener" class="sketchy-btn sm">🧊 three.js</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- External Script Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="./vendor/gif.js"></script>
+  <script src="./vendor/omggif.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>
