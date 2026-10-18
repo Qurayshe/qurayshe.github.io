@@ -261,6 +261,19 @@ export class SearchModal {
       keywords: 'lancer ttrpg token builder tool hex hexagon mech square retrograde minis vtt foundry roll20 3d bevel misc',
       route: '#misc/lancer'
     });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '💝',
+      badge: 'Locket',
+      badgeClass: 'badge-misc',
+      id: 'misc-heartlocket',
+      title: 'Heart Locket Maker',
+      desc: '3D heart locket that opens to reveal photos or text, exported as an animated GIF or video.',
+      keywords: 'heart locket photo gif video valentine love meme beloved three.js 3d opens clamshell misc',
+      route: '#misc/heartlocket'
+    });
   }
 
   renderModal() {

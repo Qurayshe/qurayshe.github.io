@@ -37,3 +37,6 @@ GITHUB_PAGES_SETUP.md
 # Local CDN offline assets copy
 vendor/
 
+# misc tool vendor bundles ship with the site (e.g. misc/heartlocket/vendor)
+!misc/heartlocket/vendor/
+!misc/heartlocket/vendor/**
