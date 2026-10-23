@@ -265,6 +265,19 @@ export class SearchModal {
     this.items.push({
       type: 'misc',
       category: 'Misc Tools',
+      icon: '📱',
+      badge: 'QR Code',
+      badgeClass: 'badge-misc',
+      id: 'misc-qrcode',
+      title: 'QR Code Doodle Studio',
+      desc: 'Interactive QR code maker: draw pixels, embed 32x32 pixel art, or carve out heart/circle/star holes for crisp photos.',
+      keywords: 'qr code generator studio qrcodedraw pixel art draw photo logo heart star doodle scanner scan misc',
+      route: '#misc/qrcode'
+    });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
       icon: '💝',
       badge: 'Locket',
       badgeClass: 'badge-misc',

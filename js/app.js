@@ -187,7 +187,8 @@ class App {
     // Dynamically point the embed frame at the requested tool (default: blorbo).
     const frame = document.getElementById('misc-embed-frame');
     if (frame) {
-      const activeTool = toolId || 'blorbo';
+      let activeTool = toolId || 'blorbo';
+      if (activeTool === 'qrcodedraw') activeTool = 'qrcode';
       const toolPath = `./misc/${activeTool}/index.html`;
       if (frame.getAttribute('src') !== toolPath) {
         frame.setAttribute('src', toolPath);
