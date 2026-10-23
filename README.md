@@ -1,0 +1,1 @@
+basic tool for viewing, generating, and editing qr codes, with the intent of being able to embed images in them, either as part of the qr code (ie using the dots+error correction etc) or by using 'holes' (ie using additional resolution to leave space to place an image of a specific shape)
