@@ -136,86 +136,6 @@
     ]
   };
 
-  // --- Cute Sample Blorbo Avatar (for shape hole) ---
-  function createSampleBlorboImage() {
-    const c = document.createElement('canvas');
-    c.width = 300;
-    c.height = 300;
-    const ctx = c.getContext('2d');
-
-    // Soft pastel gradient
-    const grad = ctx.createRadialGradient(150, 150, 20, 150, 150, 150);
-    grad.addColorStop(0, '#ffeef2');
-    grad.addColorStop(1, '#ffd1dc');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 300, 300);
-
-    // Cute Blorbo body
-    ctx.fillStyle = '#ff70a6';
-    ctx.beginPath();
-    ctx.ellipse(150, 160, 90, 80, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = '#111111';
-    ctx.stroke();
-
-    // Cute ears
-    ctx.fillStyle = '#ff70a6';
-    ctx.beginPath();
-    ctx.arc(90, 95, 26, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(210, 95, 26, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Eyes
-    ctx.fillStyle = '#111111';
-    ctx.beginPath();
-    ctx.ellipse(125, 150, 8, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(175, 150, 8, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eye shines
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(122, 146, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(172, 146, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Blush
-    ctx.fillStyle = 'rgba(255, 107, 107, 0.45)';
-    ctx.beginPath();
-    ctx.ellipse(108, 166, 14, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(192, 166, 14, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Smile
-    ctx.strokeStyle = '#111111';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.arc(150, 165, 14, 0.1 * Math.PI, 0.9 * Math.PI);
-    ctx.stroke();
-
-    // Sparkles
-    ctx.font = '28px sans-serif';
-    ctx.fillText('✨', 40, 70);
-    ctx.fillText('💖', 230, 80);
-
-    const img = new Image();
-    img.src = c.toDataURL();
-    return img;
-  }
-
   // --- App State ---
   const state = {
     content: 'https://qurayshe.github.io',
@@ -277,7 +197,8 @@
   };
 
   // Set default sample photo
-  state.hole.image = createSampleBlorboImage();
+  // No default photo loaded
+  state.hole.image = null;
 
   // --- DOM Elements ---
   const dom = {
@@ -348,8 +269,7 @@
     holeImageDropzone: document.getElementById('holeImageDropzone'),
     holeFileName: document.getElementById('holeFileName'),
     btnClearHoleImage: document.getElementById('btnClearHoleImage'),
-    btnSamplePhoto: document.getElementById('btnSamplePhoto'),
-    photoScaleRange: document.getElementById('photoScaleRange'),
+        photoScaleRange: document.getElementById('photoScaleRange'),
     photoScaleVal: document.getElementById('photoScaleVal'),
     photoPanXRange: document.getElementById('photoPanXRange'),
     photoPanXVal: document.getElementById('photoPanXVal'),
@@ -452,6 +372,12 @@
     const text = state.content || 'https://qurayshe.github.io';
     const ecl = getEccEnum(state.eccLevel);
     let minVer = state.version > 0 ? state.version : 1;
+    if (state.version === 0 && state.pixelArt.enabled) {
+      if (state.pixelArt.gridSize >= 64) minVer = Math.max(minVer, 18);
+      else if (state.pixelArt.gridSize >= 48) minVer = Math.max(minVer, 14);
+      else if (state.pixelArt.gridSize >= 32) minVer = Math.max(minVer, 10);
+      else if (state.pixelArt.gridSize >= 24) minVer = Math.max(minVer, 7);
+    }
     let maxVer = state.version > 0 ? state.version : 40;
     let msk = state.mask;
 
@@ -610,6 +536,181 @@
     }
     return path;
   }
+  // --- Doodle Ink Wobble Perimeter Sampler & Renderer ---
+  function getShapePerimeterPoints(shape, cx, cy, r, numPoints = 120) {
+    const pts = [];
+    switch (shape) {
+      case 'circle': {
+        for (let i = 0; i < numPoints; i++) {
+          const a = (i / numPoints) * Math.PI * 2;
+          pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+        }
+        break;
+      }
+      case 'heart': {
+        const s = r / 16;
+        for (let i = 0; i < numPoints; i++) {
+          const t = (i / numPoints) * Math.PI * 2;
+          const hx = 16 * Math.pow(Math.sin(t), 3);
+          const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+          pts.push({ x: cx + hx * s, y: cy + (hy + 2.5) * s });
+        }
+        break;
+      }
+      case 'star': {
+        const points = 5;
+        const rOuter = r;
+        const rInner = r * 0.44;
+        const totalVerts = points * 2;
+        const vertices = [];
+        let angle = -Math.PI / 2;
+        const step = Math.PI / points;
+        for (let i = 0; i < totalVerts; i++) {
+          const rad = (i % 2 === 0) ? rOuter : rInner;
+          vertices.push({ x: cx + Math.cos(angle) * rad, y: cy + Math.sin(angle) * rad });
+          angle += step;
+        }
+        const sub = Math.max(2, Math.floor(numPoints / totalVerts));
+        for (let i = 0; i < totalVerts; i++) {
+          const p1 = vertices[i];
+          const p2 = vertices[(i + 1) % totalVerts];
+          for (let s = 0; s < sub; s++) {
+            const frac = s / sub;
+            pts.push({ x: p1.x + (p2.x - p1.x) * frac, y: p1.y + (p2.y - p1.y) * frac });
+          }
+        }
+        break;
+      }
+      case 'rounded': {
+        const side = r * 2;
+        const corner = r * 0.35;
+        const half = r;
+        const segs = [
+          { x: cx - half + corner, y: cy - half, dx: 1, dy: 0, len: side - 2 * corner },
+          { x: cx + half, y: cy - half + corner, dx: 0, dy: 1, len: side - 2 * corner },
+          { x: cx + half - corner, y: cy + half, dx: -1, dy: 0, len: side - 2 * corner },
+          { x: cx - half, y: cy + half - corner, dx: 0, dy: -1, len: side - 2 * corner }
+        ];
+        const sub = Math.max(2, Math.floor(numPoints / 4));
+        for (let i = 0; i < 4; i++) {
+          const seg = segs[i];
+          for (let s = 0; s < sub; s++) {
+            const frac = s / sub;
+            pts.push({ x: seg.x + seg.dx * seg.len * frac, y: seg.y + seg.dy * seg.len * frac });
+          }
+        }
+        break;
+      }
+      case 'square': {
+        const half = r;
+        const corners = [
+          { x: cx - half, y: cy - half },
+          { x: cx + half, y: cy - half },
+          { x: cx + half, y: cy + half },
+          { x: cx - half, y: cy + half }
+        ];
+        const sub = Math.max(2, Math.floor(numPoints / 4));
+        for (let i = 0; i < 4; i++) {
+          const p1 = corners[i];
+          const p2 = corners[(i + 1) % 4];
+          for (let s = 0; s < sub; s++) {
+            const frac = s / sub;
+            pts.push({ x: p1.x + (p2.x - p1.x) * frac, y: p1.y + (p2.y - p1.y) * frac });
+          }
+        }
+        break;
+      }
+      case 'diamond': {
+        const vertices = [
+          { x: cx, y: cy - r * 1.15 },
+          { x: cx + r * 1.15, y: cy },
+          { x: cx, y: cy + r * 1.15 },
+          { x: cx - r * 1.15, y: cy }
+        ];
+        const sub = Math.max(2, Math.floor(numPoints / 4));
+        for (let i = 0; i < 4; i++) {
+          const p1 = vertices[i];
+          const p2 = vertices[(i + 1) % 4];
+          for (let s = 0; s < sub; s++) {
+            const frac = s / sub;
+            pts.push({ x: p1.x + (p2.x - p1.x) * frac, y: p1.y + (p2.y - p1.y) * frac });
+          }
+        }
+        break;
+      }
+      case 'hexagon': {
+        const vertices = [];
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3 - Math.PI / 6;
+          vertices.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+        }
+        const sub = Math.max(2, Math.floor(numPoints / 6));
+        for (let i = 0; i < 6; i++) {
+          const p1 = vertices[i];
+          const p2 = vertices[(i + 1) % 6];
+          for (let s = 0; s < sub; s++) {
+            const frac = s / sub;
+            pts.push({ x: p1.x + (p2.x - p1.x) * frac, y: p1.y + (p2.y - p1.y) * frac });
+          }
+        }
+        break;
+      }
+      default: {
+        for (let i = 0; i < numPoints; i++) {
+          const a = (i / numPoints) * Math.PI * 2;
+          pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+        }
+      }
+    }
+    return pts;
+  }
+
+  function drawDoodleWobbleBorder(ctx, shape, cx, cy, radius, bWidth, color, darkColor) {
+    const pts = getShapePerimeterPoints(shape, cx, cy, radius, 120);
+    const n = pts.length;
+    if (n === 0) return;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const passes = [
+      { color: color, width: bWidth, seed: 1.5, amp: bWidth * 0.45 },
+      { color: darkColor || '#111111', width: Math.max(1, bWidth * 0.55), seed: 4.8, amp: bWidth * 0.3 }
+    ];
+
+    passes.forEach(pass => {
+      ctx.strokeStyle = pass.color;
+      ctx.lineWidth = pass.width;
+      ctx.beginPath();
+
+      for (let i = 0; i < n; i++) {
+        const curr = pts[i];
+        const next = pts[(i + 1) % n];
+        const prev = pts[(i - 1 + n) % n];
+
+        const dx = next.x - prev.x;
+        const dy = next.y - prev.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+
+        const wobble = Math.sin(i * 0.38 + pass.seed) * pass.amp +
+                       Math.cos(i * 0.82 + pass.seed * 2) * (pass.amp * 0.45);
+
+        const wx = curr.x + nx * wobble;
+        const wy = curr.y + ny * wobble;
+
+        if (i === 0) ctx.moveTo(wx, wy);
+        else ctx.lineTo(wx, wy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  }
+
 
   // --- Pixel Art Binarization & Processing ---
   function getPixelArtGrid(size) {
@@ -953,14 +1054,7 @@
         ctx.lineCap = 'round';
 
         if (state.hole.borderStyle === 'doodle') {
-          // Hand-drawn doodle ink: 2 slightly offset jittered passes
-          ctx.stroke(holePath);
-          ctx.save();
-          ctx.translate(0.8, -0.6);
-          ctx.lineWidth = Math.max(1, bWidth * 0.65);
-          ctx.strokeStyle = state.colorDark;
-          ctx.stroke(holePath);
-          ctx.restore();
+          drawDoodleWobbleBorder(ctx, state.hole.shape, holeCenterX, holeCenterY, holeRadius, bWidth, state.hole.borderColor, state.colorDark);
         } else if (state.hole.borderStyle === 'double') {
           ctx.stroke(holePath);
           const innerPath = createShapePath(state.hole.shape, holeCenterX, holeCenterY, holeRadius - bWidth * 1.6);
@@ -1077,25 +1171,103 @@
     }
   }
 
-  // --- Auto-Fit Version Algorithm ---
+  // --- Generous Auto-Fit Version & Scannability Solver ---
   function autoFitVersion() {
-    // Finds the minimum QR version where current hole + edits fit inside <= 20% ECC
-    const targetSafetyRatio = 0.20;
-    let currentVer = state.version > 0 ? state.version : (state.qr ? state.qr.version : 4);
+    // 1. Force ECC level to 'H' for 30% error correction budget
+    state.eccLevel = 'H';
+    dom.eccLevelSelect.value = 'H';
 
-    for (let testVer = Math.max(1, currentVer); testVer <= 40; testVer++) {
-      const testSize = testVer * 4 + 17;
-      const totalModules = testSize * testSize;
-      const holeAreaRatio = state.hole.enabled ? Math.PI * Math.pow(state.hole.sizePct * 0.9, 2) : 0;
-      if (holeAreaRatio <= targetSafetyRatio) {
-        state.version = testVer;
-        dom.versionSelect.value = testVer;
-        renderQR();
-        return;
+    // 2. Minimum version check based on pixel art size (if active)
+    let minVer = 1;
+    if (state.pixelArt.enabled) {
+      if (state.pixelArt.gridSize >= 64) minVer = 18;
+      else if (state.pixelArt.gridSize >= 48) minVer = 14;
+      else if (state.pixelArt.gridSize >= 32) minVer = 10;
+      else if (state.pixelArt.gridSize >= 24) minVer = 7;
+      else if (state.pixelArt.gridSize >= 16) minVer = 4;
+      else minVer = 3;
+    }
+
+    const text = state.content || 'https://qurayshe.github.io';
+    const segs = qrcodegen.QrSegment.makeSegments(text);
+    const ecl = qrcodegen.QrCode.Ecc.HIGH;
+
+    // Minimum version needed just to fit the text payload in Level H
+    let minVerForText = minVer;
+    for (let v = minVer; v <= 40; v++) {
+      try {
+        qrcodegen.QrCode.encodeSegments(segs, ecl, v, v, 0, false);
+        minVerForText = v;
+        break;
+      } catch (e) {
+        // Payload needs higher version
       }
     }
-    state.version = 20;
-    dom.versionSelect.value = 20;
+
+    // 3. Scan for a verified scannable solution
+    const initialHoleSize = state.hole.sizePct;
+    const holeSizesToTry = state.hole.enabled
+      ? [initialHoleSize, 0.28, 0.25, 0.22, 0.18, 0.15]
+      : [0];
+
+    const scanSize = 400;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = scanSize;
+    offCanvas.height = scanSize;
+    const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+    let bestSolution = null;
+
+    outerSearch:
+    for (const testHoleSize of holeSizesToTry) {
+      state.hole.sizePct = testHoleSize;
+
+      for (let ver = minVerForText; ver <= 40; ver++) {
+        try {
+          const testQr = qrcodegen.QrCode.encodeSegments(segs, ecl, ver, ver, state.mask, false);
+          state.qr = testQr;
+          state.qrSize = testQr.size;
+          state.version = ver;
+
+          // Render onto offscreen canvas and verify with jsQR
+          renderQR(offCanvas, scanSize);
+
+          if (window.jsQR) {
+            const imgData = offCtx.getImageData(0, 0, scanSize, scanSize);
+            const code = window.jsQR(imgData.data, scanSize, scanSize, {
+              inversionAttempts: 'dontInvert'
+            });
+            if (code && code.data === text) {
+              bestSolution = { ver, holeSize: testHoleSize };
+              break outerSearch;
+            }
+          }
+        } catch (e) {
+          // Continue searching
+        }
+      }
+    }
+
+    // If an exact jsQR solution was found, apply it
+    if (bestSolution) {
+      state.version = bestSolution.ver;
+      dom.versionSelect.value = bestSolution.ver;
+      state.hole.sizePct = bestSolution.holeSize;
+      dom.holeSizeRange.value = Math.round(bestSolution.holeSize * 100);
+      dom.holeSizeVal.textContent = Math.round(bestSolution.holeSize * 100) + '%';
+      dom.autoFixBanner.hidden = true;
+    } else {
+      // Generous fallback: pick a large version with safe hole size
+      const generousVer = Math.max(minVerForText, 20);
+      state.version = generousVer;
+      dom.versionSelect.value = generousVer;
+      if (state.hole.enabled) {
+        state.hole.sizePct = 0.20;
+        dom.holeSizeRange.value = 20;
+        dom.holeSizeVal.textContent = '20%';
+      }
+    }
+
     renderQR();
   }
 
@@ -1112,6 +1284,7 @@
     const ver = state.qr ? state.qr.version : 4;
     const segs = qrcodegen.QrSegment.makeSegments(text);
 
+    let bestTotal = 0;
     for (let m = 0; m < 8; m++) {
       try {
         const testQr = qrcodegen.QrCode.encodeSegments(segs, ecl, ver, ver, m, false);
@@ -1134,6 +1307,7 @@
         if (matches > maxMatch) {
           maxMatch = matches;
           bestMask = m;
+          bestTotal = total;
         }
       } catch (e) {
         // Continue
@@ -1142,7 +1316,7 @@
 
     state.mask = bestMask;
     dom.maskSelect.value = bestMask;
-    const matchPct = total > 0 ? ((maxMatch / total) * 100).toFixed(0) : 65;
+    const matchPct = bestTotal > 0 ? ((maxMatch / bestTotal) * 100).toFixed(0) : 75;
     dom.smartMaskHint.textContent = `⚡ Selected Mask ${bestMask}: naturally matches ${matchPct}% of your pixel art!`;
     renderQR();
   }
@@ -1586,11 +1760,7 @@
     renderQR();
   });
 
-  dom.btnSamplePhoto.addEventListener('click', () => {
-    state.hole.image = createSampleBlorboImage();
-    dom.holeFileName.textContent = 'Cute Blorbo loaded';
-    renderQR();
-  });
+  
 
   dom.photoScaleRange.addEventListener('input', () => {
     state.hole.imageScale = parseInt(dom.photoScaleRange.value, 10) / 100;
@@ -1660,6 +1830,11 @@
   dom.pixelSizeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       state.pixelArt.gridSize = parseInt(radio.value, 10);
+      const minRequired = state.pixelArt.gridSize >= 64 ? 18 : state.pixelArt.gridSize >= 48 ? 14 : state.pixelArt.gridSize >= 32 ? 10 : 7;
+      if (state.version > 0 && state.version < minRequired) {
+        state.version = minRequired;
+        dom.versionSelect.value = minRequired;
+      }
       renderQR();
     });
   });
