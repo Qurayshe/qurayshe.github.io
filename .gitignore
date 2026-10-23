@@ -40,3 +40,7 @@ vendor/
 # misc tool vendor bundles ship with the site (e.g. misc/heartlocket/vendor)
 !misc/heartlocket/vendor/
 !misc/heartlocket/vendor/**
+!misc/qrcode/vendor/
+!misc/qrcode/vendor/**
+!misc/qrcodedraw/vendor/
+!misc/qrcodedraw/vendor/**
