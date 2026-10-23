@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Cute QR code generator & studio. Draw pixels, embed tiny pixel art directly into QR modules, or carve custom shape holes for crisp high-res photos without breaking scannability!" />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>QR Code Doodle Studio 📱✨</title>
+
+  <!-- Google Fonts: blorbo doodle fonts + UI faces -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Comic+Neue:wght@400;700&family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Inter:wght@400;500;600;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- ====================================================================
+       TOP CREDIT / INFO BANNER
+       ==================================================================== -->
+  <aside class="credit-banner top-credit" aria-label="Attribution">
+    <span class="sparkle-icon">✨</span>
+    <span>
+      craft playful QR codes: draw pixels, embed 32×32 pixel art, or carve out
+      <strong>custom shape holes (heart, star, circle)</strong> for high-res photos!
+    </span>
+    <span class="sparkle-icon">📱</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>✨ qr code doodle studio</span>
+        <span style="font-size: 22px;">📱</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          draw · embed pixel art · shape holes with photos · live scan check
+        </div>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener" title="Back to main site">
+          qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: CANVAS & LIVE SCANNER
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Preview and Drawing Section">
+        <div class="card-header-badge badge-yellow">
+          <span>preview &amp; canvas</span>
+        </div>
+
+        <!-- Live Scan Status Bar -->
+        <div class="scan-status-card" id="scanStatusCard">
+          <div class="scan-status-pill scannable" id="scanStatusPill">
+            <span class="scan-pill-icon" id="scanPillIcon">✅</span>
+            <span class="scan-pill-text" id="scanPillText">Scannable</span>
+          </div>
+          <div class="scan-ecc-budget" id="scanEccBudget">
+            <div class="ecc-label-row">
+              <span class="ecc-label">Error Correction Used:</span>
+              <span class="ecc-value" id="eccValue">0.0% / 30%</span>
+            </div>
+            <div class="ecc-meter-track">
+              <div class="ecc-meter-fill" id="eccMeterFill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning notification if unreadable or near limit -->
+        <div class="auto-fix-banner" id="autoFixBanner" hidden>
+          <span class="fix-icon">⚠️</span>
+          <span class="fix-msg" id="fixMsg">Hole or edits exceed safe ECC budget!</span>
+          <button class="sketchy-btn sm lime" id="btnAutoFixVersion" type="button" title="Automatically increase QR version so it scans cleanly">
+            ⚡ Auto-Fix Version
+          </button>
+        </div>
+
+        <!-- QR Canvas Stage -->
+        <div class="stage-wrap">
+          <div class="canvas-container" id="canvasContainer">
+            <canvas id="qrCanvas" class="qr-canvas" width="600" height="600" tabindex="1" title="Click or drag to paint modules · use pencil, eraser, or rect tool"></canvas>
+            <!-- Hover highlight or coordinate tooltip -->
+            <div class="coord-tooltip" id="coordTooltip" hidden>X: 0, Y: 0</div>
+          </div>
+
+          <!-- Drawing Toolbar -->
+          <div class="drawing-toolbar">
+            <div class="tool-group" role="radiogroup" aria-label="Drawing tool">
+              <button class="tool-btn active" id="toolPencilDark" type="button" title="Pencil: Draw dark module">
+                ✏️ <span>Dark</span>
+              </button>
+              <button class="tool-btn" id="toolPencilLight" type="button" title="Pencil: Draw light / white module">
+                ⚪ <span>Light</span>
+              </button>
+              <button class="tool-btn" id="toolRect" type="button" title="Rectangle fill tool">
+                🔲 <span>Rect</span>
+              </button>
+              <button class="tool-btn" id="toolEraser" type="button" title="Eraser: Restore module to clean QR code">
+                🧽 <span>Restore</span>
+              </button>
+            </div>
+
+            <div class="tool-group secondary">
+              <button class="tool-btn sm" id="btnUndo" type="button" title="Undo paint (Ctrl+Z)" disabled>↩️</button>
+              <button class="tool-btn sm" id="btnRedo" type="button" title="Redo paint (Ctrl+Y)" disabled>↪️</button>
+              <button class="tool-btn sm" id="btnToggleGrid" type="button" title="Toggle module grid lines">
+                <span>▦ Grid</span>
+              </button>
+              <button class="tool-btn sm coral" id="btnClearEdits" type="button" title="Clear all hand-drawn edits">
+                <span>Reset Edits</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Action Bar -->
+        <div class="export-bar">
+          <div class="export-sizes">
+            <label class="mini-label">size
+              <select id="exportResolution" class="sketchy-select">
+                <option value="600">600 px</option>
+                <option value="1024" selected>1024 px (HD)</option>
+                <option value="2048">2048 px (Print)</option>
+              </select>
+            </label>
+          </div>
+          <div class="export-buttons">
+            <button class="sketchy-btn pink" id="btnDownloadPng" type="button" title="Download crisp high-res PNG">
+              💾 Download PNG
+            </button>
+            <button class="sketchy-btn yellow" id="btnDownloadSvg" type="button" title="Download vector SVG file">
+              📐 SVG
+            </button>
+            <button class="sketchy-btn" id="btnCopyImage" type="button" title="Copy QR image to clipboard">
+              📋 Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="hint-row">
+          <span class="side-chip" id="qrSizeInfoChip">Version 4 · 33×33 modules</span>
+          <span class="hint-text" id="scanDecodeInfo">Scans: "https://qurayshe.github.io"</span>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           COLUMN 2: CONTROLS & TABS
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Settings Section">
+        <!-- Tab Navigation Buttons -->
+        <nav class="nav-tabs" role="tablist">
+          <button class="tab-btn active" id="tabBtnBase" role="tab" aria-selected="true" data-tab="tabBase" type="button">
+            ⚙️ Base QR
+          </button>
+          <button class="tab-btn" id="tabBtnHole" role="tab" aria-selected="false" data-tab="tabHole" type="button">
+            💖 Shape Hole &amp; Photo
+          </button>
+          <button class="tab-btn" id="tabBtnPixel" role="tab" aria-selected="false" data-tab="tabPixel" type="button">
+            👾 Pixel Art Embed
+          </button>
+          <button class="tab-btn" id="tabBtnStudio" role="tab" aria-selected="false" data-tab="tabStudio" type="button">
+            🔬 Studio Inspector
+          </button>
+        </nav>
+
+        <!-- ==============================================================
+             TAB 1: BASE QR SETTINGS
+             ============================================================== -->
+        <div class="tab-pane active" id="tabBase" role="tabpanel">
+          <!-- Content Input Block -->
+          <div class="control-block">
+            <div class="block-title">
+              <span>📝 QR Content &amp; Encoding</span>
+            </div>
+            <div class="field-wrap">
+              <label class="control-label" for="qrTextInput">Text or URL to encode:</label>
+              <textarea id="qrTextInput" class="sketchy-textarea" rows="2" placeholder="Enter link (e.g. https://qurayshe.github.io) or message">https://qurayshe.github.io</textarea>
+            </div>
+
+            <div class="sub-row" style="margin-top: 10px;">
+              <label class="mini-label" title="High (H) allows up to 30% error correction, perfect for holes and art!">
+                ECC Level:
+                <select id="eccLevelSelect" class="sketchy-select">
+                  <option value="L">L — Low (7%)</option>
+                  <option value="M">M — Medium (15%)</option>
+                  <option value="Q">Q — Quartile (25%)</option>
+                  <option value="H" selected>H — High (30% Best for Art &amp; Holes)</option>
+                </select>
+              </label>
+
+              <label class="mini-label" title="Auto selects the smallest QR version that fits your content">
+                QR Version:
+                <select id="versionSelect" class="sketchy-select">
+                  <option value="0" selected>Auto Size</option>
+                  <!-- 1 to 40 populated dynamically -->
+                </select>
+              </label>
+
+              <label class="mini-label" title="Mask pattern (0 to 7) inverts modules to break up undesirable patterns">
+                Mask:
+                <select id="maskSelect" class="sketchy-select">
+                  <option value="-1" selected>Auto Best Mask</option>
+                  <option value="0">Pattern 0</option>
+                  <option value="1">Pattern 1</option>
+                  <option value="2">Pattern 2</option>
+                  <option value="3">Pattern 3</option>
+                  <option value="4">Pattern 4</option>
+                  <option value="5">Pattern 5</option>
+                  <option value="6">Pattern 6</option>
+                  <option value="7">Pattern 7</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <!-- Color & Styling Block -->
+          <div class="control-block">
+            <div class="block-title">
+              <span>🎨 Colors &amp; Dotted Rendering</span>
+            </div>
+
+            <div class="color-row">
+              <label class="mini-label">Dark Modules:
+                <input type="color" id="colorDark" class="sketchy-color" value="#111111" />
+              </label>
+              <label class="mini-label">Background:
+                <input type="color" id="colorLight" class="sketchy-color" value="#fefefb" />
+              </label>
+              <div class="preset-colors">
+                <button class="color-dot-preset" data-dark="#111111" data-light="#fefefb" style="background: #111111;" title="Classic Ink on Cream"></button>
+                <button class="color-dot-preset" data-dark="#b31b5c" data-light="#fff0f5" style="background: #b31b5c;" title="Rose Pink"></button>
+                <button class="color-dot-preset" data-dark="#0f3460" data-light="#e6f4f1" style="background: #0f3460;" title="Deep Ocean"></button>
+                <button class="color-dot-preset" data-dark="#5e17eb" data-light="#faf5ff" style="background: #5e17eb;" title="Magic Purple"></button>
+                <button class="color-dot-preset" data-dark="#1c523b" data-light="#f3fdf6" style="background: #1c523b;" title="Forest Matcha"></button>
+              </div>
+            </div>
+
+            <!-- Dotted Mode Option -->
+            <div class="control-row" style="margin-top: 10px;">
+              <label class="mode-opt" title="Render modules as smaller centered dots so background art or illustrations can show through">
+                <input type="checkbox" id="checkDottedMode" />
+                <span>🔘 Dotted Rendering Mode</span>
+              </label>
+            </div>
+
+            <div class="dotted-options-panel" id="dottedOptionsPanel" hidden>
+              <div class="control-row">
+                <span class="control-label">Dot Size:</span>
+                <input type="range" id="dotScaleRange" class="sketchy-range" min="30" max="100" value="80" />
+                <span class="num-pill" id="dotScaleVal">80%</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">Dot Shape:</span>
+                <div class="mode-row">
+                  <label class="mode-opt"><input type="radio" name="dotShape" value="square" checked /> Square</label>
+                  <label class="mode-opt"><input type="radio" name="dotShape" value="rounded" /> Rounded</label>
+                  <label class="mode-opt"><input type="radio" name="dotShape" value="circle" /> Circle</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 2: SHAPE HOLE & HIGH-RES PHOTO
+             ============================================================== -->
+        <div class="tab-pane" id="tabHole" role="tabpanel">
+          <div class="control-block">
+            <div class="block-title">
+              <label class="mode-opt" style="font-size: 18px;">
+                <input type="checkbox" id="checkEnableHole" checked />
+                <span>💖 Enable Cutout Hole for Regular High-Res Image</span>
+              </label>
+            </div>
+            <p class="helper-text">
+              Carves out an exact shape from the QR code and places a crystal-clear, full-resolution photo inside.
+              Because error correction covers the hole, your photo is <strong>never downscaled to pixelated QR blocks</strong>!
+            </p>
+
+            <div id="holeControlsWrapper">
+              <!-- Shape Selection -->
+              <div class="control-row" style="margin-top: 10px;">
+                <span class="control-label">Shape:</span>
+                <div class="shape-buttons-grid" role="radiogroup" aria-label="Hole shape">
+                  <button class="shape-btn active" data-shape="heart" type="button" title="Cute Heart">💖 Heart</button>
+                  <button class="shape-btn" data-shape="circle" type="button" title="Smooth Circle">⚪ Circle</button>
+                  <button class="shape-btn" data-shape="rounded" type="button" title="Rounded Square">🔲 Rounded</button>
+                  <button class="shape-btn" data-shape="square" type="button" title="Clean Square">⬛ Square</button>
+                  <button class="shape-btn" data-shape="star" type="button" title="5-point Star">⭐ Star</button>
+                  <button class="shape-btn" data-shape="diamond" type="button" title="Diamond / Lozenge">💎 Diamond</button>
+                  <button class="shape-btn" data-shape="hexagon" type="button" title="Cute Hexagon">⬡ Hexagon</button>
+                </div>
+              </div>
+
+              <!-- Hole Size & Margin Sliders -->
+              <div class="control-row">
+                <span class="control-label">Hole Size:</span>
+                <input type="range" id="holeSizeRange" class="sketchy-range" min="15" max="42" value="26" />
+                <span class="num-pill" id="holeSizeVal">26%</span>
+              </div>
+
+              <div class="control-row">
+                <span class="control-label">Margin Gap:</span>
+                <input type="range" id="holeMarginRange" class="sketchy-range" min="0" max="8" value="2" />
+                <span class="num-pill" id="holeMarginVal">2 px</span>
+              </div>
+
+              <div class="control-row">
+                <span class="control-label">Position X:</span>
+                <input type="range" id="holePosXRange" class="sketchy-range" min="-30" max="30" value="0" />
+                <span class="num-pill" id="holePosXVal">0%</span>
+              </div>
+
+              <div class="control-row">
+                <span class="control-label">Position Y:</span>
+                <input type="range" id="holePosYRange" class="sketchy-range" min="-30" max="30" value="0" />
+                <span class="num-pill" id="holePosYVal">0%</span>
+              </div>
+
+              <!-- Border & Hole Style -->
+              <div class="sub-row">
+                <label class="mini-label">Border Style:
+                  <select id="holeBorderStyle" class="sketchy-select">
+                    <option value="doodle" selected>✏️ Doodle Ink Wobble</option>
+                    <option value="solid">Clean Solid Outline</option>
+                    <option value="double">Double Outline</option>
+                    <option value="sticker">Sticker White + Shadow</option>
+                    <option value="none">No Outline</option>
+                  </select>
+                </label>
+
+                <label class="mini-label">Border Color:
+                  <input type="color" id="holeBorderColor" class="sketchy-color" value="#ff70a6" />
+                </label>
+
+                <label class="mini-label">Width:
+                  <input type="range" id="holeBorderWidthRange" class="sketchy-range mini" min="1" max="10" value="3" />
+                  <span class="num-pill" id="holeBorderWidthVal">3px</span>
+                </label>
+              </div>
+
+              <!-- Upload Photo for inside Hole -->
+              <div class="photo-upload-block" style="margin-top: 14px;">
+                <div class="block-title">
+                  <span>🖼️ Photo / Logo inside the Hole</span>
+                </div>
+                <input type="file" id="holeImageInput" accept="image/*" hidden />
+                <div class="dropzone" id="holeImageDropzone" role="button" tabindex="0"
+                     aria-label="Upload photo for shape hole: drop an image, paste, or click">
+                  <span class="dz-icon" aria-hidden="true">📷</span>
+                  <span class="dz-body">
+                    <span class="dz-text"><strong>Drop photo here</strong>, paste, or click to upload</span>
+                    <span class="dz-hint">Full resolution! PNG, JPG, WebP, SVG, GIF supported</span>
+                  </span>
+                </div>
+                <div class="sub-row" style="margin-top: 8px;">
+                  <span class="file-name" id="holeFileName">Sample photo loaded (Heart locket blorbo)</span>
+                  <button class="sketchy-btn sm coral" id="btnClearHoleImage" type="button">Remove Photo</button>
+                  <button class="sketchy-btn sm yellow" id="btnSamplePhoto" type="button">Use Cute Blorbo</button>
+                </div>
+
+                <!-- Photo Adjustments -->
+                <div class="control-row" style="margin-top: 10px;">
+                  <span class="control-label">Photo Zoom:</span>
+                  <input type="range" id="photoScaleRange" class="sketchy-range" min="50" max="250" value="100" />
+                  <span class="num-pill" id="photoScaleVal">100%</span>
+                </div>
+
+                <div class="control-row">
+                  <span class="control-label">Pan Photo X:</span>
+                  <input type="range" id="photoPanXRange" class="sketchy-range" min="-100" max="100" value="0" />
+                  <span class="num-pill" id="photoPanXVal">0</span>
+                </div>
+
+                <div class="control-row">
+                  <span class="control-label">Pan Photo Y:</span>
+                  <input type="range" id="photoPanYRange" class="sketchy-range" min="-100" max="100" value="0" />
+                  <span class="num-pill" id="photoPanYVal">0</span>
+                </div>
+
+                <div class="control-row">
+                  <span class="control-label">Rotate Photo:</span>
+                  <input type="range" id="photoRotRange" class="sketchy-range" min="-180" max="180" value="0" />
+                  <span class="num-pill" id="photoRotVal">0°</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 3: PIXEL ART EMBED (32x32 / small image directly into modules)
+             ============================================================== -->
+        <div class="tab-pane" id="tabPixel" role="tabpanel">
+          <div class="control-block">
+            <div class="block-title">
+              <label class="mode-opt" style="font-size: 18px;">
+                <input type="checkbox" id="checkEnablePixelArt" />
+                <span>👾 Embed Small Image Directly into QR Modules</span>
+              </label>
+            </div>
+            <p class="helper-text">
+              Directly translates an image (e.g. 16×16, 24×24, 32×32) into the actual black &amp; white modules of the QR code.
+              Uses smart masking and error correction budget optimization!
+            </p>
+
+            <div id="pixelArtControlsWrapper" hidden>
+              <!-- Cute Sample Pixel Presets -->
+              <div class="control-row" style="margin-top: 10px;">
+                <span class="control-label">Presets:</span>
+                <div class="preset-pixel-btns">
+                  <button class="sketchy-btn sm" data-preset="heart" type="button">💖 Heart</button>
+                  <button class="sketchy-btn sm" data-preset="cat" type="button">🐱 Cat</button>
+                  <button class="sketchy-btn sm" data-preset="star" type="button">⭐ Star</button>
+                  <button class="sketchy-btn sm" data-preset="ghost" type="button">👻 Ghost</button>
+                  <button class="sketchy-btn sm" data-preset="mushroom" type="button">🍄 Shroom</button>
+                  <button class="sketchy-btn sm" data-preset="smiley" type="button">🙂 Smiley</button>
+                </div>
+              </div>
+
+              <!-- Upload Custom Pixel Art / Image -->
+              <input type="file" id="pixelImageInput" accept="image/*" hidden />
+              <div class="dropzone" id="pixelImageDropzone" role="button" tabindex="0"
+                   aria-label="Upload small image to embed: drop an image, paste, or click">
+                <span class="dz-icon" aria-hidden="true">🖼️</span>
+                <span class="dz-body">
+                  <span class="dz-text"><strong>Drop tiny image</strong> or click to upload</span>
+                  <span class="dz-hint">Downsamples automatically to selected grid size (e.g. 16×16, 24×24, 32×32)</span>
+                </span>
+              </div>
+              <span class="file-name" id="pixelFileName" style="margin-top: 4px;">Preset: Heart selected</span>
+
+              <!-- Target Size & Placement -->
+              <div class="control-row" style="margin-top: 10px;">
+                <span class="control-label">Grid Size:</span>
+                <div class="mode-row">
+                  <label class="mode-opt"><input type="radio" name="pixelSize" value="12" /> 12×12</label>
+                  <label class="mode-opt"><input type="radio" name="pixelSize" value="16" /> 16×16</label>
+                  <label class="mode-opt"><input type="radio" name="pixelSize" value="24" checked /> 24×24</label>
+                  <label class="mode-opt"><input type="radio" name="pixelSize" value="32" /> 32×32</label>
+                </div>
+              </div>
+
+              <!-- Binarization & Dithering -->
+              <div class="sub-row">
+                <label class="mini-label">Dither Mode:
+                  <select id="pixelDitherMode" class="sketchy-select">
+                    <option value="floyd" selected>Floyd-Steinberg Dither</option>
+                    <option value="atkinson">Atkinson Dither (Retro)</option>
+                    <option value="threshold">Pure Threshold</option>
+                  </select>
+                </label>
+
+                <label class="mini-label">Threshold:
+                  <input type="range" id="pixelThresholdRange" class="sketchy-range mini" min="0" max="255" value="128" />
+                  <span class="num-pill" id="pixelThresholdVal">128</span>
+                </label>
+
+                <label class="mode-opt">
+                  <input type="checkbox" id="checkInvertPixel" /> Invert B/W
+                </label>
+              </div>
+
+              <!-- Alignment & Offsets -->
+              <div class="control-row" style="margin-top: 10px;">
+                <span class="control-label">Placement:</span>
+                <select id="pixelPlacementSelect" class="sketchy-select">
+                  <option value="center" selected>Center of QR Code</option>
+                  <option value="bottom-right">Bottom-Right (Classic)</option>
+                  <option value="bottom-left">Bottom-Left</option>
+                  <option value="top-right">Top-Right</option>
+                  <option value="custom">Custom X/Y Offset</option>
+                </select>
+              </div>
+
+              <div class="control-row" id="pixelCustomOffsetRow" hidden>
+                <span class="control-label">Offset:</span>
+                <label class="mini-label">X: <input type="range" id="pixelOffsetXRange" class="sketchy-range mini" min="-20" max="20" value="0" /></label>
+                <label class="mini-label">Y: <input type="range" id="pixelOffsetYRange" class="sketchy-range mini" min="-20" max="20" value="0" /></label>
+              </div>
+
+              <!-- Smart Mask Optimizer Button -->
+              <div class="btn-row" style="margin-top: 12px;">
+                <button class="sketchy-btn yellow" id="btnSmartMask" type="button" title="Test all 8 masks to find the one matching your pixel art best">
+                  ⚡ Auto-Find Best Mask Pattern
+                </button>
+                <button class="sketchy-btn lime" id="btnAutoFitPixelVersion" type="button" title="Auto-scale version so error correction stays safe">
+                  ⚡ Auto-Fit QR Version
+                </button>
+                <button class="sketchy-btn pink" id="btnBakePixelArt" type="button" title="Bake pixels into editable canvas">
+                  ✏️ Bake into Canvas (Draw over)
+                </button>
+              </div>
+              <p class="helper-text" id="smartMaskHint" style="margin-top: 6px;">
+                Protected: Function patterns (finder corners &amp; timing tracks) are automatically preserved!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 4: STUDIO INSPECTOR (Screenshots 2 & 3 parity)
+             ============================================================== -->
+        <div class="tab-pane" id="tabStudio" role="tabpanel">
+          <div class="control-block">
+            <div class="block-title">
+              <span>🔬 QR Studio &amp; Functional Breakdown</span>
+            </div>
+            <p class="helper-text">
+              Inspect how QR codes are constructed according to ISO/IEC 18004. Toggle highlight areas to see finder patterns,
+              timing tracks, alignment marks, format info, and data blocks.
+            </p>
+
+            <!-- Areas Toggle -->
+            <div class="control-row" style="margin-top: 10px;">
+              <label class="mode-opt">
+                <input type="checkbox" id="checkHighlightAreas" />
+                <span>🎨 Highlight QR Areas (Colored Overlay)</span>
+              </label>
+            </div>
+
+            <!-- Areas Legend -->
+            <div class="areas-legend" id="areasLegend">
+              <span class="legend-chip" style="--chip-bg: #89c4f4;">Finder Patterns</span>
+              <span class="legend-chip" style="--chip-bg: #cceeff;">Separators</span>
+              <span class="legend-chip" style="--chip-bg: #ffd1dc;">Timing Tracks</span>
+              <span class="legend-chip" style="--chip-bg: #b5e51d;">Alignment Marks</span>
+              <span class="legend-chip" style="--chip-bg: #a349a1; color: #fff;">Dark Module</span>
+              <span class="legend-chip" style="--chip-bg: #ffe66d;">Format Info</span>
+              <span class="legend-chip" style="--chip-bg: #ff6b6b; color: #fff;">Version Bits</span>
+              <span class="legend-chip" style="--chip-bg: #e6e6e6;">Data &amp; ECC Payload</span>
+            </div>
+
+            <!-- Step-by-Step Construction Buttons -->
+            <div class="studio-steps-container" style="margin-top: 14px;">
+              <div class="step-card">
+                <div class="step-header">
+                  <strong>Step 1: Set Finder &amp; Alignment Patterns</strong>
+                </div>
+                <button class="sketchy-btn sm" id="btnStep1" type="button">Fill Finder &amp; Alignment</button>
+              </div>
+
+              <div class="step-card">
+                <div class="step-header">
+                  <strong>Step 2: Set Timing Patterns</strong>
+                </div>
+                <button class="sketchy-btn sm" id="btnStep2" type="button">Fill Timing Tracks</button>
+              </div>
+
+              <div class="step-card">
+                <div class="step-header">
+                  <strong>Step 3 &amp; 4: Set Error Correction &amp; Format Bits</strong>
+                </div>
+                <button class="sketchy-btn sm" id="btnStep34" type="button">Fill Format &amp; Mask Info</button>
+              </div>
+
+              <div class="step-card">
+                <div class="step-header">
+                  <strong>Step 5 &amp; 6: Set Data &amp; Reed-Solomon ECC</strong>
+                </div>
+                <button class="sketchy-btn sm" id="btnStep56" type="button">Fill Codewords</button>
+              </div>
+
+              <div class="step-card">
+                <div class="step-header">
+                  <strong>Step 7: Apply Masking Pattern</strong>
+                </div>
+                <button class="sketchy-btn sm" id="btnStep7" type="button">Apply Mask Pattern</button>
+              </div>
+
+              <div class="step-card highlight">
+                <div class="step-header">
+                  <strong>⚡ Complete QR Code</strong>
+                </div>
+                <button class="sketchy-btn sm pink" id="btnStepAll" type="button">Execute All Steps</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Footer -->
+    <footer class="footer-bar">
+      <span>built with love for <a href="https://qurayshe.github.io/" target="_blank" rel="noopener">qurayshe.github.io</a> ✨</span>
+      <span>pure client-side · no servers · ISO/IEC 18004 compliant</span>
+    </footer>
+  </div>
+
+  <!-- Vendor dependencies -->
+  <script src="./vendor/qrcodegen.js"></script>
+  <script src="./vendor/jsQR.js"></script>
+  <!-- Application logic -->
+  <script src="./main.js"></script>
+</body>
+</html>
