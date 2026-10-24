@@ -44,3 +44,6 @@ vendor/
 !misc/qrcode/vendor/**
 !misc/qrcodedraw/vendor/
 !misc/qrcodedraw/vendor/**
+
+!misc/caption/vendor/
+!misc/caption/vendor/**

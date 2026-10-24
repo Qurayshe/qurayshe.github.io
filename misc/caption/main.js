@@ -4,7 +4,67 @@
  * Styled in the Blorbo Doodle theme for qurayshe.github.io.
  */
 
-import { GIFEncoder, quantize, applyPalette } from './vendor/gifenc.esm.js';
+/**
+ * Resilient lazy loader for gifenc (GIFEncoder, quantize, applyPalette).
+ * Tries local vendor path, sibling path, and CDN as fallback.
+ */
+let gifencCache = null;
+async function getGifEncoder() {
+  if (gifencCache) return gifencCache;
+  const sources = [
+    './vendor/gifenc.esm.js',
+    './gifenc.js',
+    'https://unpkg.com/gifenc@1.0.3/dist/gifenc.esm.js',
+    'https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js'
+  ];
+  for (const src of sources) {
+    try {
+      const mod = await import(src);
+      if (mod && (mod.GIFEncoder || mod.default)) {
+        gifencCache = {
+          GIFEncoder: mod.GIFEncoder || mod.default,
+          quantize: mod.quantize,
+          applyPalette: mod.applyPalette
+        };
+        return gifencCache;
+      }
+    } catch (e) {
+      // try next source
+    }
+  }
+  throw new Error('Could not load GIFEncoder from any source');
+}
+
+/**
+ * Ensures omggif reader is available before decoding GIFs.
+ */
+async function ensureOmggif() {
+  if (window.omggif && window.omggif.GifReader) return window.omggif;
+  const sources = [
+    './vendor/omggif.js',
+    './omggif.js',
+    'https://cdn.jsdelivr.net/npm/omggif@1.0.10/omggif.min.js'
+  ];
+  for (const src of sources) {
+    if (window.omggif && window.omggif.GifReader) break;
+    await new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => {
+        if (typeof window.omggif === 'undefined' && typeof window.GifReader !== 'undefined') {
+          window.omggif = { GifReader: window.GifReader, GifWriter: window.GifWriter };
+        }
+        resolve();
+      };
+      s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+  }
+  if (!window.omggif || !window.omggif.GifReader) {
+    throw new Error('omggif library could not be loaded');
+  }
+  return window.omggif;
+}
 
 /* ==========================================================================
    State & Defaults
@@ -479,6 +539,7 @@ async function loadGif(fileOrBuffer, name = 'animated.gif') {
   state.mediaName = name;
 
   try {
+    await ensureOmggif();
     let buffer;
     if (fileOrBuffer instanceof ArrayBuffer) {
       buffer = fileOrBuffer;
@@ -712,6 +773,8 @@ async function exportGif() {
 
   setExportStatus(true, 5, 'Initializing GIF encoder…');
 
+  const { GIFEncoder, quantize, applyPalette } = await getGifEncoder();
+
   const { frames, delays } = state.gifData;
   const totalFrames = frames.length;
   const scale = state.exportScale;
@@ -878,6 +941,8 @@ async function exportVideoToGif() {
   stopPlayback();
 
   setExportStatus(true, 5, 'Sampling video frames for GIF…');
+
+  const { GIFEncoder, quantize, applyPalette } = await getGifEncoder();
 
   const video = state.videoEl;
   const scale = state.exportScale * 0.75; // slightly lower scale for GIF
