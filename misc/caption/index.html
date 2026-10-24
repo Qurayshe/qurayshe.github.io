@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Simple image, animated GIF, and video meme caption generator with classic white top bar and black text. Styled in the signature blorbo doodle aesthetic." />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>Caption Tool 💬✨</title>
+
+  <!-- Google Fonts: Meme fonts (Oswald, Anton, Montserrat) + Doodle fonts (Patrick Hand, DynaPuff, Shantell Sans) + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Comic+Neue:ital,wght@0,700;1,700&family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Inter:wght@600;800;900&family=JetBrains+Mono:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Oswald:wght@600;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,600;0,700;0,800;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- ====================================================================
+       TOP CREDIT / INFO BANNER
+       ==================================================================== -->
+  <aside class="credit-banner top-credit" aria-label="Attribution">
+    <span class="sparkle-icon">✨</span>
+    <span>
+      craft crisp meme captions: add top/bottom white bars and punchy text to
+      <strong>Images, Animated GIFs, and Videos</strong>!
+    </span>
+    <span class="sparkle-icon">💬</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>💬 caption tool</span>
+        <span style="font-size: 22px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          image · animated gif · video · classic top text · fast export
+        </div>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener" title="Back to main site">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Samples Toolbar -->
+    <section class="sample-bar" aria-label="Quick Samples">
+      <div class="sample-bar-label">
+        <span>✨ quick samples:</span>
+      </div>
+      <div class="sample-pills">
+        <button class="sketchy-btn sm yellow" id="samplePlink" type="button" title="Load the classic Plink cat photo">
+          🐱 Plink Cat
+        </button>
+        <button class="sketchy-btn sm pink" id="sampleKirby" type="button" title="Load the wobbling Kirby animated GIF">
+          👾 Kirby GIF
+        </button>
+        <button class="sketchy-btn sm cyan" id="sampleVideo" type="button" title="Generate an interactive animated video with sound">
+          🎬 Bouncy Video
+        </button>
+      </div>
+    </section>
+
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: PREVIEW & PLAYBACK
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Preview and Output Section">
+        <div class="card-header-badge badge-yellow">
+          <span>👀 live preview</span>
+        </div>
+
+        <!-- Canvas Stage -->
+        <div class="stage-wrap">
+          <div class="canvas-container" id="canvasContainer">
+            <canvas id="captionCanvas" class="caption-canvas" width="600" height="400" tabindex="1"></canvas>
+          </div>
+        </div>
+
+        <!-- Media Info Pill Bar -->
+        <div class="media-info-bar">
+          <div class="media-tag-pill" id="mediaTypePill">
+            <span id="mediaIcon">🖼️</span>
+            <span id="mediaTypeLabel">Image</span>
+          </div>
+          <div class="media-dim-pill" id="mediaDimLabel">261 × 153 px</div>
+        </div>
+
+        <!-- Playback Card (Active for GIF and Video) -->
+        <div class="playback-card" id="playbackCard" hidden>
+          <div class="playback-controls">
+            <div class="playback-btn-group">
+              <button class="sketchy-btn sm" id="btnPrevFrame" type="button" title="Previous frame">⏮</button>
+              <button class="sketchy-btn sm yellow" id="btnPlayPause" type="button" title="Play or pause animation">
+                <span id="playIcon">⏸</span>
+                <span id="playLabel">Pause</span>
+              </button>
+              <button class="sketchy-btn sm" id="btnNextFrame" type="button" title="Next frame">⏭</button>
+              <button class="sketchy-btn sm bone" id="btnMuteToggle" type="button" title="Toggle audio mute" hidden>
+                <span id="muteIcon">🔊</span>
+              </button>
+            </div>
+            <div class="time-readout" id="playbackReadout">Frame 1 / 1</div>
+          </div>
+          <div class="scrub-wrap">
+            <input class="sketchy-range" id="timelineScrubber" type="range" min="0" max="100" value="0" title="Scrub timeline" />
+          </div>
+        </div>
+
+        <!-- Export Action Buttons -->
+        <div class="action-rows">
+          <div class="primary-actions">
+            <button class="sketchy-btn lg pink" id="btnDownloadMain" type="button">
+              <span>💾 Download Image</span>
+            </button>
+            <button class="sketchy-btn lg" id="btnCopyClipboard" type="button" title="Copy captioned image straight to clipboard for pasting into chat">
+              <span>📋 Copy</span>
+            </button>
+          </div>
+
+          <!-- Secondary Export Formats -->
+          <div class="secondary-actions">
+            <span class="export-alt-label">other formats:</span>
+            <div class="export-alt-group">
+              <button class="sketchy-btn sm" id="btnExportAlt1" type="button">JPG</button>
+              <button class="sketchy-btn sm" id="btnExportAlt2" type="button">WebP</button>
+              <button class="sketchy-btn sm lime" id="btnExportGifVideo" type="button" hidden>🎬 Video</button>
+              <button class="sketchy-btn sm bone" id="btnExportVideoGif" type="button" hidden>🎞️ GIF</button>
+            </div>
+          </div>
+
+          <!-- Live Export Progress Indicator -->
+          <div class="export-status-box" id="exportStatusBox" hidden>
+            <div class="progress-info">
+              <span id="progressStatusText">Baking frames…</span>
+              <span id="progressPercentText">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           COLUMN 2: CONTROLS & STYLING
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Caption Configuration Controls">
+        <div class="card-header-badge badge-cyan">
+          <span>✏️ caption &amp; settings</span>
+        </div>
+
+        <!-- 1. Dropzone Upload Area -->
+        <div class="dropzone-box" id="dropzoneBox" tabindex="0">
+          <input type="file" id="fileInput" class="file-input-hidden" accept="image/*,video/*,.gif" title="Upload an image, animated GIF, or video" />
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-title">drop image, gif, or video here</div>
+          <div class="dropzone-sub">or click to browse · ctrl+v to paste anytime!</div>
+        </div>
+
+        <!-- 2. Caption Text Section -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>💬 Caption Text</span>
+            <button class="sketchy-btn sm bone" id="btnResetText" type="button" title="Reset text to default plink">↺ Plink</button>
+          </div>
+
+          <textarea id="captionTextInput" class="caption-textarea" placeholder="Type your caption here..." rows="2">plink</textarea>
+
+          <!-- Optional Secondary Bottom Text (Active when position is Both) -->
+          <div id="bottomTextGroup" hidden>
+            <label class="control-label" for="captionBottomInput" style="margin-top: 4px;">Bottom Caption:</label>
+            <textarea id="captionBottomInput" class="caption-textarea" placeholder="Bottom text..." rows="2"></textarea>
+          </div>
+
+          <!-- Position Segmented Control -->
+          <div class="control-row" style="margin-top: 4px;">
+            <label class="control-label">Position:</label>
+            <div class="segmented-group" id="posGroup" role="radiogroup" aria-label="Caption position">
+              <button class="segmented-btn active" data-pos="top" type="button">Top</button>
+              <button class="segmented-btn" data-pos="bottom" type="button">Bottom</button>
+              <button class="segmented-btn" data-pos="both" type="button">Both</button>
+            </div>
+          </div>
+
+          <!-- Alignment & Case -->
+          <div class="control-row">
+            <label class="control-label">Alignment:</label>
+            <div class="segmented-group" id="alignGroup" role="radiogroup" aria-label="Text alignment">
+              <button class="segmented-btn" data-align="left" type="button">Left</button>
+              <button class="segmented-btn active" data-align="center" type="button">Center</button>
+              <button class="segmented-btn" data-align="right" type="button">Right</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Text Case:</label>
+            <div class="segmented-group" id="caseGroup" role="radiogroup" aria-label="Text letter case">
+              <button class="segmented-btn active" data-case="none" type="button">As Typed</button>
+              <button class="segmented-btn" data-case="upper" type="button">UPPER</button>
+              <button class="segmented-btn" data-case="lower" type="button">lower</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Font & Typography Section -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>🔤 Typography</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="fontFamilySelect">Font Family:</label>
+            <select class="sketchy-select" id="fontFamilySelect">
+              <option value="'Oswald', Futura, sans-serif" selected>Oswald / Futura (Classic Meme)</option>
+              <option value="'Anton', Impact, sans-serif">Anton (Ultra Bold)</option>
+              <option value="'Impact', sans-serif">Impact (Oldschool Meme)</option>
+              <option value="'Montserrat', sans-serif">Montserrat Black</option>
+              <option value="'Arial Black', sans-serif">Arial Black</option>
+              <option value="'DynaPuff', cursive">DynaPuff (Cute &amp; Bubbly)</option>
+              <option value="'Patrick Hand', cursive">Patrick Hand (Handwritten)</option>
+              <option value="'Shantell Sans', cursive">Shantell Sans (Comic Marker)</option>
+              <option value="'Comic Neue', cursive">Comic Neue (Clean Sans)</option>
+              <option value="'JetBrains Mono', monospace">JetBrains Mono (Code)</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="autoSizeToggle">Auto Font Size:</label>
+            <div class="sketchy-toggle">
+              <input id="autoSizeToggle" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+
+          <div class="control-row" id="manualFontRow" style="opacity: 0.55; pointer-events: none;">
+            <label class="control-label" for="fontSizeSlider">Font Size:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="fontSizeSlider" type="range" min="14" max="140" value="32" />
+              <span class="slider-val-badge" id="lblFontSize">32px</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Bar Appearance & Styling -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>🎨 Box Appearance</span>
+          </div>
+
+          <!-- Background Color -->
+          <div class="control-row">
+            <label class="control-label" for="bgColorPicker">Bar Color:</label>
+            <div class="color-picker-wrap">
+              <div class="color-swatches" id="bgSwatches">
+                <button class="color-swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White (Default)"></button>
+                <button class="color-swatch-btn" data-color="#fafafa" style="background: #fafafa;" title="Off-White"></button>
+                <button class="color-swatch-btn" data-color="#ffe66d" style="background: #ffe66d;" title="Pastel Yellow"></button>
+                <button class="color-swatch-btn" data-color="#ffd1dc" style="background: #ffd1dc;" title="Pastel Rose"></button>
+                <button class="color-swatch-btn" data-color="#111111" style="background: #111111;" title="Dark"></button>
+              </div>
+              <input class="sketchy-color-input" id="bgColorPicker" type="color" value="#ffffff" title="Custom background color" />
+            </div>
+          </div>
+
+          <!-- Text Color -->
+          <div class="control-row">
+            <label class="control-label" for="textColorPicker">Text Color:</label>
+            <div class="color-picker-wrap">
+              <div class="color-swatches" id="textSwatches">
+                <button class="color-swatch-btn" data-color="#000000" style="background: #000000;" title="Black (Default)"></button>
+                <button class="color-swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White"></button>
+                <button class="color-swatch-btn" data-color="#ed1b24" style="background: #ed1b24;" title="Red"></button>
+                <button class="color-swatch-btn" data-color="#00a3e8" style="background: #00a3e8;" title="Blue"></button>
+                <button class="color-swatch-btn" data-color="#a349a1" style="background: #a349a1;" title="Purple"></button>
+              </div>
+              <input class="sketchy-color-input" id="textColorPicker" type="color" value="#000000" title="Custom text color" />
+            </div>
+          </div>
+
+          <!-- Box Padding -->
+          <div class="control-row">
+            <label class="control-label" for="paddingSlider">Padding:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="paddingSlider" type="range" min="10" max="80" value="28" />
+              <span class="slider-val-badge" id="lblPadding">28px</span>
+            </div>
+          </div>
+
+          <!-- Divider Separator -->
+          <div class="control-row">
+            <label class="control-label" for="dividerSelect">Divider Line:</label>
+            <select class="sketchy-select" id="dividerSelect">
+              <option value="none" selected>None (Clean)</option>
+              <option value="hairline">Hairline</option>
+              <option value="doodle">Hand-Drawn Inked</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 5. Export Settings -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>⚙️ Output Scale</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Resolution:</label>
+            <div class="segmented-group" id="scaleGroup" role="radiogroup" aria-label="Output resolution scale">
+              <button class="segmented-btn active" data-scale="1" type="button">100%</button>
+              <button class="segmented-btn" data-scale="0.75" type="button">75%</button>
+              <button class="segmented-btn" data-scale="0.5" type="button">50%</button>
+            </div>
+          </div>
+          <div class="helper-text">
+            💡 Scale down to 75% or 50% for huge gifs and videos to stay within Discord's upload limit!
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Credit / Attribution Card -->
+    <footer class="bottom-credit-card">
+      <div class="bottom-credit-title">💬 meme caption studio · built for GitHub Pages</div>
+      <p class="bottom-credit-text">
+        Pure client-side image, GIF, and video compositing. Animated GIFs decoded with
+        <a href="https://github.com/deanm/omggif" target="_blank" rel="noopener"><strong>omggif</strong></a>
+        and encoded with <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener"><strong>gifenc</strong></a>.
+        Videos recorded with the native <strong>MediaRecorder API</strong> with audio preservation!
+      </p>
+      <div class="bottom-links">
+        <a href="https://qurayshe.github.io/" class="sketchy-btn sm yellow">🏠 qurayshe.github.io</a>
+        <a href="#misc/petpet" class="sketchy-btn sm">🐾 petpet</a>
+        <a href="#misc/qrcode" class="sketchy-btn sm">📱 qr code</a>
+        <a href="#misc/heartlocket" class="sketchy-btn sm pink">💝 heart locket</a>
+        <a href="#misc/blorbo" class="sketchy-btn sm lime">🎨 blorbo</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Popup -->
+  <div class="toast" id="toastBox">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="./vendor/omggif.js"></script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
+

@@ -287,6 +287,20 @@ export class SearchModal {
       keywords: 'heart locket photo gif video valentine love meme beloved three.js 3d opens clamshell misc',
       route: '#misc/heartlocket'
     });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '💬',
+      badge: 'Caption',
+      badgeClass: 'badge-misc',
+      id: 'misc-caption',
+      title: 'Caption Tool',
+      desc: 'Meme caption maker for images, animated GIFs, and videos with classic white header text.',
+      keywords: 'caption tool meme plink gif video text white box esmbot ifunny generator editor misc',
+      route: '#misc/caption'
+    });
+
   }
 
   renderModal() {

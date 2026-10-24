@@ -189,6 +189,7 @@ class App {
     if (frame) {
       let activeTool = toolId || 'blorbo';
       if (activeTool === 'qrcodedraw') activeTool = 'qrcode';
+      if (activeTool === 'caption-tool') activeTool = 'caption';
       const toolPath = `./misc/${activeTool}/index.html`;
       if (frame.getAttribute('src') !== toolPath) {
         frame.setAttribute('src', toolPath);
