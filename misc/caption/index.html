@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffe66d" />
   <title>Caption Tool 💬✨</title>
 
-  <!-- Google Fonts: Meme fonts (Oswald, Anton, Montserrat) + Doodle fonts (Patrick Hand, DynaPuff, Shantell Sans) + JetBrains Mono -->
+  <!-- Google Fonts: Meme fonts (Oswald, Anton, Montserrat, Ubuntu Sans) + Doodle fonts (Patrick Hand, DynaPuff, Shantell Sans) + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Comic+Neue:ital,wght@0,700;1,700&family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Inter:wght@600;800;900&family=JetBrains+Mono:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Oswald:wght@600;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,600;0,700;0,800;1,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Comic+Neue:ital,wght@0,700;1,700&family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Inter:wght@600;800;900&family=JetBrains+Mono:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Oswald:wght@600;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,600;0,700;0,800;1,700&family=Ubuntu+Sans:wght@700;800&family=Ubuntu+Sans+Condensed:wght@700;800;900&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -55,9 +55,6 @@
         </button>
         <button class="sketchy-btn sm pink" id="sampleKirby" type="button" title="Load the wobbling Kirby animated GIF">
           👾 Kirby GIF
-        </button>
-        <button class="sketchy-btn sm cyan" id="sampleVideo" type="button" title="Generate an interactive animated video with sound">
-          🎬 Bouncy Video
         </button>
       </div>
     </section>
@@ -214,7 +211,10 @@
           <div class="control-row">
             <label class="control-label" for="fontFamilySelect">Font Family:</label>
             <select class="sketchy-select" id="fontFamilySelect">
-              <option value="'Oswald', Futura, sans-serif" selected>Oswald / Futura (Classic Meme)</option>
+              <option value="'Futura Condensed Bold', 'Futura-CondensedExtraBold', 'Futura Condensed', Futura, 'Arial Narrow', sans-serif" selected>Futura Condensed Bold (Default)</option>
+              <option value="'Oswald', sans-serif">Oswald</option>
+              <option value="'Ubuntu Sans', sans-serif">Ubuntu Sans</option>
+              <option value="'Ubuntu Sans Condensed', sans-serif">Ubuntu Sans Condensed</option>
               <option value="'Anton', Impact, sans-serif">Anton (Ultra Bold)</option>
               <option value="'Impact', sans-serif">Impact (Oldschool Meme)</option>
               <option value="'Montserrat', sans-serif">Montserrat Black</option>
@@ -229,10 +229,10 @@
 
           <div class="control-row">
             <label class="control-label" for="autoSizeToggle">Auto Font Size:</label>
-            <div class="sketchy-toggle">
+            <label class="sketchy-toggle" for="autoSizeToggle" title="Toggle automatic font size fitting">
               <input id="autoSizeToggle" type="checkbox" checked />
               <span class="toggle-slider"></span>
-            </div>
+            </label>
           </div>
 
           <div class="control-row" id="manualFontRow" style="opacity: 0.55; pointer-events: none;">
@@ -309,6 +309,7 @@
           <div class="control-row">
             <label class="control-label">Resolution:</label>
             <div class="segmented-group" id="scaleGroup" role="radiogroup" aria-label="Output resolution scale">
+              <button class="segmented-btn" data-scale="2" type="button">200%</button>
               <button class="segmented-btn active" data-scale="1" type="button">100%</button>
               <button class="segmented-btn" data-scale="0.75" type="button">75%</button>
               <button class="segmented-btn" data-scale="0.5" type="button">50%</button>

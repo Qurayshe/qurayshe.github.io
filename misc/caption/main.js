@@ -92,7 +92,7 @@ const state = {
   position: 'top',    // 'top' | 'bottom' | 'both'
   alignment: 'center',// 'left' | 'center' | 'right'
   textCase: 'none',   // 'none' | 'upper' | 'lower'
-  fontFamily: "'Oswald', Futura, sans-serif",
+  fontFamily: "'Futura Condensed Bold', 'Futura-CondensedExtraBold', 'Futura Condensed', Futura, 'Arial Narrow', sans-serif",
   autoSize: true,
   fontSize: 32,
   bgColor: '#ffffff',
@@ -189,18 +189,35 @@ function formatText(str, textCase) {
 }
 
 /**
- * Calculates optimal font size for a given media width & text string.
- * Mimics classic Discord/esmBot meme styling: punchy, bold, nicely fitted.
+ * Automatically calculates the best font size for the caption text
+ * to fit nicely within the media width without spilling into excess lines.
  */
-function calculateOptimalFontSize(mediaWidth, text) {
-  if (!text) return 32;
-  const len = text.length;
-  // Base size is ~11% of media width for short words (like "plink")
-  let target = Math.round(mediaWidth * 0.11);
-  if (len > 30) target = Math.round(mediaWidth * 0.08);
-  if (len > 60) target = Math.round(mediaWidth * 0.06);
-  if (len > 120) target = Math.round(mediaWidth * 0.045);
-  return Math.max(16, Math.min(target, 120));
+function calculateOptimalFontSize(boxWidth, text, font) {
+  if (!text || text.trim() === '') return 32;
+
+  const testCanvas = document.createElement('canvas');
+  const tCtx = testCanvas.getContext('2d');
+  const maxW = Math.max(40, boxWidth - 36);
+
+  // Target size ~12% of box width for short text (e.g. ~31px on 261px width)
+  let testSize = Math.max(16, Math.min(Math.round(boxWidth * 0.12), 120));
+
+  tCtx.font = `bold ${testSize}px ${font}`;
+  if (tCtx.measureText(text).width <= maxW && !text.includes('\n')) {
+    return testSize;
+  }
+
+  // Iteratively reduce font size until lines <= 2 or minimum size reached
+  while (testSize > 14) {
+    tCtx.font = `bold ${testSize}px ${font}`;
+    const lines = wrapText(tCtx, text, maxW);
+    if (lines.length <= 2) {
+      break;
+    }
+    testSize -= 2;
+  }
+
+  return Math.max(14, testSize);
 }
 
 /**
@@ -280,9 +297,14 @@ function renderMeme(destCanvas, sourceMedia, opts = {}) {
   // Determine font size
   let currentFontSize = state.fontSize;
   if (state.autoSize) {
-    currentFontSize = calculateOptimalFontSize(w, topTextRaw || bottomTextRaw || 'plink');
+    currentFontSize = calculateOptimalFontSize(w, topTextRaw || bottomTextRaw || 'plink', state.fontFamily);
+    if (fontSizeSlider && lblFontSize) {
+      fontSizeSlider.value = currentFontSize;
+      lblFontSize.textContent = `${currentFontSize}px`;
+    }
+  } else {
+    currentFontSize = Math.max(12, Math.round(state.fontSize * scale));
   }
-  currentFontSize = Math.max(12, Math.round(currentFontSize * scale));
 
   const padY = Math.max(8, Math.round(state.padding * scale));
 
@@ -1067,126 +1089,7 @@ function exportGifToVideo() {
   stepGif();
 }
 
-/* ==========================================================================
-   Synthetic Sample Video Generator
-   Creates a cute 3-second animated video with sound in the browser!
-   ========================================================================== */
-async function generateSampleVideo() {
-  stopPlayback();
-  setExportStatus(true, 10, 'Synthesizing demo video…');
 
-  const mime = pickVideoMime() || 'video/webm';
-  const vCanvas = document.createElement('canvas');
-  vCanvas.width = 360;
-  vCanvas.height = 360;
-  const vCtx = vCanvas.getContext('2d');
-
-  // Web Audio Synth
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  const actx = new AudioCtx();
-  const dest = actx.createMediaStreamDestination();
-
-  const osc = actx.createOscillator();
-  const gain = actx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(260, actx.currentTime);
-  gain.gain.setValueAtTime(0.08, actx.currentTime);
-  osc.connect(gain);
-  gain.connect(dest);
-  osc.start();
-
-  const canvasStream = vCanvas.captureStream(30);
-  const combined = new MediaStream([
-    ...canvasStream.getVideoTracks(),
-    ...dest.stream.getAudioTracks()
-  ]);
-
-  const rec = new MediaRecorder(combined, { mimeType: mime });
-  const chunks = [];
-  rec.ondataavailable = (e) => chunks.push(e.data);
-
-  rec.onstop = () => {
-    osc.stop();
-    actx.close();
-    setExportStatus(false);
-    const blob = new Blob(chunks, { type: mime });
-    loadVideo(blob, 'bouncy-cat.mp4');
-  };
-
-  rec.start();
-
-  const startTime = performance.now();
-  const durationMs = 3000;
-
-  const anim = () => {
-    const elapsed = performance.now() - startTime;
-    const t = elapsed / 1000;
-
-    // Draw cute bouncy cat face
-    vCtx.fillStyle = '#ffeedd';
-    vCtx.fillRect(0, 0, 360, 360);
-
-    // Bouncing ball physics
-    const bounceY = Math.abs(Math.sin(t * 3.5)) * 120;
-    const catY = 240 - bounceY;
-
-    // Pitch shift with bounce
-    osc.frequency.setValueAtTime(260 + (240 - catY), actx.currentTime);
-
-    // Cute ears
-    vCtx.fillStyle = '#ff70a6';
-    vCtx.beginPath();
-    vCtx.moveTo(130, catY - 50);
-    vCtx.lineTo(150, catY - 100);
-    vCtx.lineTo(170, catY - 50);
-    vCtx.fill();
-
-    vCtx.beginPath();
-    vCtx.moveTo(190, catY - 50);
-    vCtx.lineTo(210, catY - 100);
-    vCtx.lineTo(230, catY - 50);
-    vCtx.fill();
-
-    // Cat head
-    vCtx.fillStyle = '#ffffff';
-    vCtx.strokeStyle = '#111111';
-    vCtx.lineWidth = 4;
-    vCtx.beginPath();
-    vCtx.arc(180, catY, 60, 0, Math.PI * 2);
-    vCtx.fill();
-    vCtx.stroke();
-
-    // Eyes
-    vCtx.fillStyle = '#111111';
-    vCtx.beginPath();
-    vCtx.arc(160, catY - 10, 8, 0, Math.PI * 2);
-    vCtx.arc(200, catY - 10, 8, 0, Math.PI * 2);
-    vCtx.fill();
-
-    // Pink nose
-    vCtx.fillStyle = '#ff70a6';
-    vCtx.beginPath();
-    vCtx.arc(180, catY + 6, 6, 0, Math.PI * 2);
-    vCtx.fill();
-
-    // Floor shadow
-    vCtx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-    vCtx.beginPath();
-    const shadowScale = 1 - bounceY / 150;
-    vCtx.ellipse(180, 310, 60 * shadowScale, 12 * shadowScale, 0, 0, Math.PI * 2);
-    vCtx.fill();
-
-    setExportStatus(true, Math.round((elapsed / durationMs) * 100), 'Rendering bouncy video…');
-
-    if (elapsed < durationMs) {
-      requestAnimationFrame(anim);
-    } else {
-      rec.stop();
-    }
-  };
-
-  requestAnimationFrame(anim);
-}
 
 /* ==========================================================================
    Event Listeners & User Interactions
@@ -1255,12 +1158,19 @@ function bindEvents() {
     manualFontRow.style.opacity = state.autoSize ? '0.55' : '1';
     manualFontRow.style.pointerEvents = state.autoSize ? 'none' : 'auto';
     updatePreview();
+    showToast(state.autoSize ? 'Auto Font Size: ON' : 'Manual Font Size: ON', '🔤');
   });
 
   fontSizeSlider.addEventListener('input', () => {
     state.fontSize = parseInt(fontSizeSlider.value, 10);
     lblFontSize.textContent = `${state.fontSize}px`;
-    if (!state.autoSize) updatePreview();
+    if (state.autoSize) {
+      state.autoSize = false;
+      autoSizeToggle.checked = false;
+      manualFontRow.style.opacity = '1';
+      manualFontRow.style.pointerEvents = 'auto';
+    }
+    updatePreview();
   });
 
   // 6. Box styling: colors & padding
@@ -1420,12 +1330,6 @@ function bindEvents() {
     captionTextInput.value = 'wobble';
     state.captionTop = 'wobble';
     loadGif('./img/sample.gif', 'kirby.gif');
-  });
-
-  $('#sampleVideo').addEventListener('click', () => {
-    captionTextInput.value = 'he bounce';
-    state.captionTop = 'he bounce';
-    generateSampleVideo();
   });
 
   // 11. Export Actions
