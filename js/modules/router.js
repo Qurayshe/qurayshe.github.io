@@ -19,6 +19,9 @@ export class Router {
     const hash = window.location.hash.replace('#', '') || 'home';
     let [section, subParam] = hash.split('/');
 
+    // 0. Update Navbar Theme (swap to 'blorbo' doodle styling on blorbo-themed pages in /misc)
+    this.updateNavbarTheme(section, subParam);
+
     // 1. Update Navigation Bar Active State
     const labSections = ['systems', 'graphics', 'motion', 'servers', 'ai'];
     const isLabActive = labSections.includes(section);
@@ -46,7 +49,8 @@ export class Router {
     document.querySelectorAll('.dropdown-item').forEach((item) => {
       const href = item.getAttribute('href')?.replace('#', '');
       const fullRoute = subParam ? `${section}/${subParam}` : section;
-      const isMatch = href === fullRoute || (!subParam && href === section);
+      const isDefaultBlorbo = section === 'misc' && !subParam && href === 'misc/blorbo';
+      const isMatch = href === fullRoute || (!subParam && href === section) || isDefaultBlorbo;
       item.classList.toggle('active', Boolean(isMatch));
     });
 
@@ -87,6 +91,24 @@ export class Router {
 
   navigate(hash) {
     window.location.hash = hash;
+  }
+
+  updateNavbarTheme(section, subParam) {
+    const isMisc = section === 'misc';
+    const activeTool = (subParam || 'blorbo').toLowerCase();
+    // 'lancer' uses the dark cyberpunk portal aesthetic.
+    // The rest of /misc (blorbo, petpet, qrcode, heartlocket, caption) use the 'blorbo' doodle theme.
+    const isBlorboTheme = isMisc && activeTool !== 'lancer';
+
+    document.body.classList.toggle('theme-blorbo', isBlorboTheme);
+    const navbar = document.querySelector('.global-navbar');
+    if (navbar) {
+      navbar.classList.toggle('theme-blorbo', isBlorboTheme);
+    }
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', isBlorboTheme ? '#f5f0e8' : '#07060b');
+    }
   }
 }
 

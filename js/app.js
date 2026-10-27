@@ -103,6 +103,7 @@ class App {
     this.bindCardHoverEffects();
     this.bindMagneticElements();
     this.bindMarkdownLinkInteractions();
+    this.bindIframeNavigation();
     this.animateHeroChoreography();
 
     // 6. Start Routing
@@ -196,6 +197,38 @@ class App {
         frame.src = toolPath;
       }
     }
+  }
+
+  bindIframeNavigation() {
+    const frame = document.getElementById('misc-embed-frame');
+    if (!frame) return;
+
+    frame.addEventListener('load', () => {
+      try {
+        const frameWin = frame.contentWindow;
+        if (!frameWin) return;
+
+        // If inner frame changes hash to another misc tool
+        frameWin.addEventListener('hashchange', () => {
+          const innerHash = frameWin.location.hash;
+          if (innerHash.startsWith('#misc/')) {
+            window.location.hash = innerHash;
+          }
+        });
+
+        // Intercept navigation links clicked inside iframe
+        frameWin.document.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href^="#misc/"]');
+          if (link) {
+            e.preventDefault();
+            const targetHash = link.getAttribute('href');
+            window.location.hash = targetHash;
+          }
+        });
+      } catch (err) {
+        // Handled silently if cross-origin
+      }
+    });
   }
 
   /* --------------------------------------------------------------------------
