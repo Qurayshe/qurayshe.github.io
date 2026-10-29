@@ -44,6 +44,7 @@ misc/caption/
 ├── index.html        # App structure and markup
 ├── style.css         # Blorbo doodle theme & responsive styling
 ├── main.js           # Compositing, playback loop & export logic
+├── fonts/            # Authentic Futura Condensed Bold webfonts (woff2, woff, ttf)
 ├── img/
 │   ├── sample.png    # Classic "plink" cat photo
 │   └── sample.gif    # Kirby wobble animated GIF

@@ -1,6 +1,60 @@
 @charset "UTF-8";
 
 /* ==========================================================================
+   Custom Web Fonts
+   Authentic Meme Font: Futura Condensed Bold (Image Club / esmBot / Tenor style)
+   ========================================================================== */
+@font-face {
+  font-family: 'Futura Condensed Bold';
+  src: url('./fonts/futura-condensed-bold.woff2') format('woff2'),
+       url('./fonts/futura-condensed-bold.woff') format('woff'),
+       url('./fonts/futura-condensed-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futura Condensed Bold';
+  src: url('./fonts/futura-condensed-bold.woff2') format('woff2'),
+       url('./fonts/futura-condensed-bold.woff') format('woff'),
+       url('./fonts/futura-condensed-bold.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futura Condensed Bold';
+  src: url('./fonts/futura-condensed-bold.woff2') format('woff2'),
+       url('./fonts/futura-condensed-bold.woff') format('woff'),
+       url('./fonts/futura-condensed-bold.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futura-CondensedExtraBold';
+  src: url('./fonts/futura-condensed-bold.woff2') format('woff2'),
+       url('./fonts/futura-condensed-bold.woff') format('woff'),
+       url('./fonts/futura-condensed-bold.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futura Condensed';
+  src: url('./fonts/futura-condensed-bold.woff2') format('woff2'),
+       url('./fonts/futura-condensed-bold.woff') format('woff'),
+       url('./fonts/futura-condensed-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
    Meme Caption Tool — Blorbo Doodle Theme
    Matches misc/blorbo, misc/petpet, misc/heartlocket & misc/qrcode on qurayshe.github.io:
    Cream dotted paper, Patrick Hand & DynaPuff typography, hand-inked borders,

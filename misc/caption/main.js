@@ -1372,10 +1372,13 @@ function handleFile(file) {
 async function init() {
   bindEvents();
 
-  // Wait for Google Fonts to be ready so initial canvas text measurements are accurate
+  // Wait for Google Fonts and custom webfonts to be ready so initial canvas text measurements are accurate
   if (document.fonts) {
     try {
-      await document.fonts.ready;
+      await Promise.all([
+        document.fonts.load('bold 32px "Futura Condensed Bold"'),
+        document.fonts.ready,
+      ]);
     } catch (e) {
       console.warn('Font loading check:', e);
     }
