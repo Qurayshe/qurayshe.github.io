@@ -50,6 +50,27 @@ class App {
       this.heroScene = new HeroScene('hero-3d-viewport');
     }
 
+    // 1c. Retro PC Viewport Expand / Minimize Toggle
+    const expandBtn = document.getElementById('btn-hero-pc-expand');
+    const heroGrid = document.querySelector('.hero-grid');
+    if (expandBtn && heroGrid) {
+      expandBtn.addEventListener('click', () => {
+        const isExpanded = heroGrid.classList.toggle('pc-expanded');
+        const maxIcon = expandBtn.querySelector('.expand-icon-maximize');
+        const minIcon = expandBtn.querySelector('.expand-icon-minimize');
+        const text = expandBtn.querySelector('.expand-btn-text');
+        if (maxIcon) maxIcon.style.display = isExpanded ? 'none' : 'block';
+        if (minIcon) minIcon.style.display = isExpanded ? 'block' : 'none';
+        if (text) text.textContent = isExpanded ? 'Minimize PC' : 'Expand PC';
+
+        if (this.computerScene) {
+          this.computerScene.onResize();
+          setTimeout(() => this.computerScene?.onResize(), 60);
+          setTimeout(() => this.computerScene?.onResize(), 320);
+        }
+      });
+    }
+
     // 2. Initialize Lab Viewers
     const systemsContainer = document.getElementById('systems-container');
     if (systemsContainer) {

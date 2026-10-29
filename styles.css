@@ -955,6 +955,65 @@ body.theme-blorbo .nav-mobile-toggle span {
   image-rendering: crisp-edges;
 }
 
+
+/* ==========================================================================
+   Hero Retro PC Viewport Expand / Minimize Mode
+   ========================================================================== */
+.hero-pc-expand-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.85rem;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.hero-pc-expand-btn:hover {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(99, 102, 241, 0.6);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+}
+
+.hero-pc-expand-btn:active {
+  transform: translateY(0);
+}
+
+/* Expanded state on hero-grid */
+.hero-grid.pc-expanded {
+  grid-template-columns: 1fr !important;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.hero-grid.pc-expanded .hero-3d-col {
+  display: none !important;
+}
+
+.hero-grid.pc-expanded .hero-pc-col {
+  width: 100%;
+  height: clamp(660px, 82vh, 880px);
+  min-height: 620px;
+  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .hero-copy-col {
   z-index: 2;
 }
