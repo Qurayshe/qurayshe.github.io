@@ -107,7 +107,7 @@ export class Router {
     }
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
-      themeColorMeta.setAttribute('content', isBlorboTheme ? '#f5f0e8' : '#07060b');
+      themeColorMeta.setAttribute('content', isBlorboTheme ? '#f5f0e8' : '#15131c');
     }
   }
 }

@@ -111,7 +111,7 @@ export class MemoryVisualizer {
 
   arenaAllocateChunk(payloadSize = 5) {
     const s = this.state;
-    const colors = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa'];
+    const colors = ['#45c8ff', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa'];
     const color = colors[s.good.nextId % colors.length];
     const cid = s.good.nextId;
 
@@ -161,7 +161,7 @@ export class MemoryVisualizer {
         id: cid,
         type: 'header',
         tag: `Hdr(${payloadSize}B)`,
-        color: '#a855f7'
+        color: '#ff70a6'
       };
       // Place payload
       for (let i = 1; i < totalNeeded; i++) {

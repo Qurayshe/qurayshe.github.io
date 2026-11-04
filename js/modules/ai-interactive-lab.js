@@ -392,7 +392,7 @@ export class AIInteractiveLab {
     };
   }
 
-  drawArrow(fromX, fromY, toX, toY, color = '#38bdf8', lineWidth = 2.5, label = '') {
+  drawArrow(fromX, fromY, toX, toY, color = '#45c8ff', lineWidth = 2.5, label = '') {
     const ctx = this.ctx;
     const p1 = this.toCanvas(fromX, fromY);
     const p2 = this.toCanvas(toX, toY);
@@ -489,8 +489,8 @@ export class AIInteractiveLab {
       const pSum = this.toCanvas(u.x + v.x, u.y + v.y);
 
       this.ctx.save();
-      this.ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
-      this.ctx.strokeStyle = 'rgba(168, 85, 247, 0.3)';
+      this.ctx.fillStyle = 'rgba(255, 112, 166, 0.08)';
+      this.ctx.strokeStyle = 'rgba(255, 112, 166, 0.3)';
       this.ctx.setLineDash([4, 4]);
       this.ctx.beginPath();
       this.ctx.moveTo(p0.x, p0.y);
@@ -533,7 +533,7 @@ export class AIInteractiveLab {
     }
 
     // 3. Draw Main Vectors u and v
-    this.drawArrow(0, 0, u.x, u.y, '#38bdf8', 3.0, `u (${u.x}, ${u.y})`);
+    this.drawArrow(0, 0, u.x, u.y, '#45c8ff', 3.0, `u (${u.x}, ${u.y})`);
     this.drawArrow(0, 0, v.x, v.y, '#fb7185', 3.0, `v (${v.x}, ${v.y})`);
 
     // 4. Update Stats Box
@@ -626,7 +626,7 @@ export class AIInteractiveLab {
 
     if (s.mode === 'row') {
       // Draw Line 1: a11 * x + a12 * y = b1
-      this.drawLineEquation(s.a11, s.a12, s.b1, '#38bdf8', 'Line 1: a11 x1 + a12 x2 = b1');
+      this.drawLineEquation(s.a11, s.a12, s.b1, '#45c8ff', 'Line 1: a11 x1 + a12 x2 = b1');
       // Draw Line 2: a21 * x + a22 * y = b2
       this.drawLineEquation(s.a21, s.a22, s.b2, '#fb7185', 'Line 2: a21 x1 + a22 x2 = b2');
 
@@ -658,7 +658,7 @@ export class AIInteractiveLab {
       }
     } else if (s.mode === 'col') {
       // Column Picture: x1 * [a11, a21] + x2 * [a12, a22] = [b1, b2]
-      this.drawArrow(0, 0, s.a11, s.a21, '#38bdf8', 2.5, 'col 1');
+      this.drawArrow(0, 0, s.a11, s.a21, '#45c8ff', 2.5, 'col 1');
       this.drawArrow(0, 0, s.a12, s.a22, '#fb7185', 2.5, 'col 2');
       this.drawArrow(0, 0, s.b1, s.b2, '#10b981', 3.5, 'target b');
 
@@ -704,8 +704,8 @@ export class AIInteractiveLab {
 
       // Base Parallelogram A
       this.ctx.save();
-      this.ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
-      this.ctx.strokeStyle = '#38bdf8';
+      this.ctx.fillStyle = 'rgba(69, 200, 255, 0.14)';
+      this.ctx.strokeStyle = '#45c8ff';
       this.ctx.lineWidth = 1.5;
       this.ctx.beginPath();
       this.ctx.moveTo(p0.x, p0.y);
@@ -735,8 +735,8 @@ export class AIInteractiveLab {
       this.ctx.restore();
 
       // Draw Vectors
-      this.drawArrow(0, 0, a1.x, a1.y, '#38bdf8', 2.5, `col 1 a₁ (${a1.x}, ${a1.y})`);
-      this.drawArrow(0, 0, a2.x, a2.y, '#a855f7', 2.5, `col 2 a₂ (${a2.x}, ${a2.y})`);
+      this.drawArrow(0, 0, a1.x, a1.y, '#45c8ff', 2.5, `col 1 a₁ (${a1.x}, ${a1.y})`);
+      this.drawArrow(0, 0, a2.x, a2.y, '#ff70a6', 2.5, `col 2 a₂ (${a2.x}, ${a2.y})`);
       this.drawArrow(0, 0, b.x, b.y, '#10b981', 3.0, `target b (${b.x}, ${b.y})`);
 
       // Trace & Characteristic polynomial
@@ -909,7 +909,7 @@ export class AIInteractiveLab {
       // Draw Trajectory Ribbon
       if (p.path.length > 1) {
         ctx.save();
-        ctx.strokeStyle = isRK4 ? '#38bdf8' : '#f43f5e';
+        ctx.strokeStyle = isRK4 ? '#45c8ff' : '#f43f5e';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         const pStart = this.toCanvas(p.path[0].x, p.path[0].y);
@@ -984,7 +984,7 @@ export class AIInteractiveLab {
     const u2 = { x: -0.555, y: 0.832 };
 
     // 1. Draw Principal Axes (Eigenvectors / Singular Vectors)
-    this.drawArrow(0, 0, u1.x * 3.5, u1.y * 3.5, '#38bdf8', 2.5, 'u1 (σ1 = 3.8)');
+    this.drawArrow(0, 0, u1.x * 3.5, u1.y * 3.5, '#45c8ff', 2.5, 'u1 (σ1 = 3.8)');
     this.drawArrow(0, 0, u2.x * 1.5, u2.y * 1.5, '#fb7185', 2.0, 'u2 (σ2 = 0.8)');
 
     // 2. Draw Data Points (interpolating between full 2D position and rank-1 projection)
@@ -1001,7 +1001,7 @@ export class AIInteractiveLab {
       const pScreen = this.toCanvas(curX, curY);
 
       // Point dot
-      ctx.fillStyle = '#a855f7';
+      ctx.fillStyle = '#ff70a6';
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -1012,7 +1012,7 @@ export class AIInteractiveLab {
       // Drop dashed line if blending
       if (blend > 0.05 && blend < 0.95) {
         const pOrig = this.toCanvas(pt.x, pt.y);
-        ctx.strokeStyle = 'rgba(168, 85, 247, 0.3)';
+        ctx.strokeStyle = 'rgba(255, 112, 166, 0.3)';
         ctx.setLineDash([2, 2]);
         ctx.beginPath();
         ctx.moveTo(pOrig.x, pOrig.y);
@@ -1148,7 +1148,7 @@ export class AIInteractiveLab {
 
       // 1. Draw Activation Curve f(x) (Cyan)
       ctx.save();
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = '#45c8ff';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       let first = true;
@@ -1251,7 +1251,7 @@ export class AIInteractiveLab {
     // Trajectory path
     if (this.gradState.history.length > 1) {
       ctx.save();
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = '#45c8ff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const p0 = this.toCanvas(this.gradState.history[0].x, this.gradState.history[0].y);
@@ -1329,7 +1329,7 @@ export class AIInteractiveLab {
 
     // 1-sigma, 2-sigma, 3-sigma ellipses
     [1, 2, 3].forEach((k) => {
-      ctx.strokeStyle = k === 1 ? '#38bdf8' : k === 2 ? 'rgba(56, 189, 248, 0.4)' : 'rgba(56, 189, 248, 0.2)';
+      ctx.strokeStyle = k === 1 ? '#45c8ff' : k === 2 ? 'rgba(69, 200, 255, 0.4)' : 'rgba(69, 200, 255, 0.2)';
       ctx.lineWidth = k === 1 ? 2 : 1;
       ctx.beginPath();
       ctx.ellipse(p0.x, p0.y, k * sx * this.scale, k * sy * (1 - Math.abs(rho) * 0.4) * this.scale, -angle, 0, Math.PI * 2);

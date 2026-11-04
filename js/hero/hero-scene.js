@@ -169,11 +169,11 @@ export class HeroScene {
     const ambientLight = new THREE.AmbientLight(0x181028, 2.8);
     this.studioLightsGroup.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0xa855f7, 4.5, 35);
+    const pointLight1 = new THREE.PointLight(0xff70a6, 4.5, 35);
     pointLight1.position.set(10, 12, 10);
     this.studioLightsGroup.add(pointLight1);
 
-    const pointLight2 = new THREE.PointLight(0x38bdf8, 3.5, 30);
+    const pointLight2 = new THREE.PointLight(0x45c8ff, 3.5, 30);
     pointLight2.position.set(-10, -10, 8);
     this.studioLightsGroup.add(pointLight2);
 
@@ -204,7 +204,7 @@ export class HeroScene {
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
     grad.addColorStop(0.35, 'rgba(240, 220, 255, 0.95)');
-    grad.addColorStop(0.65, 'rgba(168, 85, 247, 0.5)');
+    grad.addColorStop(0.65, 'rgba(255, 112, 166, 0.5)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 64, 64);
@@ -222,7 +222,7 @@ export class HeroScene {
     const originalPositions = new Float32Array(count * 3);
 
     const color1 = new THREE.Color('#c084fc');
-    const color2 = new THREE.Color('#38bdf8');
+    const color2 = new THREE.Color('#45c8ff');
     const color3 = new THREE.Color('#f43f5e');
 
     for (let i = 0; i < count; i++) {
@@ -305,7 +305,7 @@ export class HeroScene {
 
     const ringGeo = new THREE.TorusGeometry(4.3, 0.04, 16, 100);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
+      color: 0x45c8ff,
       transparent: true,
       opacity: 0.6
     });
@@ -322,7 +322,7 @@ export class HeroScene {
       {
         id: 'systems',
         label: 'Systems & C',
-        color: 0xa855f7,
+        color: 0xff70a6,
         geo: new THREE.OctahedronGeometry(0.52, 0),
         orbitRadius: 5.4,
         speed: 0.75,
@@ -332,7 +332,7 @@ export class HeroScene {
       {
         id: 'servers',
         label: 'Rust & Go Servers',
-        color: 0x38bdf8,
+        color: 0x45c8ff,
         geo: new THREE.DodecahedronGeometry(0.48, 0),
         orbitRadius: 6.2,
         speed: -0.55,
@@ -388,8 +388,8 @@ export class HeroScene {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
 
-    const c1 = new THREE.Color('#a855f7');
-    const c2 = new THREE.Color('#38bdf8');
+    const c1 = new THREE.Color('#ff70a6');
+    const c2 = new THREE.Color('#45c8ff');
 
     let idx = 0;
     for (let x = 0; x < size; x++) {
@@ -427,7 +427,7 @@ export class HeroScene {
     this.matrixRipples = [];
     this.matrixGroup.add(this.matrixPoints);
 
-    const gridHelper = new THREE.GridHelper(size * spacing, size, 0xa855f7, 0x38bdf8);
+    const gridHelper = new THREE.GridHelper(size * spacing, size, 0xff70a6, 0x45c8ff);
     gridHelper.position.y = -0.05;
     gridHelper.material.opacity = 0.25;
     gridHelper.material.transparent = true;

@@ -364,7 +364,7 @@ export class MotionLab {
   getControlMeta(ctrl, index) {
     const CONTROL_COLORS = [
       '#c084fc', // Neon Violet
-      '#a855f7', // Electric Purple
+      '#ff70a6', // Doodle Rose
       '#ffffff', // Pure White
       '#e9d5ff', // Lilac White
       '#d8b4fe', // Light Lavender

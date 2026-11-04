@@ -51,8 +51,8 @@ export class ResumeViewer {
               <svg class="resume-svg-frame" viewBox="0 0 160 160" width="110" height="110">
                 <defs>
                   <linearGradient id="crestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#a855f7" />
-                    <stop offset="50%" stop-color="#38bdf8" />
+                    <stop offset="0%" stop-color="#ff70a6" />
+                    <stop offset="50%" stop-color="#45c8ff" />
                     <stop offset="100%" stop-color="#ec4899" />
                   </linearGradient>
                   <filter id="neonPulse" x="-30%" y="-30%" width="160%" height="160%">
@@ -65,12 +65,12 @@ export class ResumeViewer {
                 </defs>
                 <!-- Octagonal Outer Frame -->
                 <polygon class="svg-anim-path crest-outer" points="80,8 135,30 152,80 135,130 80,152 25,130 8,80 25,30"
-                  fill="rgba(168, 85, 247, 0.06)" stroke="url(#crestGrad)" stroke-width="2.5" filter="url(#neonPulse)" />
+                  fill="rgba(255, 112, 166, 0.06)" stroke="url(#crestGrad)" stroke-width="2.5" filter="url(#neonPulse)" />
                 <!-- Inner Geometric Circuit Rings -->
                 <circle class="svg-anim-path crest-ring" cx="80" cy="80" r="46"
-                  fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="6,4" />
+                  fill="none" stroke="#45c8ff" stroke-width="1.8" stroke-dasharray="6,4" />
                 <circle class="svg-anim-path crest-core" cx="80" cy="80" r="26"
-                  fill="rgba(56, 189, 248, 0.12)" stroke="#a855f7" stroke-width="2" />
+                  fill="rgba(69, 200, 255, 0.12)" stroke="#ff70a6" stroke-width="2" />
                 <text x="80" y="87" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="800" fill="#ffffff">◆</text>
               </svg>
             </div>
@@ -719,8 +719,8 @@ export class ResumeViewer {
         { value: 1.0, duration: 450, easing: 'easeOutElastic(1.3, 0.45)' }
       ],
       borderColor: [
-        { value: '#a855f7', duration: 150 },
-        { value: 'rgba(168, 85, 247, 0.25)', duration: 450 }
+        { value: '#ff70a6', duration: 150 },
+        { value: 'rgba(255, 112, 166, 0.25)', duration: 450 }
       ],
       delay: anime.stagger(30, { from: clickedIndex % allNodes.length })
     });
@@ -815,11 +815,11 @@ export class ResumeViewer {
         // Modulate color from purple to cyan
         const pct = i / this.equalizerBars.length;
         if (amp > 0.75) {
-          barObj.el.style.background = '#38bdf8';
-          barObj.el.style.boxShadow = '0 0 8px rgba(56, 189, 248, 0.8)';
+          barObj.el.style.background = '#45c8ff';
+          barObj.el.style.boxShadow = '0 0 8px rgba(69, 200, 255, 0.8)';
         } else if (pct < 0.5) {
-          barObj.el.style.background = '#a855f7';
-          barObj.el.style.boxShadow = '0 0 6px rgba(168, 85, 247, 0.5)';
+          barObj.el.style.background = '#ff70a6';
+          barObj.el.style.boxShadow = '0 0 6px rgba(255, 112, 166, 0.5)';
         } else {
           barObj.el.style.background = '#c084fc';
           barObj.el.style.boxShadow = 'none';
@@ -847,7 +847,7 @@ export class ResumeViewer {
       backgroundColor: [
         { value: '#ffffff', duration: 150 },
         { value: '#ec4899', duration: 250 },
-        { value: '#a855f7', duration: 300 }
+        { value: '#ff70a6', duration: 300 }
       ],
       delay: anime.stagger(15, { from: 'center' })
     });
