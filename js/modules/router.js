@@ -97,7 +97,7 @@ export class Router {
     const isMisc = section === 'misc';
     const activeTool = (subParam || 'blorbo').toLowerCase();
     // 'lancer' uses the dark cyberpunk portal aesthetic.
-    // The rest of /misc (blorbo, petpet, qrcode, heartlocket, caption) use the 'blorbo' doodle theme.
+    // The rest of /misc (blorbo, petpet, qrcode, heartlocket, caption, ascii) use the 'blorbo' doodle theme.
     const isBlorboTheme = isMisc && activeTool !== 'lancer';
 
     document.body.classList.toggle('theme-blorbo', isBlorboTheme);

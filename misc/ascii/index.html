@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ASCII image filter — turn any picture into character art with tweakable ramps, dithering, tone curves, colour modes and PNG / text export. 100% client-side." />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>ascii filter 🔤✨</title>
+
+  <!-- Google Fonts: Blorbo Doodle fonts + monospace ramps -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=Patrick+Hand&family=Shantell+Sans:ital,wght@0,500;0,700;0,800;1,700&family=Silkscreen:wght@400;700&family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- ====================================================================
+       TOP INFO BANNER
+       ==================================================================== -->
+  <aside class="credit-banner top-credit" aria-label="About">
+    <span class="sparkle-icon">✨</span>
+    <span>
+      every pixel becomes a character — tweak the <strong>ramp</strong>,
+      <strong>dither</strong>, <strong>tone</strong> &amp; <strong>ink</strong>, then export a crisp
+      <strong>PNG</strong> or plain-text <strong>.txt</strong>
+    </span>
+    <span class="sparkle-icon">🔤</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>🔤 ascii filter</span>
+        <span style="font-size: 22px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          image · character ramp · dither · colour · png &amp; txt export
+        </div>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener" title="Back to main site">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Samples Toolbar -->
+    <section class="sample-bar" aria-label="Quick Samples">
+      <div class="sample-bar-label">
+        <span>✨ quick samples:</span>
+      </div>
+      <div class="sample-pills">
+        <button class="sketchy-btn sm yellow" id="samplePlink" type="button" title="Load the classic Plink cat photo">
+          🐱 Plink Cat
+        </button>
+        <button class="sketchy-btn sm pink" id="sampleTestCard" type="button" title="Load a colourful procedural test card">
+          🌈 Test Card
+        </button>
+      </div>
+    </section>
+
+    <!-- Two-Column Grid -->
+    <main class="card-grid">
+      <!-- ================================================================
+           COLUMN 1: LIVE PREVIEW & EXPORT
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="Preview and Export">
+        <div class="card-header-badge badge-yellow">
+          <span>👀 live preview</span>
+        </div>
+
+        <!-- Preview Stage (doubles as a drop target) -->
+        <div class="stage-wrap is-empty" id="stageWrap">
+          <div class="canvas-container">
+            <canvas id="asciiCanvas" class="ascii-canvas" width="600" height="400" tabindex="0"
+              aria-label="ASCII art preview of the loaded image"></canvas>
+          </div>
+          <div class="stage-empty" id="stageEmpty">
+            <div style="font-size: 30px;">🖼️</div>
+            <div>drop an image anywhere on this page</div>
+            <div style="font-size: 14px; font-weight: normal;">click the box on the right · or ctrl+v to paste</div>
+          </div>
+        </div>
+
+        <!-- Source Info Pills -->
+        <div class="media-info-bar">
+          <div class="media-tag-pill" id="sourcePill" title="Current source image">
+            <span id="sourceIcon">🖼️</span>
+            <span id="sourceName">sample.png</span>
+          </div>
+          <div class="media-dim-pill" id="sourceDim">— × —</div>
+        </div>
+
+        <!-- Live Render Stats -->
+        <div class="ascii-stats" id="asciiStats" aria-live="polite">
+          <span class="stat-chip">grid <b id="statGrid">–</b></span>
+          <span class="stat-chip">glyphs <b id="statGlyphs">–</b></span>
+          <span class="stat-chip">render <b id="statTime">–</b></span>
+          <span class="stat-chip" id="statEngineChip">engine <b id="statEngine">–</b></span>
+        </div>
+
+        <!-- Export Actions -->
+        <div class="action-rows">
+          <div class="primary-actions">
+            <button class="sketchy-btn lg pink" id="btnDownloadPng" type="button" title="Download the ASCII art as a PNG">
+              <span>💾 Download PNG</span>
+            </button>
+            <button class="sketchy-btn lg" id="btnCopyPng" type="button" title="Copy the ASCII art PNG straight to the clipboard">
+              <span>📋 Copy PNG</span>
+            </button>
+          </div>
+          <div class="secondary-actions">
+            <span class="export-alt-label">plain text:</span>
+            <div class="export-alt-group">
+              <button class="sketchy-btn sm" id="btnCopyText" type="button" title="Copy the raw characters to the clipboard">📄 Copy .txt</button>
+              <button class="sketchy-btn sm lime" id="btnDownloadTxt" type="button" title="Download the raw characters as a .txt file">⬇ .txt</button>
+              <button class="sketchy-btn sm bone" id="btnReset" type="button" title="Reset every knob back to default">↺ reset</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           COLUMN 2: CONTROLS
+           ================================================================ -->
+      <section class="sketchy-card" aria-label="ASCII Configuration Controls">
+        <div class="card-header-badge badge-cyan">
+          <span>🎛️ knobs &amp; dials</span>
+        </div>
+
+        <!-- 1. Dropzone Upload Area -->
+        <div class="dropzone-box" id="dropzoneBox" tabindex="0" role="button" aria-label="Upload an image">
+          <input type="file" id="fileInput" class="file-input-hidden" accept="image/*" title="Upload an image" />
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-title">drop an image here</div>
+          <div class="dropzone-sub">or click to browse · ctrl+v to paste anytime</div>
+        </div>
+
+        <!-- 2. Character Ramp -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>🔤 Character Ramp</span>
+            <span class="stat-chip" id="rampLengthChip">10 chars</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="rampSelect">Ramp:</label>
+            <select class="sketchy-select" id="rampSelect">
+              <option value="classic" selected>Classic  .:-=+*#%@</option>
+              <option value="blocks">Blocks  ░▒▓█</option>
+              <option value="detailed">Detailed (70 levels)</option>
+              <option value="minimal">Minimal  .*#</option>
+              <option value="dots">Dots  ·•●</option>
+              <option value="binary">Binary  01</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </div>
+
+          <div class="ramp-preview" id="rampPreview" title="Current ramp, light → dark"></div>
+
+          <div class="control-row" id="customRampRow" hidden>
+            <label class="control-label" for="customRampInput">Custom:</label>
+            <input class="sketchy-input" id="customRampInput" type="text" value=" .:-=+*#%@"
+              maxlength="120" spellcheck="false" autocomplete="off" title="Your own ramp, light → dark" />
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="invertToggle">Invert:</label>
+            <label class="sketchy-toggle" for="invertToggle" title="Swap light and dark glyphs (great on a dark background)">
+              <input id="invertToggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="ditherToggle">Dither 4×4:</label>
+            <label class="sketchy-toggle" for="ditherToggle" title="Ordered Bayer dithering for smoother gradients">
+              <input id="ditherToggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="helper-text">
+            💡 the ramp runs light → dark: bright pixels use the first character.
+          </div>
+        </div>
+
+        <!-- 3. Tone & Detail -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>🎚️ Tone &amp; Detail</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="colsSlider">Resolution:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="colsSlider" type="range" min="30" max="220" step="2" value="90" />
+              <span class="slider-val-badge" id="lblCols">90</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="glyphSlider">Glyph size:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="glyphSlider" type="range" min="6" max="20" step="1" value="10" />
+              <span class="slider-val-badge" id="lblGlyph">10px</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="brightnessSlider">Brightness:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="brightnessSlider" type="range" min="-100" max="100" step="1" value="0" />
+              <span class="slider-val-badge" id="lblBrightness">0</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="contrastSlider">Contrast:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="contrastSlider" type="range" min="0" max="200" step="1" value="100" />
+              <span class="slider-val-badge" id="lblContrast">100</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="gammaSlider">Gamma:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="gammaSlider" type="range" min="20" max="250" step="1" value="100" />
+              <span class="slider-val-badge" id="lblGamma">1.00</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="edgeSlider">Edge boost:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="edgeSlider" type="range" min="0" max="100" step="1" value="0" />
+              <span class="slider-val-badge" id="lblEdge">0</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="smoothSlider">Smooth:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="smoothSlider" type="range" min="0" max="3" step="1" value="0" />
+              <span class="slider-val-badge" id="lblSmooth">0</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="autoLevelsToggle">Auto levels:</label>
+            <label class="sketchy-toggle" for="autoLevelsToggle" title="Stretch the histogram so the whole ramp gets used">
+              <input id="autoLevelsToggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="helper-text">
+            💡 edge boost traces outlines (anime &amp; logos pop) · smooth calms noisy photos.
+          </div>
+        </div>
+
+        <!-- 4. Ink & Colours -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>🎨 Ink &amp; Colours</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Mode:</label>
+            <div class="segmented-group" id="colorModeGroup" role="radiogroup" aria-label="Colour mode">
+              <button class="segmented-btn active" data-mode="mono" type="button" title="Single ink colour on a paper background">Ink</button>
+              <button class="segmented-btn" data-mode="source" type="button" title="Every glyph takes the pixel's own colour">Source</button>
+              <button class="segmented-btn" data-mode="duotone" type="button" title="Gradient between ink and highlight colours">Duotone</button>
+            </div>
+          </div>
+
+          <div class="control-row" id="inkRow">
+            <label class="control-label" for="inkColorPicker">Ink:</label>
+            <div class="color-picker-wrap">
+              <div class="color-swatches" id="inkSwatches">
+                <button class="color-swatch-btn" data-color="#111111" style="background: #111111;" title="Ink Black" type="button"></button>
+                <button class="color-swatch-btn" data-color="#a349a1" style="background: #a349a1;" title="Blorbo Purple" type="button"></button>
+                <button class="color-swatch-btn" data-color="#00a3e8" style="background: #00a3e8;" title="Sky Blue" type="button"></button>
+                <button class="color-swatch-btn" data-color="#ed1b24" style="background: #ed1b24;" title="Bright Red" type="button"></button>
+                <button class="color-swatch-btn" data-color="#b5e51d" style="background: #b5e51d;" title="Lime" type="button"></button>
+              </div>
+              <input class="sketchy-color-input" id="inkColorPicker" type="color" value="#111111" title="Custom ink colour" />
+            </div>
+          </div>
+
+          <div class="control-row" id="highlightRow" hidden>
+            <label class="control-label" for="highlightColorPicker">Highlight:</label>
+            <div class="color-picker-wrap">
+              <div class="color-swatches" id="highlightSwatches">
+                <button class="color-swatch-btn" data-color="#ff70a6" style="background: #ff70a6;" title="Rose" type="button"></button>
+                <button class="color-swatch-btn" data-color="#ffe66d" style="background: #ffe66d;" title="Yellow" type="button"></button>
+                <button class="color-swatch-btn" data-color="#00a3e8" style="background: #00a3e8;" title="Sky Blue" type="button"></button>
+                <button class="color-swatch-btn" data-color="#a0e8af" style="background: #a0e8af;" title="Mint" type="button"></button>
+                <button class="color-swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White" type="button"></button>
+              </div>
+              <input class="sketchy-color-input" id="highlightColorPicker" type="color" value="#ff70a6" title="Custom highlight colour" />
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="paperColorPicker">Paper:</label>
+            <div class="color-picker-wrap">
+              <div class="color-swatches" id="paperSwatches">
+                <button class="color-swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White" type="button"></button>
+                <button class="color-swatch-btn" data-color="#fffdf5" style="background: #fffdf5;" title="Cream Paper" type="button"></button>
+                <button class="color-swatch-btn" data-color="#f5f0e8" style="background: #f5f0e8;" title="Doodle Paper" type="button"></button>
+                <button class="color-swatch-btn" data-color="#111111" style="background: #111111;" title="Ink Black" type="button"></button>
+                <button class="color-swatch-btn" data-color="#0b0b12" style="background: #0b0b12;" title="Terminal Black" type="button"></button>
+              </div>
+              <input class="sketchy-color-input" id="paperColorPicker" type="color" value="#ffffff" title="Custom paper colour" />
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="transparentToggle">Transparent bg:</label>
+            <label class="sketchy-toggle" for="transparentToggle" title="Export a PNG with a transparent background">
+              <input id="transparentToggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="helper-text">
+            💡 want white type on black? flip <strong>paper</strong> to black, <strong>ink</strong> to white, then hit invert.
+          </div>
+        </div>
+
+        <!-- 5. Typography -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>✒️ Glyph Font</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="fontSelect">Font:</label>
+            <select class="sketchy-select" id="fontSelect">
+              <option value="'JetBrains Mono', monospace" selected>JetBrains Mono</option>
+              <option value="'VT323', monospace">VT323 (terminal)</option>
+              <option value="'Silkscreen', monospace">Silkscreen (pixel)</option>
+              <option value="'Space Mono', monospace">Space Mono</option>
+              <option value="'Courier New', monospace">Courier New</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="boldToggle">Bold:</label>
+            <label class="sketchy-toggle" for="boldToggle" title="Heavier glyphs, chunkier art">
+              <input id="boldToggle" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="helper-text">
+            💡 pixel fonts (Silkscreen, VT323) give that crunchy retro BBS look.
+          </div>
+        </div>
+
+        <!-- 6. Export Quality -->
+        <div class="control-section">
+          <div class="section-title-row">
+            <span>💾 Export Quality</span>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Raster scale:</label>
+            <div class="segmented-group" id="scaleGroup" role="radiogroup" aria-label="Raster resolution scale">
+              <button class="segmented-btn" data-scale="1" type="button">1×</button>
+              <button class="segmented-btn active" data-scale="2" type="button">2×</button>
+              <button class="segmented-btn" data-scale="3" type="button">3×</button>
+            </div>
+          </div>
+
+          <div class="helper-text">
+            💡 the preview canvas <em>is</em> the export — bump the scale for retina-crisp PNGs
+            (3× on 220 columns gets seriously big).
+          </div>
+        </div>
+
+
+      </section>
+
+    </main>
+
+    <!-- Bottom Credit / Attribution Card -->
+    <footer class="bottom-credit-card">
+      <div class="bottom-credit-title">🔤 ascii filter studio · built for GitHub Pages</div>
+      <p class="bottom-credit-text">
+        Every glyph is a GPU instance: the ramps are baked into a single texture atlas and the
+        whole grid is drawn in <strong>one instanced draw call</strong> (WebGL2), so the same
+        pipeline can chew through animated GIFs and video frames later without changing a knob.
+        Sampling, dithering and ramp mapping are plain JS — no wasm, no server, nothing leaves your browser.
+      </p>
+      <div class="bottom-links">
+        <a href="https://qurayshe.github.io/" class="sketchy-btn sm yellow">🏠 qurayshe.github.io</a>
+        <a href="#misc/petpet" class="sketchy-btn sm">🐾 petpet</a>
+        <a href="#misc/caption" class="sketchy-btn sm cyan">💬 caption</a>
+        <a href="#misc/qrcode" class="sketchy-btn sm">📱 qr code</a>
+        <a href="#misc/heartlocket" class="sketchy-btn sm pink">💝 heart locket</a>
+        <a href="#misc/blorbo" class="sketchy-btn sm lime">🎨 blorbo</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Popup -->
+  <div class="toast" id="toastBox" role="status" aria-live="polite">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

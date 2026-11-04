@@ -301,6 +301,19 @@ export class SearchModal {
       route: '#misc/caption'
     });
 
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '🔤',
+      badge: 'ASCII',
+      badgeClass: 'badge-misc',
+      id: 'misc-ascii',
+      title: 'ASCII Filter',
+      desc: 'Turn images into character art with custom ramps, dithering, tone curves, colour modes and PNG / text export.',
+      keywords: 'ascii art filter image text character ramp dither bayer posterize mono duotone monospace terminal text art generator misc',
+      route: '#misc/ascii'
+    });
+
   }
 
   renderModal() {
