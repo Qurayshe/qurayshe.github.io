@@ -19,6 +19,7 @@ import { AIViewer } from './modules/ai-viewer.js';
 import { MotionLab } from './modules/motion-lab.js';
 import { ResumeViewer } from './modules/resume-viewer.js';
 import { SearchModal } from './modules/search-modal.js';
+import { TerminalLoader } from './modules/terminal-loader.js';
 import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from './data/manifest.js';
 
 class App {
@@ -38,6 +39,8 @@ class App {
   }
 
   init() {
+    // 0. Terminal Boot Loader (runs on initial visit to prevent font pop-in / FOUT)
+    TerminalLoader.init();
     // 1a. Initialize Floating Retro PC Scene (Independent canvas on the left)
     const pcViewport = document.getElementById('hero-pc-viewport');
     if (pcViewport) {

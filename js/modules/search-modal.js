@@ -6,6 +6,7 @@
 import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from '../data/manifest.js';
 import { RESUME_DATA } from '../data/resume-data.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { TerminalLoader } from './terminal-loader.js';
 
 export class SearchModal {
   constructor(router) {
@@ -221,6 +222,20 @@ export class SearchModal {
         });
       });
     }
+
+    // 4b. Index System Boot Replay
+    this.items.push({
+      type: 'system',
+      category: 'System // BIOS',
+      icon: '⚡',
+      badge: 'Terminal',
+      badgeClass: 'badge-three',
+      id: 'system-boot',
+      title: 'Replay Terminal Boot Sequence',
+      desc: 'Replay the BIOS startup sequence with Kirby, Yuuka, and Miyabi ASCII terminal showcase.',
+      keywords: 'terminal boot bios sequence ascii art kirby yuuka miyabi reboot restart loader',
+      action: () => TerminalLoader.replay()
+    });
 
     // 5. Index Misc Fun Tools
     this.items.push({
@@ -509,7 +524,13 @@ export class SearchModal {
 
   selectItem(item) {
     this.close();
-    window.location.hash = item.route.replace('#', '');
+    if (item.action) {
+      item.action();
+      return;
+    }
+    if (item.route) {
+      window.location.hash = item.route.replace('#', '');
+    }
   }
 }
 

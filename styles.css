@@ -7463,3 +7463,288 @@ code[class*="language-"] {
 
 
 
+
+/* ==========================================================================
+   Terminal Boot Loading Screen (Initial Visit)
+   ========================================================================== */
+
+html.fast-boot #terminal-boot-screen {
+  display: none !important;
+}
+
+#terminal-boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #0e0c14;
+  color: var(--text-main, #f5f0e8);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  cursor: default;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s ease;
+}
+
+#terminal-boot-screen.terminal-fade-out {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.015);
+  filter: blur(4px);
+}
+
+/* Retro CRT scanlines and subtle radial phosphor glow */
+.terminal-scanlines {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 26, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+              radial-gradient(circle at 40% 35%, rgba(255, 112, 166, 0.05), transparent 75%);
+  background-size: 100% 4px, 100% 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Console Window Box (Top / Upper-Left) */
+.terminal-console-pane {
+  position: relative;
+  z-index: 4;
+  width: min(720px, 92vw);
+  margin: clamp(1rem, 3.5vh, 2.5rem) auto auto clamp(1.2rem, 5vw, 4.5rem);
+  background: rgba(21, 19, 28, 0.92);
+  border: 1.5px solid rgba(245, 240, 232, 0.22);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 4px 6px 0 var(--doodle-void, #0b0910), 0 0 35px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.terminal-console-pane:hover {
+  border-color: rgba(255, 112, 166, 0.45);
+}
+
+.terminal-boot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: rgba(14, 12, 20, 0.95);
+  border-bottom: 1px solid rgba(245, 240, 232, 0.12);
+}
+
+.terminal-boot-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.terminal-dot.red { background: #ff5f56; box-shadow: 0 0 6px rgba(255, 95, 86, 0.5); }
+.terminal-dot.yellow { background: #ffbd2e; box-shadow: 0 0 6px rgba(255, 189, 46, 0.5); }
+.terminal-dot.green { background: #27c93f; box-shadow: 0 0 6px rgba(39, 201, 63, 0.5); }
+
+.terminal-boot-title {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.76rem;
+  color: var(--text-secondary, #b9b0a2);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-left: 0.35rem;
+}
+
+.terminal-boot-skip-btn {
+  background: rgba(245, 240, 232, 0.08);
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  border-radius: 6px;
+  color: var(--accent-pink, #ff70a6);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.terminal-boot-skip-btn:hover {
+  background: rgba(255, 112, 166, 0.18);
+  border-color: var(--accent-pink, #ff70a6);
+  transform: translateY(-1px);
+}
+
+.terminal-boot-body {
+  padding: 0.95rem 1.25rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.81rem;
+  line-height: 1.6;
+  min-height: 175px;
+  max-height: 38vh;
+  overflow-y: auto;
+}
+
+.terminal-line {
+  margin-bottom: 0.35rem;
+  color: var(--text-main, #f5f0e8);
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  opacity: 0;
+  transform: translateY(3px);
+  animation: terminalLineIn 0.16s ease forwards;
+}
+
+@keyframes terminalLineIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.terminal-line .t-tag {
+  color: var(--accent-purple, #ff70a6);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.terminal-line .t-msg {
+  color: var(--text-body, #ddd5c7);
+  flex-grow: 1;
+}
+
+.terminal-line .t-status {
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.terminal-line .t-status.t-ok {
+  color: var(--accent-green, #b5e51d);
+}
+
+.terminal-line .t-status.t-wait {
+  color: var(--accent-amber, #ffd166);
+}
+
+.terminal-boot-prompt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.55rem 1.25rem 0.85rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  color: var(--text-body, #ddd5c7);
+  border-top: 1px dashed rgba(245, 240, 232, 0.1);
+}
+
+.terminal-prompt-user {
+  color: var(--accent-cyan, #45c8ff);
+  font-weight: 600;
+}
+
+.terminal-prompt-path {
+  color: var(--accent-pink, #ff70a6);
+}
+
+.terminal-cursor {
+  display: inline-block;
+  color: var(--accent-pink, #ff70a6);
+  font-weight: 900;
+  animation: terminalBlink 0.9s infinite step-start;
+}
+
+@keyframes terminalBlink {
+  50% { opacity: 0; }
+}
+
+.terminal-boot-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted, #8a8296);
+  margin-left: auto;
+}
+
+/* Bottom ASCII Art Showcase: Kirby (left), Yuuka (center), Miyabi (right)
+   Aligned with align-items: flex-end so the bottom lines of all 3 line up flush.
+   Miyabi has 57 lines (taller) and sits on the right, rising up into open space. */
+.terminal-ascii-shelf {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(0.75rem, 2.5vw, 3rem);
+  width: 100%;
+  max-width: 1750px;
+  margin: 0 auto;
+  padding: 0 clamp(0.75rem, 2.5vw, 2.5rem) 0.5rem;
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.terminal-ascii-art {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Courier New', monospace);
+  font-size: clamp(2.6px, 0.44vw, 5.6px);
+  line-height: 1.0;
+  letter-spacing: 0;
+  white-space: pre;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.88;
+  filter: contrast(1.15);
+  flex-shrink: 0;
+}
+
+.terminal-ascii-art.ascii-kirby {
+  color: #ff9ec4;
+  text-shadow: 0 0 10px rgba(255, 112, 166, 0.32);
+}
+
+.terminal-ascii-art.ascii-yuuka {
+  color: #c4a7e7;
+  text-shadow: 0 0 10px rgba(196, 167, 231, 0.32);
+}
+
+.terminal-ascii-art.ascii-miyabi {
+  color: #7ee7fc;
+  text-shadow: 0 0 10px rgba(69, 200, 255, 0.32);
+  margin-left: auto;
+}
+
+/* Mobile & Small Screen Adaptations */
+@media (max-width: 860px) {
+  .terminal-console-pane {
+    width: calc(100% - 1.5rem);
+    margin: 1rem auto auto 0.75rem;
+  }
+  .terminal-boot-hint {
+    display: none;
+  }
+  .terminal-ascii-art {
+    font-size: clamp(1.9px, 0.7vw, 3.4px);
+  }
+}
+
+@media (max-width: 480px) {
+  .terminal-ascii-art {
+    font-size: clamp(1.6px, 0.6vw, 2.4px);
+  }
+  .terminal-boot-body {
+    font-size: 0.74rem;
+    min-height: 140px;
+  }
+}
