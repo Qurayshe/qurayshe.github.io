@@ -7561,6 +7561,19 @@ html.fast-boot #terminal-boot-screen {
   font-weight: 600;
   letter-spacing: 0.03em;
   margin-left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.terminal-throbber {
+  display: inline-block;
+  color: var(--accent-pink, #ff70a6);
+  text-shadow: 0 0 8px rgba(255, 112, 166, 0.7);
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  min-width: 1ch;
+  text-align: center;
 }
 
 .terminal-boot-skip-btn {
@@ -7635,6 +7648,23 @@ html.fast-boot #terminal-boot-screen {
   color: var(--accent-amber, #ffd166);
 }
 
+.terminal-line .t-status.t-active {
+  color: var(--accent-pink, #ff70a6);
+}
+
+.terminal-type-cursor {
+  display: inline-block;
+  color: var(--accent-pink, #ff70a6);
+  font-weight: 700;
+  margin-left: 2px;
+  animation: terminalCursorPulse 0.35s infinite alternate;
+}
+
+@keyframes terminalCursorPulse {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
 .terminal-boot-prompt {
   display: flex;
   align-items: center;
@@ -7671,6 +7701,11 @@ html.fast-boot #terminal-boot-screen {
   font-size: 0.72rem;
   color: var(--text-muted, #8a8296);
   margin-left: auto;
+}
+
+.terminal-prompt-state {
+  color: var(--text-muted, #8a8296);
+  font-size: 0.78rem;
 }
 
 /* Bottom ASCII Art Showcase: Kirby (left), Yuuka (center), Miyabi (right)
@@ -7723,6 +7758,31 @@ html.fast-boot #terminal-boot-screen {
   color: #7ee7fc;
   text-shadow: 0 0 10px rgba(69, 200, 255, 0.32);
   margin-left: auto;
+}
+
+.ascii-line {
+  display: block;
+  line-height: 1.0;
+  min-height: 1em;
+  white-space: pre;
+}
+
+.ascii-cursor {
+  display: inline;
+  color: #fff;
+  font-weight: 900;
+}
+
+.ascii-kirby .ascii-cursor {
+  text-shadow: 0 0 6px #fff, 0 0 12px #ff9ec4;
+}
+
+.ascii-yuuka .ascii-cursor {
+  text-shadow: 0 0 6px #fff, 0 0 12px #c4a7e7;
+}
+
+.ascii-miyabi .ascii-cursor {
+  text-shadow: 0 0 6px #fff, 0 0 12px #7ee7fc;
 }
 
 /* Mobile & Small Screen Adaptations */

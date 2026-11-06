@@ -56,7 +56,10 @@
           <span class="terminal-dot red"></span>
           <span class="terminal-dot yellow"></span>
           <span class="terminal-dot green"></span>
-          <span class="terminal-boot-title">qurayshe-os // boot_sequence.sh (x86_64-wasm)</span>
+          <span class="terminal-boot-title">
+            <span class="terminal-throbber" id="terminal-header-throbber" aria-hidden="true">⠋</span>
+            qurayshe-os // boot_sequence.sh (x86_64-wasm)
+          </span>
         </div>
         <button id="terminal-boot-skip" class="terminal-boot-skip-btn" type="button" title="Skip boot sequence">
           [ESC] Skip
@@ -68,7 +71,7 @@
       </div>
 
       <div class="terminal-boot-prompt">
-        <span class="terminal-prompt-user">guest@qurayshe</span>:<span class="terminal-prompt-path">~</span>$ <span class="terminal-cursor">█</span>
+        <span class="terminal-prompt-user">guest@qurayshe</span>:<span class="terminal-prompt-path">~</span>$ <span id="terminal-prompt-target"><span class="terminal-throbber" aria-hidden="true">⠋</span> <span class="terminal-prompt-state">booting...</span></span>
         <span class="terminal-boot-hint">(Press ESC or click anywhere to skip)</span>
       </div>
     </div>
