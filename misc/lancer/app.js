@@ -82,6 +82,10 @@ class LancerTokenApp {
       popoutFlip: false,
       popoutFeather: 0,
       popoutShowGuide: true,
+      popoutAboveBorder: false,
+      popoutLayerMode: 'above-all', // 'above-all' | 'above-border'
+      popoutOverlap: 'half-plane',  // 'half-plane' | 'outside'
+      popoutCutBorder: false,
       brushMode: 'reveal',     // 'reveal' (pop-out) | 'clip' (erase)
       brushSize: 30,
 
@@ -369,14 +373,19 @@ class LancerTokenApp {
     }
   }
 
-  createPolygonPath(ctx, polygon = this.currentPolygon) {
+  addPolygonToPath(ctx, polygon = this.currentPolygon) {
     if (!polygon.length) return;
-    ctx.beginPath();
     ctx.moveTo(polygon[0].x, polygon[0].y);
     for (let i = 1; i < polygon.length; i++) {
       ctx.lineTo(polygon[i].x, polygon[i].y);
     }
     ctx.closePath();
+  }
+
+  createPolygonPath(ctx, polygon = this.currentPolygon) {
+    if (!polygon.length) return;
+    ctx.beginPath();
+    this.addPolygonToPath(ctx, polygon);
   }
 
   /* --------------------------------------------------------------------------
@@ -468,22 +477,77 @@ class LancerTokenApp {
 
     // 2c. Border Stroke (drawn behind image if borderInFront is false)
     if (!this.state.borderInFront && this.state.borderWidth > 0) {
-      this.drawBorderStroke(tCtx);
+      if (this.state.popoutBreach && this.state.popoutCutBorder && (this.state.popoutMode === 'cutoff' || this.state.popoutMode === 'both')) {
+        tCtx.save();
+        this.createNonBreachHalfPlanePath(tCtx);
+        tCtx.clip();
+        this.drawBorderStroke(tCtx);
+        tCtx.restore();
+      } else {
+        this.drawBorderStroke(tCtx);
+      }
     }
 
     // 2d. Custom Image Layer (with Pop-Out breaching & masking)
     if (this.state.image) {
-      this.drawImageLayer(tCtx);
+      if (this.state.popoutBreach && this.state.popoutAboveBorder && this.state.borderInFront) {
+        // When breach goes above border, draw the under-border base portion here
+        if (this.state.popoutOverlap === 'outside') {
+          tCtx.save();
+          this.createPolygonPath(tCtx);
+          tCtx.clip();
+          this.drawRawImage(tCtx);
+          tCtx.restore();
+        } else {
+          tCtx.save();
+          this.createPolygonPath(tCtx);
+          tCtx.clip();
+          if (this.state.popoutMode === 'cutoff' || this.state.popoutMode === 'both') {
+            this.createNonBreachHalfPlanePath(tCtx);
+            tCtx.clip();
+          }
+          this.drawRawImage(tCtx);
+          tCtx.restore();
+        }
+      } else {
+        this.drawImageLayer(tCtx);
+      }
     }
 
     // 2e. Hex Border Outline (Stroke drawn in front)
     if (this.state.borderInFront && this.state.borderWidth > 0) {
-      this.drawBorderStroke(tCtx);
+      if (this.state.popoutBreach && this.state.popoutCutBorder && (this.state.popoutMode === 'cutoff' || this.state.popoutMode === 'both')) {
+        tCtx.save();
+        this.createNonBreachHalfPlanePath(tCtx);
+        tCtx.clip();
+        this.drawBorderStroke(tCtx);
+        tCtx.restore();
+      } else {
+        this.drawBorderStroke(tCtx);
+      }
+    }
+
+    // 2e-bis. Breach Image Layer above Border (if layer mode is 'above-border')
+    if (this.state.image && this.state.popoutBreach && this.state.popoutAboveBorder && this.state.borderInFront && this.state.popoutLayerMode === 'above-border') {
+      this.drawBreachImageLayer(tCtx);
     }
 
     // 2f. 3D Bevel & Emboss (Smooth Metallic / Hard Chisel / Pillow)
     if (this.state.enableBevel && this.state.bevelDepth > 0) {
-      this.drawBevelAndEmboss(tCtx);
+      if (this.state.popoutBreach && this.state.popoutCutBorder && (this.state.popoutMode === 'cutoff' || this.state.popoutMode === 'both')) {
+        tCtx.save();
+        this.createNonBreachHalfPlanePath(tCtx);
+        tCtx.clip();
+        this.drawBevelAndEmboss(tCtx);
+        tCtx.restore();
+      } else {
+        this.drawBevelAndEmboss(tCtx);
+      }
+    }
+
+    // 2g. Breach Image Layer above Border & Bevel (if layer mode is 'above-all')
+    if (this.state.image && this.state.popoutBreach && this.state.popoutAboveBorder && (this.state.borderInFront || this.state.enableBevel) && this.state.popoutLayerMode === 'above-all') {
+      this.drawBreachImageLayer(tCtx);
     }
 
     tCtx.restore();
@@ -623,22 +687,80 @@ class LancerTokenApp {
     ctx.restore();
   }
 
+  drawRawImage(ctx) {
+    const { imageScale, imageRotation, imageOffsetX, imageOffsetY, flipH, flipV } = this.state;
+    const img = this.state.image;
+    if (!img) return;
+
+    ctx.save();
+    ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
+    ctx.rotate((imageRotation * Math.PI) / 180);
+    ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.restore();
+  }
+
+  drawBrushMaskedImage(ctx) {
+    const brushImg = document.createElement('canvas');
+    brushImg.width = this.totalCanvasW;
+    brushImg.height = this.totalCanvasH;
+    const bCtx = brushImg.getContext('2d');
+    this.drawRawImage(bCtx);
+    bCtx.globalCompositeOperation = 'destination-in';
+    bCtx.drawImage(this.customMaskCanvas, 0, 0);
+    ctx.drawImage(brushImg, 0, 0);
+  }
+
+  addCutoffHalfPlaneToPath(ctx, flip = this.state.popoutFlip) {
+    const { popoutCutoff, popoutAngle } = this.state;
+    const w = this.totalCanvasW;
+    const h = this.totalCanvasH;
+    const cutoffY = (popoutCutoff / 100) * h;
+    const angleRad = (popoutAngle * Math.PI) / 180;
+    const ext = Math.max(w, h) * 2;
+    const cx = this.hexCenterX;
+    const cy = cutoffY;
+    const dir = flip ? 1 : -1;
+
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+
+    const p1x = cx - cosA * ext;
+    const p1y = cy - sinA * ext;
+    const p2x = cx + cosA * ext;
+    const p2y = cy + sinA * ext;
+    const p3x = p2x + (-sinA * ext * 2 * dir);
+    const p3y = p2y + (cosA * ext * 2 * dir);
+    const p4x = p1x + (-sinA * ext * 2 * dir);
+    const p4y = p1y + (cosA * ext * 2 * dir);
+
+    ctx.moveTo(p1x, p1y);
+    ctx.lineTo(p2x, p2y);
+    ctx.lineTo(p3x, p3y);
+    ctx.lineTo(p4x, p4y);
+    ctx.closePath();
+  }
+
+  createCutoffHalfPlanePath(ctx) {
+    ctx.beginPath();
+    this.addCutoffHalfPlaneToPath(ctx, this.state.popoutFlip);
+  }
+
+  createNonBreachHalfPlanePath(ctx) {
+    ctx.beginPath();
+    this.addCutoffHalfPlaneToPath(ctx, !this.state.popoutFlip);
+  }
+
   /**
    * Dedicated Pop-Out & Masking Image Drawing Layer
    */
   drawImageLayer(ctx) {
-    const { imageScale, imageRotation, imageOffsetX, imageOffsetY, flipH, flipV, cropImage, popoutBreach, popoutMode } = this.state;
-    const img = this.state.image;
-    if (!img) return;
+    const { cropImage, popoutBreach, popoutMode } = this.state;
+    if (!this.state.image) return;
 
     if (!cropImage) {
       // Uncropped free-floating image
-      ctx.save();
-      ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      ctx.rotate((imageRotation * Math.PI) / 180);
-      ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
-      ctx.restore();
+      this.drawRawImage(ctx);
       return;
     }
 
@@ -647,10 +769,7 @@ class LancerTokenApp {
       ctx.save();
       this.createPolygonPath(ctx);
       ctx.clip();
-      ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      ctx.rotate((imageRotation * Math.PI) / 180);
-      ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      this.drawRawImage(ctx);
       ctx.restore();
       return;
     }
@@ -659,10 +778,7 @@ class LancerTokenApp {
     if (popoutMode === 'cutoff') {
       ctx.save();
       this.applyPopoutClipping(ctx);
-      ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      ctx.rotate((imageRotation * Math.PI) / 180);
-      ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      this.drawRawImage(ctx);
       ctx.restore();
     } else if (popoutMode === 'brush') {
       // Hex interior + custom brush painted area
@@ -670,54 +786,20 @@ class LancerTokenApp {
       ctx.save();
       this.createPolygonPath(ctx);
       ctx.clip();
-      ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      ctx.rotate((imageRotation * Math.PI) / 180);
-      ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      this.drawRawImage(ctx);
       ctx.restore();
 
-      const brushImg = document.createElement('canvas');
-      brushImg.width = this.totalCanvasW;
-      brushImg.height = this.totalCanvasH;
-      const bCtx = brushImg.getContext('2d');
-      bCtx.save();
-      bCtx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      bCtx.rotate((imageRotation * Math.PI) / 180);
-      bCtx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      bCtx.drawImage(img, -img.width / 2, -img.height / 2);
-      bCtx.restore();
-
-      bCtx.globalCompositeOperation = 'destination-in';
-      bCtx.drawImage(this.customMaskCanvas, 0, 0);
-
-      ctx.drawImage(brushImg, 0, 0);
+      this.drawBrushMaskedImage(ctx);
       ctx.restore();
     } else if (popoutMode === 'both') {
       // Cutoff plane + custom brush painted area
       ctx.save();
       ctx.save();
       this.applyPopoutClipping(ctx);
-      ctx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      ctx.rotate((imageRotation * Math.PI) / 180);
-      ctx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      this.drawRawImage(ctx);
       ctx.restore();
 
-      const brushImg = document.createElement('canvas');
-      brushImg.width = this.totalCanvasW;
-      brushImg.height = this.totalCanvasH;
-      const bCtx = brushImg.getContext('2d');
-      bCtx.save();
-      bCtx.translate(this.hexCenterX + imageOffsetX, this.hexCenterY + imageOffsetY);
-      bCtx.rotate((imageRotation * Math.PI) / 180);
-      bCtx.scale(flipH ? -imageScale : imageScale, flipV ? -imageScale : imageScale);
-      bCtx.drawImage(img, -img.width / 2, -img.height / 2);
-      bCtx.restore();
-
-      bCtx.globalCompositeOperation = 'destination-in';
-      bCtx.drawImage(this.customMaskCanvas, 0, 0);
-
-      ctx.drawImage(brushImg, 0, 0);
+      this.drawBrushMaskedImage(ctx);
       ctx.restore();
     }
   }
@@ -726,53 +808,53 @@ class LancerTokenApp {
    * Constructs the pop-out breach clipping mask (combining linear cutoff plane and custom painted mask)
    */
   applyPopoutClipping(ctx) {
-    const { popoutMode, popoutCutoff, popoutAngle, popoutFlip } = this.state;
-    const w = this.totalCanvasW;
-    const h = this.totalCanvasH;
-
+    const { popoutMode } = this.state;
     ctx.beginPath();
-    // 1. Base hex path is always included
-    this.createPolygonPath(ctx);
-
-    // 2. Add linear cutoff plane breach if enabled
+    this.addPolygonToPath(ctx);
     if (popoutMode === 'cutoff' || popoutMode === 'both') {
-      const cutoffY = (popoutCutoff / 100) * h;
-      const angleRad = (popoutAngle * Math.PI) / 180;
-      
-      ctx.save();
-      // Construct cutoff half-space polygon
-      const ext = Math.max(w, h) * 1.5;
-      const cx = this.hexCenterX;
-      const cy = cutoffY;
-
-      // Normal vector pointing in popout direction
-      const dir = popoutFlip ? 1 : -1;
-
-      // 4 corners of half-plane
-      const cosA = Math.cos(angleRad);
-      const sinA = Math.sin(angleRad);
-
-      const p1x = cx - cosA * ext;
-      const p1y = cy - sinA * ext;
-      const p2x = cx + cosA * ext;
-      const p2y = cy + sinA * ext;
-      const p3x = p2x + (-sinA * ext * dir);
-      const p3y = p2y + (cosA * ext * dir);
-      const p4x = p1x + (-sinA * ext * dir);
-      const p4y = p1y + (cosA * ext * dir);
-
-      ctx.moveTo(p1x, p1y);
-      ctx.lineTo(p2x, p2y);
-      ctx.lineTo(p3x, p3y);
-      ctx.lineTo(p4x, p4y);
-      ctx.closePath();
+      this.addCutoffHalfPlaneToPath(ctx, this.state.popoutFlip);
     }
-
     ctx.clip();
   }
 
+  /**
+   * Dedicated Breach Image Layer drawn above border/bevel
+   */
+  drawBreachImageLayer(ctx) {
+    const { popoutMode, popoutOverlap, borderWidth } = this.state;
+    if (!this.state.image) return;
+
+    if (popoutMode === 'cutoff' || popoutMode === 'both') {
+      ctx.save();
+      if (popoutOverlap === 'outside') {
+        const scaleFactor = Math.max(0.85, 1 - ((borderWidth * 1.2) / this.totalCanvasW));
+        ctx.beginPath();
+        this.addCutoffHalfPlaneToPath(ctx, this.state.popoutFlip);
+        ctx.save();
+        ctx.translate(this.hexCenterX, this.hexCenterY);
+        ctx.scale(scaleFactor, scaleFactor);
+        ctx.translate(-this.hexCenterX, -this.hexCenterY);
+        this.addPolygonToPath(ctx);
+        ctx.restore();
+        ctx.clip('evenodd');
+        this.drawRawImage(ctx);
+      } else {
+        this.createCutoffHalfPlanePath(ctx);
+        ctx.clip();
+        this.drawRawImage(ctx);
+      }
+      ctx.restore();
+    }
+
+    if (popoutMode === 'brush' || popoutMode === 'both') {
+      ctx.save();
+      this.drawBrushMaskedImage(ctx);
+      ctx.restore();
+    }
+  }
+
   drawPopoutGuideOverlay(ctx) {
-    const { popoutCutoff, popoutAngle, popoutFlip } = this.state;
+    const { popoutCutoff, popoutAngle, popoutFlip, popoutAboveBorder } = this.state;
     const w = this.totalCanvasW;
     const h = this.totalCanvasH;
     const cutoffY = (popoutCutoff / 100) * h;
@@ -817,7 +899,8 @@ class LancerTokenApp {
 
     ctx.font = 'bold 10px Arial, sans-serif';
     ctx.fillStyle = '#38bdf8';
-    ctx.fillText('✂ BREACH PLANE', cx + 12, cy - 8);
+    const guideText = popoutAboveBorder ? '✂ BREACH PLANE (OVER BORDER)' : '✂ BREACH PLANE';
+    ctx.fillText(guideText, cx + 12, cy - 8);
 
     ctx.restore();
   }
@@ -1752,6 +1835,23 @@ class LancerTokenApp {
       }
     });
 
+    bindToggle('popoutAboveBorder', 'popoutAboveBorder', (checked) => {
+      const opts = document.getElementById('popoutAboveBorderOptions');
+      if (opts) opts.style.display = checked ? '' : 'none';
+    });
+
+    document.getElementById('popoutLayerMode')?.addEventListener('change', (e) => {
+      this.state.popoutLayerMode = e.target.value;
+      this.render();
+    });
+
+    document.getElementById('popoutOverlap')?.addEventListener('change', (e) => {
+      this.state.popoutOverlap = e.target.value;
+      this.render();
+    });
+
+    bindToggle('popoutCutBorder', 'popoutCutBorder');
+
     // Pop-Out Brush Tools
     const btnBrushReveal = document.getElementById('btnBrushReveal');
     const btnBrushClip = document.getElementById('btnBrushClip');
@@ -2055,6 +2155,10 @@ class LancerTokenApp {
     this.state.popoutFlip = false;
     this.state.popoutFeather = 0;
     this.state.popoutShowGuide = true;
+    this.state.popoutAboveBorder = false;
+    this.state.popoutLayerMode = 'above-all';
+    this.state.popoutOverlap = 'half-plane';
+    this.state.popoutCutBorder = false;
     this.state.enablePixelate = false;
     this.state.enableBevel = true;
     this.state.bevelStyle = 'smooth';
@@ -2114,6 +2218,12 @@ class LancerTokenApp {
     setVal('popoutAngle', 0);
     setChecked('popoutFlip', false);
     setChecked('popoutShowGuide', true);
+    setChecked('popoutAboveBorder', false);
+    setVal('popoutLayerMode', 'above-all');
+    setVal('popoutOverlap', 'half-plane');
+    setChecked('popoutCutBorder', false);
+    const popoutOpts = document.getElementById('popoutAboveBorderOptions');
+    if (popoutOpts) popoutOpts.style.display = 'none';
     setChecked('enableBevel', true);
     setVal('bevelStyle', 'smooth');
     setVal('bevelDepth', 8);

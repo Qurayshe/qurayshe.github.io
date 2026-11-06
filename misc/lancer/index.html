@@ -465,7 +465,7 @@
               <div class="control-col">
                 <label class="control-label" for="popoutMode">Mask Mode:</label>
                 <select id="popoutMode">
-                  <option value="cutoff" selected>Cutoff Line</option>
+                  <option value="cutoff" selected>Breach Plane</option>
                   <option value="brush">Brush</option>
                   <option value="both">Combined</option>
                 </select>
@@ -476,7 +476,7 @@
           <!-- Linear Cutoff Plane Controls -->
           <div class="control-card" id="cardLinearCutoff">
             <div class="card-title">
-              <span>Cutoff Line</span>
+              <span>Breach Plane</span>
               <label class="toggle-row" for="popoutShowGuide" style="width: auto;">
                 <span class="control-label" style="font-size: 10px;">Guide Line:</span>
                 <span class="toggle-switch">
@@ -524,6 +524,49 @@
               <div class="slider-wrap">
                 <input type="range" id="popoutFeather" min="0" max="40" value="0">
               </div>
+            </div>
+
+            <!-- Layering & Border Controls -->
+            <div class="control-row" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <label class="toggle-row" for="popoutAboveBorder">
+                <span class="control-label">Above Border (Layer):</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="popoutAboveBorder">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div id="popoutAboveBorderOptions" style="display: none;">
+              <div class="control-row" id="rowPopoutLayerMode" style="margin-top: 6px;">
+                <div class="control-col">
+                  <label class="control-label" for="popoutLayerMode">Layer Depth:</label>
+                  <select id="popoutLayerMode">
+                    <option value="above-all" selected>Above Border &amp; Bevel</option>
+                    <option value="above-border">Above Border (Under Bevel)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="control-row" id="rowPopoutOverlap" style="margin-top: 6px;">
+                <div class="control-col">
+                  <label class="control-label" for="popoutOverlap">Breach Area:</label>
+                  <select id="popoutOverlap">
+                    <option value="half-plane" selected>Entire Breach Side</option>
+                    <option value="outside">Outside Frame Only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-row" style="margin-top: 6px;">
+              <label class="toggle-row" for="popoutCutBorder">
+                <span class="control-label">Cut Border at Plane:</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="popoutCutBorder">
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
             </div>
           </div>
 
