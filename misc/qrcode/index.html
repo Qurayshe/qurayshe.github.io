@@ -273,7 +273,7 @@
           <div class="control-block">
             <div class="block-title">
               <label class="mode-opt" style="font-size: 18px;">
-                <input type="checkbox" id="checkEnableHole" checked />
+                <input type="checkbox" id="checkEnableHole" />
                 <span>💖 Enable Cutout Hole for Regular High-Res Image</span>
               </label>
             </div>
@@ -282,7 +282,7 @@
               Because error correction covers the hole, your photo is <strong>never downscaled to pixelated QR blocks</strong>!
             </p>
 
-            <div id="holeControlsWrapper">
+            <div id="holeControlsWrapper" style="opacity: 0.45; pointer-events: none;">
               <!-- Shape Selection -->
               <div class="control-row" style="margin-top: 10px;">
                 <span class="control-label">Shape:</span>
@@ -335,7 +335,7 @@
                 </label>
 
                 <label class="mini-label">Border Color:
-                  <input type="color" id="holeBorderColor" class="sketchy-color" value="#ff70a6" />
+                  <input type="color" id="holeBorderColor" class="sketchy-color" value="#111111" />
                 </label>
 
                 <label class="mini-label">Width:

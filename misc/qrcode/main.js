@@ -159,14 +159,14 @@
 
     // Hole Cutout
     hole: {
-      enabled: true,
+      enabled: false,
       shape: 'heart',
       sizePct: 0.26,
       margin: 2,
       posX: 0,
       posY: 0,
       borderStyle: 'doodle',
-      borderColor: '#ff70a6',
+      borderColor: '#111111',
       borderWidth: 3,
       image: null,
       imageScale: 1.0,
@@ -665,7 +665,7 @@
     return pts;
   }
 
-  function drawDoodleWobbleBorder(ctx, shape, cx, cy, radius, bWidth, color, darkColor) {
+  function drawDoodleWobbleBorder(ctx, shape, cx, cy, radius, bWidth, color) {
     const pts = getShapePerimeterPoints(shape, cx, cy, radius, 120);
     const n = pts.length;
     if (n === 0) return;
@@ -674,9 +674,10 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
+    const strokeColor = color || '#111111';
     const passes = [
-      { color: color, width: bWidth, seed: 1.5, amp: bWidth * 0.45 },
-      { color: darkColor || '#111111', width: Math.max(1, bWidth * 0.55), seed: 4.8, amp: bWidth * 0.3 }
+      { color: strokeColor, width: bWidth, seed: 1.5, amp: bWidth * 0.45 },
+      { color: strokeColor, width: Math.max(1, bWidth * 0.55), seed: 4.8, amp: bWidth * 0.3 }
     ];
 
     passes.forEach(pass => {
@@ -1054,7 +1055,7 @@
         ctx.lineCap = 'round';
 
         if (state.hole.borderStyle === 'doodle') {
-          drawDoodleWobbleBorder(ctx, state.hole.shape, holeCenterX, holeCenterY, holeRadius, bWidth, state.hole.borderColor, state.colorDark);
+          drawDoodleWobbleBorder(ctx, state.hole.shape, holeCenterX, holeCenterY, holeRadius, bWidth, state.hole.borderColor);
         } else if (state.hole.borderStyle === 'double') {
           ctx.stroke(holePath);
           const innerPath = createShapePath(state.hole.shape, holeCenterX, holeCenterY, holeRadius - bWidth * 1.6);
@@ -1670,6 +1671,8 @@
     dom.holeControlsWrapper.style.pointerEvents = state.hole.enabled ? 'auto' : 'none';
     renderQR();
   });
+  dom.holeControlsWrapper.style.opacity = state.hole.enabled ? '1' : '0.45';
+  dom.holeControlsWrapper.style.pointerEvents = state.hole.enabled ? 'auto' : 'none';
 
   dom.shapeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
