@@ -86,8 +86,15 @@
             </label>
           </div>
         </div>
+        <div class="control-row" id="adjustTargetRow" style="margin-top: -2px;">
+          <span class="control-label">moving</span>
+          <div class="chips-row" style="margin-top: 0; margin-left: auto;">
+            <button type="button" class="sketchy-chip adjust-target-chip active" data-adjust-target="sprite">🧑 target</button>
+            <button type="button" class="sketchy-chip adjust-target-chip" data-adjust-target="hand">🖐️ hand</button>
+          </div>
+        </div>
         <div class="helper-text">
-          enable to move your image with mouse/touch/arrow keys in the preview. works on mobile too :-)
+          enable to move the target or hand with mouse/touch/arrow keys in the preview. works on mobile too :-)
         </div>
 
         <!-- Flip Target -->
@@ -253,6 +260,27 @@
           </div>
           <div class="helper-text">
             swap layers so the hand is underneath the target instead of on top
+          </div>
+
+          <!-- Hand Round Cutoff Toggle & Curve Setting -->
+          <div class="control-row" style="margin-top: 4px;">
+            <label for="handRoundCutoff" class="control-label">round cutoff</label>
+            <div class="toggle-wrap">
+              <label class="sketchy-toggle">
+                <input id="handRoundCutoff" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="control-row" id="handRoundRadiusRow" style="opacity: 0.45; pointer-events: none;">
+            <label for="handRoundRadius" class="control-label">cutoff curve</label>
+            <div class="slider-wrap">
+              <input id="handRoundRadius" class="sketchy-range" type="range" step="1" min="4" max="60" value="22" disabled />
+              <span id="handRoundRadiusVal" class="num-pill">22</span>
+            </div>
+          </div>
+          <div class="helper-text">
+            rounds off the flat cut edge of the hand sprite when it isn't touching a canvas edge
           </div>
         </section>
 

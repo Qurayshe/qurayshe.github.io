@@ -27,6 +27,9 @@ const DEFAULTS = Object.freeze({
   handOffsetX: 0,
   handOffsetY: 0,
   handBehind: false, // Layer switch: false = hand on top, true = hand on bottom
+  handRoundCutoff: false, // Round off the flat cut edge of the hand sprite
+  handRoundRadius: 22,    // Cutoff curve depth in base 112px units (4 - 60)
+  adjustTarget: "sprite", // Active adjust layer: "sprite" | "hand"
 });
 
 const CANVAS_OPTIONS = Object.freeze({
@@ -225,6 +228,123 @@ const g = { ...DEFAULTS };
     };
 
     /**
+     * Caches per-column vertical opaque bounds for each frame of handImg
+     * so round-cutoff clipping adapts cleanly to the wrist silhouette.
+     */
+    let handBoundsCache = { src: "", isSpriteSheet: false, frames: [] };
+
+    const getHandFrameBounds = (frameIndex, isSpriteSheet, frameW, frameH) => {
+      const cacheKey = `${handImg.src}|${handImg.naturalWidth}x${handImg.naturalHeight}`;
+      if (handBoundsCache.src !== cacheKey) {
+        const frameCount = isSpriteSheet ? 5 : 1;
+        const frames = [];
+        try {
+          const scanCanvas = document.createElement("canvas");
+          scanCanvas.width = handImg.naturalWidth;
+          scanCanvas.height = handImg.naturalHeight;
+          const scanCtx = scanCanvas.getContext("2d");
+          scanCtx.drawImage(handImg, 0, 0);
+
+          for (let f = 0; f < frameCount; f++) {
+            const sx = Math.floor(f * frameW);
+            const sw = Math.max(1, Math.floor(frameW));
+            const sh = Math.max(1, Math.floor(frameH));
+            const imgData = scanCtx.getImageData(sx, 0, sw, sh).data;
+            const colMinY = new Int16Array(sw).fill(-1);
+            const colMaxY = new Int16Array(sw).fill(-1);
+            let bx = sw;
+
+            for (let x = 0; x < sw; x++) {
+              let minY = -1;
+              let maxY = -1;
+              for (let y = 0; y < sh; y++) {
+                if (imgData[(y * sw + x) * 4 + 3] > 20) {
+                  if (minY === -1) minY = y;
+                  maxY = y;
+                }
+              }
+              colMinY[x] = minY;
+              colMaxY[x] = maxY;
+              if (minY !== -1 && bx === sw) bx = x;
+            }
+            if (bx === sw) bx = 0;
+            frames.push({ bx, sw, sh, colMinY, colMaxY });
+          }
+        } catch (e) {
+          // CORS fallback if image pixels cannot be read
+          for (let f = 0; f < frameCount; f++) {
+            frames.push(null);
+          }
+        }
+        handBoundsCache = { src: cacheKey, isSpriteSheet, frames };
+      }
+      return handBoundsCache.frames[isSpriteSheet ? frameIndex : 0] || null;
+    };
+
+    const applyRoundCutoffClip = (_ctx, frameIndex, isSpriteSheet, frameW, frameH, ox, oy, drawW, drawH) => {
+      const bounds = getHandFrameBounds(frameIndex, isSpriteSheet, frameW, frameH);
+      const rScaled = (g.handRoundRadius / OUT_SIZE) * drawW;
+
+      let bxScaled = 0;
+      let topYScaled = 0;
+      let botYScaled = drawH;
+
+      if (bounds) {
+        const scaleX = drawW / bounds.sw;
+        const scaleY = drawH / bounds.sh;
+        const rPx = Math.max(1, Math.round((g.handRoundRadius / OUT_SIZE) * bounds.sw));
+        const endX = Math.min(bounds.sw - 1, bounds.bx + rPx);
+        let minY = bounds.sh;
+        let maxY = -1;
+
+        for (let x = bounds.bx; x <= endX; x++) {
+          if (bounds.colMinY[x] !== -1) {
+            if (bounds.colMinY[x] < minY) minY = bounds.colMinY[x];
+            if (bounds.colMaxY[x] > maxY) maxY = bounds.colMaxY[x];
+          }
+        }
+
+        bxScaled = bounds.bx * scaleX;
+        if (maxY >= minY) {
+          topYScaled = minY * scaleY;
+          botYScaled = (maxY + 1) * scaleY;
+        }
+      }
+
+      const wyScaled = (topYScaled + botYScaled) / 2;
+      const ryScaled = Math.max(0.5, (botYScaled - topYScaled) / 2);
+
+      _ctx.beginPath();
+      _ctx.moveTo(ox + drawW, oy);
+      _ctx.lineTo(ox + bxScaled + rScaled, oy);
+      _ctx.lineTo(ox + bxScaled + rScaled, oy + topYScaled);
+      _ctx.ellipse(
+        ox + bxScaled + rScaled,
+        oy + wyScaled,
+        Math.max(0.5, rScaled),
+        ryScaled,
+        0,
+        Math.PI * 1.5,
+        Math.PI * 0.5,
+        true
+      );
+      _ctx.lineTo(ox + bxScaled + rScaled, oy + drawH);
+      _ctx.lineTo(ox + drawW, oy + drawH);
+      _ctx.closePath();
+      _ctx.clip();
+    };
+
+    const drawAdjustBox = (_ctx, x, y, w, h, isActive) => {
+      _ctx.save();
+      _ctx.globalAlpha = 1;
+      _ctx.lineWidth = 1.5;
+      _ctx.setLineDash(isActive ? [3, 2] : [2, 3]);
+      _ctx.strokeStyle = isActive ? "#ff3b30" : "rgba(128, 128, 128, 0.55)";
+      _ctx.strokeRect(x, y, w, h);
+      _ctx.restore();
+    };
+
+    /**
      * Draws the hand on top of the pet
      */
     const drawHand = (frame, _ctx, _adjust, cf) => {
@@ -262,7 +382,16 @@ const g = { ...DEFAULTS };
           _ctx.scale(-1, 1);
         }
 
+        _ctx.save();
+        if (g.handRoundCutoff) {
+          applyRoundCutoffClip(_ctx, frame, true, frameW, frameH, 0, 0, drawW, drawH);
+        }
         _ctx.drawImage(handImg, sx, 0, frameW, frameH, 0, 0, drawW, drawH);
+        _ctx.restore();
+
+        if (_adjust) {
+          drawAdjustBox(_ctx, 0, 0, drawW, drawH, g.adjustTarget === "hand");
+        }
       } else {
         // Single image hand: animate position, tilt, and elastic squash & stretch
         const baseW = OUT_SIZE * g.handScale;
@@ -282,6 +411,20 @@ const g = { ...DEFAULTS };
           _ctx.scale(-1, 1);
         }
 
+        _ctx.save();
+        if (g.handRoundCutoff) {
+          applyRoundCutoffClip(
+            _ctx,
+            0,
+            false,
+            handImg.naturalWidth,
+            handImg.naturalHeight,
+            -drawW / 2,
+            -drawH / 2,
+            drawW,
+            drawH
+          );
+        }
         _ctx.drawImage(
           handImg,
           0,
@@ -293,6 +436,11 @@ const g = { ...DEFAULTS };
           drawW,
           drawH
         );
+        _ctx.restore();
+
+        if (_adjust) {
+          drawAdjustBox(_ctx, -drawW / 2, -drawH / 2, drawW, drawH, g.adjustTarget === "hand");
+        }
       }
 
       _ctx.restore();
@@ -323,10 +471,7 @@ const g = { ...DEFAULTS };
 
         // Draw bounding box if in adjust mode
         if (_adjust) {
-          _ctx.setLineDash([3, 2]);
-          _ctx.strokeStyle = "#ff3b30";
-          _ctx.strokeRect(0, 0, targetW, cf.dh);
-          _ctx.setLineDash([]);
+          drawAdjustBox(_ctx, 0, 0, targetW, cf.dh, g.adjustTarget === "sprite");
         }
         _ctx.restore();
       };
@@ -432,8 +577,13 @@ const g = { ...DEFAULTS };
       const mouseX = Math.round((e.clientX - offsetX) * offsetScale);
       const mouseY = Math.round((e.clientY - offsetY) * offsetScale);
 
-      g.spriteX += mouseX - startX;
-      g.spriteY += mouseY - startY;
+      if (g.adjustTarget === "hand") {
+        g.handOffsetX += mouseX - startX;
+        g.handOffsetY += mouseY - startY;
+      } else {
+        g.spriteX += mouseX - startX;
+        g.spriteY += mouseY - startY;
+      }
 
       startX = mouseX;
       startY = mouseY;
@@ -458,10 +608,15 @@ const g = { ...DEFAULTS };
       if (!allowAdjust) return;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         const step = e.shiftKey ? 5 : 1;
-        if (e.key === "ArrowLeft") g.spriteX -= step;
-        if (e.key === "ArrowRight") g.spriteX += step;
-        if (e.key === "ArrowUp") g.spriteY -= step;
-        if (e.key === "ArrowDown") g.spriteY += step;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        if (g.adjustTarget === "hand") {
+          g.handOffsetX += dx;
+          g.handOffsetY += dy;
+        } else {
+          g.spriteX += dx;
+          g.spriteY += dy;
+        }
         e.preventDefault();
         tick();
       }
@@ -668,6 +823,20 @@ const g = { ...DEFAULTS };
       animation.toggleAdjust(e.target.checked);
     });
 
+    const syncAdjustTargetChips = () => {
+      $$(".adjust-target-chip").forEach((b) => {
+        b.classList.toggle("active", b.dataset.adjustTarget === g.adjustTarget);
+      });
+    };
+
+    $$(".adjust-target-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        g.adjustTarget = btn.dataset.adjustTarget === "hand" ? "hand" : "sprite";
+        syncAdjustTargetChips();
+        animation.tick();
+      });
+    });
+
     // HAND CUSTOMIZATION CONTROLS (EXTRA FEATURE)
     $("#handSquish").addEventListener("input", (e) => {
       const val = clamp(parseInt(e.target.value), 20, 300);
@@ -691,6 +860,44 @@ const g = { ...DEFAULTS };
     if ($toggleHandBehind) {
       $toggleHandBehind.addEventListener("change", (e) => {
         g.handBehind = e.target.checked;
+        animation.tick();
+      });
+    }
+
+    // Round cutoff toggle & curve setting
+    const $handRoundCutoff = $("#handRoundCutoff");
+    const $handRoundRadius = $("#handRoundRadius");
+    const $handRoundRadiusRow = $("#handRoundRadiusRow");
+    const $handRoundRadiusVal = $("#handRoundRadiusVal");
+
+    const syncRoundCutoffUI = () => {
+      const enabled = !!g.handRoundCutoff;
+      if ($handRoundCutoff) $handRoundCutoff.checked = enabled;
+      if ($handRoundRadius) {
+        $handRoundRadius.value = g.handRoundRadius;
+        $handRoundRadius.disabled = !enabled;
+      }
+      if ($handRoundRadiusRow) {
+        $handRoundRadiusRow.style.opacity = enabled ? "1" : "0.45";
+        $handRoundRadiusRow.style.pointerEvents = enabled ? "auto" : "none";
+      }
+      if ($handRoundRadiusVal) {
+        $handRoundRadiusVal.innerText = `${g.handRoundRadius}`;
+      }
+    };
+
+    if ($handRoundCutoff) {
+      $handRoundCutoff.addEventListener("change", (e) => {
+        g.handRoundCutoff = e.target.checked;
+        syncRoundCutoffUI();
+        animation.tick();
+      });
+    }
+
+    if ($handRoundRadius) {
+      $handRoundRadius.addEventListener("input", (e) => {
+        g.handRoundRadius = clamp(parseInt(e.target.value, 10) || DEFAULTS.handRoundRadius, 4, 60);
+        if ($handRoundRadiusVal) $handRoundRadiusVal.innerText = `${g.handRoundRadius}`;
         animation.tick();
       });
     }
@@ -762,6 +969,11 @@ const g = { ...DEFAULTS };
       g.handBehind = DEFAULTS.handBehind;
       const $toggleHandBehind = $("#toggleHandBehind");
       if ($toggleHandBehind) $toggleHandBehind.checked = false;
+      syncRoundCutoffUI();
+      syncAdjustTargetChips();
+      g.handRoundCutoff = DEFAULTS.handRoundCutoff;
+      g.handRoundRadius = DEFAULTS.handRoundRadius;
+      syncRoundCutoffUI();
 
       $$(".hand-preset-chip").forEach((b) => b.classList.remove("active"));
       const defaultChip = document.querySelector('[data-hand="default"]');
@@ -863,6 +1075,8 @@ const g = { ...DEFAULTS };
       $("#handFlip").checked = false;
       const $toggleHandBehind = $("#toggleHandBehind");
       if ($toggleHandBehind) $toggleHandBehind.checked = false;
+      syncRoundCutoffUI();
+      syncAdjustTargetChips();
 
       animation.toggleAdjust(false);
       setPlayState(false);
