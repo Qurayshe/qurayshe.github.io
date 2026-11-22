@@ -9,6 +9,7 @@
  */
 
 import { RESUME_DATA } from '../data/resume-data.js';
+import { attachSmooth3DTilt } from '../utils/helpers.js';
 
 export class ResumeViewer {
   constructor(container) {
@@ -994,78 +995,12 @@ export class ResumeViewer {
 
   /* --------------------------------------------------------------------------
      3D Perspective Tilt & Radial Glow Follower (Lesson 10)
-     Uses per-card rAF lerp so entering at card borders eases smoothly
-     instead of snapping from flat to full tilt.
      -------------------------------------------------------------------------- */
   bind3DTilt() {
-    const cards = this.container.querySelectorAll('.resume-card');
-    cards.forEach((card) => {
-      const state = {
-        curX: 0,
-        curY: 0,
-        curLift: 0,
-        tgtX: 0,
-        tgtY: 0,
-        tgtLift: 0,
-        rafId: null,
-        hovering: false
-      };
-
-      const step = () => {
-        const ease = state.hovering ? 0.14 : 0.12;
-        state.curX += (state.tgtX - state.curX) * ease;
-        state.curY += (state.tgtY - state.curY) * ease;
-        state.curLift += (state.tgtLift - state.curLift) * ease;
-
-        const done =
-          !state.hovering &&
-          Math.abs(state.tgtX - state.curX) < 0.01 &&
-          Math.abs(state.tgtY - state.curY) < 0.01 &&
-          Math.abs(state.tgtLift - state.curLift) < 0.01;
-
-        if (done) {
-          state.curX = 0;
-          state.curY = 0;
-          state.curLift = 0;
-          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
-          state.rafId = null;
-          return;
-        }
-
-        card.style.transform = `perspective(1000px) rotateX(${state.curX.toFixed(3)}deg) rotateY(${state.curY.toFixed(3)}deg) translateY(${state.curLift.toFixed(2)}px)`;
-        state.rafId = requestAnimationFrame(step);
-      };
-
-      const startLoop = () => {
-        if (!state.rafId) {
-          state.rafId = requestAnimationFrame(step);
-        }
-      };
-
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        card.style.setProperty('--glow-x', `${x}px`);
-        card.style.setProperty('--glow-y', `${y}px`);
-
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        state.tgtX = ((y - centerY) / centerY) * -6;
-        state.tgtY = ((x - centerX) / centerX) * 6;
-        state.tgtLift = -4;
-        state.hovering = true;
-        startLoop();
-      });
-
-      card.addEventListener('mouseleave', () => {
-        state.hovering = false;
-        state.tgtX = 0;
-        state.tgtY = 0;
-        state.tgtLift = 0;
-        startLoop();
-      });
+    attachSmooth3DTilt(this.container.querySelectorAll('.resume-card'), {
+      perspective: 1000,
+      maxTilt: 6,
+      lift: -4
     });
   }
 

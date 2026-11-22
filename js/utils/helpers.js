@@ -252,3 +252,78 @@ export function debounce(fn, delay = 150) {
   };
 }
 
+/**
+ * Attaches smoothed 3D perspective tilt and radial glow tracking to card elements.
+ * Uses per-card rAF lerp so hovering at card borders eases in smoothly instead of snapping.
+ */
+export function attachSmooth3DTilt(cards, { perspective = 1000, maxTilt = 6, lift = -4 } = {}) {
+  cards.forEach((card) => {
+    const state = {
+      curX: 0,
+      curY: 0,
+      curLift: 0,
+      tgtX: 0,
+      tgtY: 0,
+      tgtLift: 0,
+      rafId: null,
+      hovering: false
+    };
+
+    const step = () => {
+      const ease = state.hovering ? 0.14 : 0.12;
+      state.curX += (state.tgtX - state.curX) * ease;
+      state.curY += (state.tgtY - state.curY) * ease;
+      state.curLift += (state.tgtLift - state.curLift) * ease;
+
+      const done =
+        !state.hovering &&
+        Math.abs(state.tgtX - state.curX) < 0.01 &&
+        Math.abs(state.tgtY - state.curY) < 0.01 &&
+        Math.abs(state.tgtLift - state.curLift) < 0.01;
+
+      if (done) {
+        state.curX = 0;
+        state.curY = 0;
+        state.curLift = 0;
+        card.style.transform = `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) translateY(0px)`;
+        state.rafId = null;
+        return;
+      }
+
+      card.style.transform = `perspective(${perspective}px) rotateX(${state.curX.toFixed(3)}deg) rotateY(${state.curY.toFixed(3)}deg) translateY(${state.curLift.toFixed(2)}px)`;
+      state.rafId = requestAnimationFrame(step);
+    };
+
+    const startLoop = () => {
+      if (!state.rafId) {
+        state.rafId = requestAnimationFrame(step);
+      }
+    };
+
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      card.style.setProperty('--glow-x', `${x}px`);
+      card.style.setProperty('--glow-y', `${y}px`);
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      state.tgtX = ((y - centerY) / centerY) * -maxTilt;
+      state.tgtY = ((x - centerX) / centerX) * maxTilt;
+      state.tgtLift = lift;
+      state.hovering = true;
+      startLoop();
+    });
+
+    card.addEventListener('mouseleave', () => {
+      state.hovering = false;
+      state.tgtX = 0;
+      state.tgtY = 0;
+      state.tgtLift = 0;
+      startLoop();
+    });
+  });
+}
+

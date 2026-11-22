@@ -21,6 +21,7 @@ import { ResumeViewer } from './modules/resume-viewer.js';
 import { SearchModal } from './modules/search-modal.js';
 import { TerminalLoader } from './modules/terminal-loader.js';
 import { SYSTEMS_CURRICULUM, GRAPHICS_CURRICULUM, SERVER_STAGES, AI_CURRICULUM, MOTION_LAB_EXAMPLES } from './data/manifest.js';
+import { attachSmooth3DTilt } from './utils/helpers.js';
 
 class App {
   constructor() {
@@ -322,29 +323,10 @@ class App {
      Dynamic 3D Tilt & Cursor Glow Follower (inspired by 3sss.tech)
      -------------------------------------------------------------------------- */
   bindCardHoverEffects() {
-    const cards = document.querySelectorAll('.portal-card, .about-card');
-    cards.forEach((card) => {
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        // Update glow origin variables for CSS radial gradient
-        card.style.setProperty('--glow-x', `${x}px`);
-        card.style.setProperty('--glow-y', `${y}px`);
-
-        // 3D Perspective Tilt
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -7.5;
-        const rotateY = ((x - centerX) / centerX) * 7.5;
-
-        card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px)`;
-      });
-
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px)';
-      });
+    attachSmooth3DTilt(document.querySelectorAll('.portal-card, .about-card'), {
+      perspective: 900,
+      maxTilt: 7.5,
+      lift: -6
     });
   }
 
