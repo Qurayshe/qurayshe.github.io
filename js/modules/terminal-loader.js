@@ -2,12 +2,13 @@
  * Terminal Boot Loader
  * Displays a retro BIOS/UNIX terminal boot sequence on initial visit to prevent
  * font pop-in (FOUT) and layout shifts while Three.js canvases, shaders, and web fonts load.
- * 
+ *
  * Features:
- * - Animated ASCII Braille throbber in header, active task status, and prompt
+ * - Full-screen terminal window with animated ASCII Braille throbber
  * - Rapid left-to-right typewriter console logging
- * - Coordinated scanline typewriter across all three bottom ASCII art figures (Kirby, Yuuka, Miyabi)
- *   printed inline row-by-row, left-to-right, top-to-bottom as a unified terminal canvas
+ * - Sequenced ASCII art showcase inside the terminal after console logs:
+ *   - Landscape/Desktop: unified inline scanline typewriter across Kirby, Yuuka, and Miyabi
+ *   - Vertical/Portrait: stacked one at a time with smooth terminal auto-scrolling
  */
 
 export class TerminalLoader {
@@ -37,6 +38,7 @@ export class TerminalLoader {
     const headerThrobber = document.getElementById('terminal-header-throbber');
     const promptTarget = document.getElementById('terminal-prompt-target');
 
+    const asciiShelf = screen.querySelector('.terminal-ascii-shelf');
     const kirbyPre = screen.querySelector('.ascii-kirby');
     const yuukaPre = screen.querySelector('.ascii-yuuka');
     const miyabiPre = screen.querySelector('.ascii-miyabi');
@@ -46,11 +48,24 @@ export class TerminalLoader {
     let currentThrobberChar = TerminalLoader.THROBBER_FRAMES[0];
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, dismissed ? 0 : ms));
+    const scrollToBottom = () => {
+      if (logContainer) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+    };
 
     // Save pristine text for instant clean skip/restore
     const originalKirbyText = kirbyPre ? kirbyPre.textContent : '';
     const originalYuukaText = yuukaPre ? yuukaPre.textContent : '';
     const originalMiyabiText = miyabiPre ? miyabiPre.textContent : '';
+
+    const restorePre = (pre, text) => {
+      if (!pre) return;
+      pre.style.display = '';
+      pre.style.width = '';
+      pre.style.height = '';
+      pre.textContent = text;
+    };
 
     const dismiss = () => {
       if (dismissed) return;
@@ -70,22 +85,12 @@ export class TerminalLoader {
       document.removeEventListener('keydown', onKeyDown);
       screen.removeEventListener('click', onClick);
 
-      // Restore full text and release layout locks immediately
-      if (kirbyPre) {
-        kirbyPre.style.width = '';
-        kirbyPre.style.height = '';
-        kirbyPre.textContent = originalKirbyText;
+      if (asciiShelf) {
+        asciiShelf.classList.remove('is-pending');
       }
-      if (yuukaPre) {
-        yuukaPre.style.width = '';
-        yuukaPre.style.height = '';
-        yuukaPre.textContent = originalYuukaText;
-      }
-      if (miyabiPre) {
-        miyabiPre.style.width = '';
-        miyabiPre.style.height = '';
-        miyabiPre.textContent = originalMiyabiText;
-      }
+      restorePre(kirbyPre, originalKirbyText);
+      restorePre(yuukaPre, originalYuukaText);
+      restorePre(miyabiPre, originalMiyabiText);
 
       screen.classList.add('terminal-fade-out');
       setTimeout(() => {
@@ -124,123 +129,25 @@ export class TerminalLoader {
       if (dismissed) return;
       throbberIdx = (throbberIdx + 1) % TerminalLoader.THROBBER_FRAMES.length;
       currentThrobberChar = TerminalLoader.THROBBER_FRAMES[throbberIdx];
-      const throbbers = screen.querySelectorAll('.terminal-throbber');
-      throbbers.forEach((th) => {
+      screen.querySelectorAll('.terminal-throbber').forEach((th) => {
         th.textContent = currentThrobberChar;
       });
     }, 70);
 
-    // Prepare ASCII Art lines and pre-allocate fixed line slots
     const kirbyLines = originalKirbyText.replace(/\r/g, '').split('\n');
     const yuukaLines = originalYuukaText.replace(/\r/g, '').split('\n');
     const miyabiLines = originalMiyabiText.replace(/\r/g, '').split('\n');
 
-    let kirbySpans = [];
-    let yuukaSpans = [];
-    let miyabiSpans = [];
-
-    if (kirbyPre && yuukaPre && miyabiPre) {
-      const kRect = kirbyPre.getBoundingClientRect();
-      const yRect = yuukaPre.getBoundingClientRect();
-      const mRect = miyabiPre.getBoundingClientRect();
-
-      if (kRect.width && kRect.height) {
-        kirbyPre.style.width = `${kRect.width}px`;
-        kirbyPre.style.height = `${kRect.height}px`;
-      }
-      if (yRect.width && yRect.height) {
-        yuukaPre.style.width = `${yRect.width}px`;
-        yuukaPre.style.height = `${yRect.height}px`;
-      }
-      if (mRect.width && mRect.height) {
-        miyabiPre.style.width = `${mRect.width}px`;
-        miyabiPre.style.height = `${mRect.height}px`;
-      }
-
-      kirbyPre.innerHTML = '';
-      yuukaPre.innerHTML = '';
-      miyabiPre.innerHTML = '';
-
-      kirbySpans = kirbyLines.map(() => {
-        const span = document.createElement('span');
-        span.className = 'ascii-line';
-        kirbyPre.appendChild(span);
-        return span;
-      });
-
-      yuukaSpans = yuukaLines.map(() => {
-        const span = document.createElement('span');
-        span.className = 'ascii-line';
-        yuukaPre.appendChild(span);
-        return span;
-      });
-
-      miyabiSpans = miyabiLines.map(() => {
-        const span = document.createElement('span');
-        span.className = 'ascii-line';
-        miyabiPre.appendChild(span);
-        return span;
-      });
-    }
-
-    // Coordinated scanline typewriter across all three ASCII figures
-    const runAsciiArtTypewriter = async () => {
-      const maxLines = Math.max(kirbyLines.length, yuukaLines.length, miyabiLines.length);
-
-      for (let i = 0; i < maxLines; i++) {
-        if (dismissed) return;
-
-        // 1. Kirby (Left)
-        if (i < kirbyLines.length) {
-          const line = kirbyLines[i];
-          const span = kirbySpans[i];
-          const len = line.length;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.45)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.82)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.textContent = line;
-        }
-
-        // 2. Yuuka (Center)
-        if (i < yuukaLines.length) {
-          const line = yuukaLines[i];
-          const span = yuukaSpans[i];
-          const len = line.length;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.45)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.82)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.textContent = line;
-        }
-
-        // 3. Miyabi (Right)
-        if (i < miyabiLines.length) {
-          const line = miyabiLines[i];
-          const span = miyabiSpans[i];
-          const len = line.length;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.45)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.innerHTML = line.slice(0, Math.floor(len * 0.82)) + '<span class="ascii-cursor">█</span>';
-          await sleep(2);
-          if (dismissed) return;
-          span.textContent = line;
-        }
-
-        // Brief scanline carriage return delay
-        await sleep(3);
-      }
-
-      if (!dismissed) {
-        if (kirbyPre) { kirbyPre.style.width = ''; kirbyPre.style.height = ''; }
-        if (yuukaPre) { yuukaPre.style.width = ''; yuukaPre.style.height = ''; }
-        if (miyabiPre) { miyabiPre.style.width = ''; miyabiPre.style.height = ''; }
-      }
+    // Shared quick left-to-right line sweep helper
+    const typeAsciiLine = async (span, line, stepDelayMs = 2) => {
+      const len = line.length;
+      span.innerHTML = line.slice(0, Math.floor(len * 0.45)) + '<span class="ascii-cursor">█</span>';
+      await sleep(stepDelayMs);
+      if (dismissed) return;
+      span.innerHTML = line.slice(0, Math.floor(len * 0.82)) + '<span class="ascii-cursor">█</span>';
+      await sleep(stepDelayMs);
+      if (dismissed) return;
+      span.textContent = line;
     };
 
     // Terminal console boot steps
@@ -283,10 +190,10 @@ export class TerminalLoader {
       },
       {
         tag: 'AUTH',
-        text: 'guest@qurayshe authorized. Spawning interactive desktop session',
-        status: 'READY',
+        text: 'guest@qurayshe authorized. Rendering terminal banner...',
+        status: 'OK',
         statusClass: 't-ok',
-        delay: 80
+        delay: 90
       }
     ];
 
@@ -303,15 +210,18 @@ export class TerminalLoader {
         `;
 
         if (logContainer) {
-          logContainer.appendChild(line);
-          logContainer.scrollTop = logContainer.scrollHeight;
+          if (asciiShelf && asciiShelf.parentNode === logContainer) {
+            logContainer.insertBefore(line, asciiShelf);
+          } else {
+            logContainer.appendChild(line);
+          }
+          scrollToBottom();
         }
 
         const msgEl = line.querySelector('.t-msg');
         const cursorEl = line.querySelector('.terminal-type-cursor');
         const statusEl = line.querySelector('.t-status');
 
-        // Snappy typewriter effect for line message
         const text = step.text;
         const chunk = 4;
         for (let c = 0; c <= text.length; c += chunk) {
@@ -347,9 +257,103 @@ export class TerminalLoader {
       }
     };
 
-    // Run both typewriter streams in synchronized concert
-    await Promise.all([runAsciiArtTypewriter(), runBootSteps()]);
+    const runAsciiArtTypewriter = async () => {
+      if (!asciiShelf || !kirbyPre || !yuukaPre || !miyabiPre) return;
 
+      asciiShelf.classList.remove('is-pending');
+      if (logContainer) {
+        logContainer.appendChild(asciiShelf);
+      }
+
+      const isVertical = window.matchMedia('(max-width: 860px), (orientation: portrait)').matches;
+
+      if (isVertical) {
+        // Portrait / mobile: stack & print one figure at a time while auto-scrolling
+        const figures = [
+          { pre: kirbyPre, lines: kirbyLines },
+          { pre: yuukaPre, lines: yuukaLines },
+          { pre: miyabiPre, lines: miyabiLines }
+        ];
+
+        for (const fig of figures) {
+          fig.pre.innerHTML = '';
+          fig.pre.style.display = 'none';
+        }
+
+        for (const fig of figures) {
+          if (dismissed) return;
+          fig.pre.style.display = '';
+
+          for (const line of fig.lines) {
+            if (dismissed) return;
+            const span = document.createElement('span');
+            span.className = 'ascii-line';
+            fig.pre.appendChild(span);
+            scrollToBottom();
+            await typeAsciiLine(span, line, 2);
+            if (dismissed) return;
+            scrollToBottom();
+            await sleep(2);
+          }
+
+          await sleep(60);
+        }
+        return;
+      }
+
+      // Landscape / desktop: inline scanline typewriter across all three side-by-side
+      const figures = [
+        { pre: kirbyPre, lines: kirbyLines },
+        { pre: yuukaPre, lines: yuukaLines },
+        { pre: miyabiPre, lines: miyabiLines }
+      ];
+
+      for (const fig of figures) {
+        const rect = fig.pre.getBoundingClientRect();
+        if (rect.width && rect.height) {
+          fig.pre.style.width = `${rect.width}px`;
+          fig.pre.style.height = `${rect.height}px`;
+        }
+        fig.pre.innerHTML = '';
+        fig.spans = fig.lines.map(() => {
+          const span = document.createElement('span');
+          span.className = 'ascii-line';
+          fig.pre.appendChild(span);
+          return span;
+        });
+      }
+
+      scrollToBottom();
+
+      const maxLines = Math.max(kirbyLines.length, yuukaLines.length, miyabiLines.length);
+      for (let i = 0; i < maxLines; i++) {
+        if (dismissed) return;
+
+        for (const fig of figures) {
+          if (i < fig.lines.length) {
+            await typeAsciiLine(fig.spans[i], fig.lines[i], 2);
+            if (dismissed) return;
+          }
+        }
+
+        scrollToBottom();
+        await sleep(4);
+      }
+
+      if (!dismissed) {
+        for (const fig of figures) {
+          fig.pre.style.width = '';
+          fig.pre.style.height = '';
+        }
+      }
+    };
+
+    // 1. Type console boot logs first
+    await runBootSteps();
+    if (dismissed) return;
+
+    // 2. Render ASCII art inside the terminal below the console logs
+    await runAsciiArtTypewriter();
     if (dismissed) return;
 
     // Terminal ready state
@@ -360,8 +364,8 @@ export class TerminalLoader {
       promptTarget.innerHTML = '<span class="terminal-cursor">█</span>';
     }
 
-    // Brief victory beat before smooth transition
-    await sleep(340);
+    // Brief beat so the user can admire the completed terminal banner before fading out
+    await sleep(480);
     dismiss();
   }
 

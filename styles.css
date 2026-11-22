@@ -7480,7 +7480,8 @@ html.fast-boot #terminal-boot-screen {
   color: var(--text-main, #f5f0e8);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  padding: clamp(0.5rem, 1.5vw, 1.25rem);
+  box-sizing: border-box;
   overflow: hidden;
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   cursor: default;
@@ -7509,13 +7510,18 @@ html.fast-boot #terminal-boot-screen {
   z-index: 3;
 }
 
-/* Console Window Box (Top / Upper-Left) */
+/* Fullscreen Console Window Box */
 .terminal-console-pane {
   position: relative;
   z-index: 4;
-  width: min(720px, 92vw);
-  margin: clamp(1rem, 3.5vh, 2.5rem) auto auto clamp(1.2rem, 5vw, 4.5rem);
-  background: rgba(21, 19, 28, 0.92);
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(21, 19, 28, 0.94);
   border: 1.5px solid rgba(245, 240, 232, 0.22);
   border-radius: var(--radius-md, 12px);
   box-shadow: 4px 6px 0 var(--doodle-void, #0b0910), 0 0 35px rgba(0, 0, 0, 0.65);
@@ -7596,13 +7602,17 @@ html.fast-boot #terminal-boot-screen {
 }
 
 .terminal-boot-body {
-  padding: 0.95rem 1.25rem;
+  padding: clamp(0.85rem, 2vw, 1.5rem);
   font-family: var(--font-mono, monospace);
-  font-size: 0.81rem;
+  font-size: clamp(0.76rem, 1vw, 0.88rem);
   line-height: 1.6;
-  min-height: 175px;
-  max-height: 38vh;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: auto;
 }
 
 .terminal-line {
@@ -7708,9 +7718,9 @@ html.fast-boot #terminal-boot-screen {
   font-size: 0.78rem;
 }
 
-/* Bottom ASCII Art Showcase: Kirby (left), Yuuka (center), Miyabi (right)
-   Aligned with align-items: flex-end so the bottom lines of all 3 line up flush.
-   Miyabi has 57 lines (taller) and sits on the right, rising up into open space. */
+/* Bottom ASCII Art Showcase inside Terminal: Kirby (left), Yuuka (center), Miyabi (right)
+   Aligned with align-items: flex-end so the bottom lines of all 3 line up flush on desktop.
+   On vertical/portrait screens, stacked cleanly one at a time. */
 .terminal-ascii-shelf {
   position: relative;
   z-index: 2;
@@ -7719,18 +7729,22 @@ html.fast-boot #terminal-boot-screen {
   justify-content: space-between;
   gap: clamp(0.75rem, 2.5vw, 3rem);
   width: 100%;
-  max-width: 1750px;
-  margin: 0 auto;
-  padding: 0 clamp(0.75rem, 2.5vw, 2.5rem) 0.5rem;
+  max-width: 1680px;
+  margin: auto auto 0;
+  padding: 1.25rem 0 0.25rem;
   box-sizing: border-box;
   pointer-events: none;
   user-select: none;
-  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.terminal-ascii-shelf.is-pending {
+  display: none;
 }
 
 .terminal-ascii-art {
   font-family: var(--font-mono, 'JetBrains Mono', 'Courier New', monospace);
-  font-size: clamp(2.6px, 0.44vw, 5.6px);
+  font-size: clamp(2.8px, 0.45vw, 6.2px);
   line-height: 1.0;
   letter-spacing: 0;
   white-space: pre;
@@ -7739,7 +7753,7 @@ html.fast-boot #terminal-boot-screen {
   border: 0;
   pointer-events: none;
   user-select: none;
-  opacity: 0.88;
+  opacity: 0.9;
   filter: contrast(1.15);
   flex-shrink: 0;
 }
@@ -7785,26 +7799,29 @@ html.fast-boot #terminal-boot-screen {
   text-shadow: 0 0 6px #fff, 0 0 12px #7ee7fc;
 }
 
-/* Mobile & Small Screen Adaptations */
-@media (max-width: 860px) {
-  .terminal-console-pane {
-    width: calc(100% - 1.5rem);
-    margin: 1rem auto auto 0.75rem;
-  }
-  .terminal-boot-hint {
-    display: none;
+/* Mobile & Vertical Screen Adaptations */
+@media (max-width: 860px), (orientation: portrait) {
+  .terminal-ascii-shelf {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    margin: 1rem auto 0;
+    padding: 0.5rem 0 1rem;
   }
   .terminal-ascii-art {
-    font-size: clamp(1.9px, 0.7vw, 3.4px);
+    font-size: clamp(3.4px, 1.55vw, 6.5px);
+  }
+  .terminal-ascii-art.ascii-miyabi {
+    margin-left: 0;
   }
 }
 
-@media (max-width: 480px) {
-  .terminal-ascii-art {
-    font-size: clamp(1.6px, 0.6vw, 2.4px);
+@media (max-width: 600px) {
+  .terminal-boot-hint {
+    display: none;
   }
   .terminal-boot-body {
     font-size: 0.74rem;
-    min-height: 140px;
   }
 }
