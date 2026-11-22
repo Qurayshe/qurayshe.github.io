@@ -43,7 +43,7 @@ export const MUSIC_TRACKS = [
     artist: 'qurayshe',
     src: 'assets/musicvidya/ktk15.mp4',
     thumb: 'assets/musicvidya/thumbs/ktk15.jpg',
-    tag: 'Original Composition'
+    tag: 'Live Performance / Original Composition'
   },
   {
     id: 'ktk16',
@@ -51,6 +51,6 @@ export const MUSIC_TRACKS = [
     artist: 'qurayshe',
     src: 'assets/musicvidya/ktk16.mp4',
     thumb: 'assets/musicvidya/thumbs/ktk16.jpg',
-    tag: 'Original Composition'
+    tag: 'Live Performance / Original Composition'
   }
 ];

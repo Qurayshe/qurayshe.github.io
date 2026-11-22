@@ -166,6 +166,36 @@ export class ResumeViewer {
                   .join('')}
               </div>
 
+              <!-- Mini 3DCG & Music Preview Dock -->
+              <div class="terminal-mini-media-row">
+                <div class="mini-media-card" id="mini-3d-card">
+                  <img class="mini-media-thumb" id="mini-3d-thumb" src="${GALLERY_3D_ITEMS[0].src}" alt="${GALLERY_3D_ITEMS[0].filename}" />
+                  <div class="mini-media-info">
+                    <div class="mini-media-kicker">3DCG &bull; <span id="mini-3d-counter">01/${String(GALLERY_3D_ITEMS.length).padStart(2, '0')}</span></div>
+                    <div class="mini-media-name" id="mini-3d-name">${GALLERY_3D_ITEMS[0].filename}</div>
+                    <div class="mini-media-btns">
+                      <button type="button" class="mini-ctrl-btn" id="btn-mini-3d-prev" title="Previous Render" aria-label="Previous Render">◀</button>
+                      <button type="button" class="mini-ctrl-btn" id="btn-mini-3d-next" title="Next Render" aria-label="Next Render">▶</button>
+                    </div>
+                  </div>
+                  <button type="button" class="mini-jump-btn" id="btn-mini-jump-3d" title="Jump to full 3DCG Showcase">↗ Full</button>
+                </div>
+
+                <div class="mini-media-card" id="mini-music-card">
+                  <img class="mini-media-thumb" id="mini-music-thumb" src="${MUSIC_TRACKS[0].thumb}" alt="${MUSIC_TRACKS[0].title}" />
+                  <div class="mini-media-info">
+                    <div class="mini-media-kicker">AUDIO &bull; <span id="mini-music-time">0:00</span></div>
+                    <div class="mini-media-name" id="mini-music-name">${MUSIC_TRACKS[0].title}</div>
+                    <div class="mini-media-btns">
+                      <button type="button" class="mini-ctrl-btn" id="btn-mini-music-prev" title="Previous Track" aria-label="Previous Track">⏮</button>
+                      <button type="button" class="mini-ctrl-btn mini-ctrl-play" id="btn-mini-music-play" title="Play / Pause" aria-label="Play / Pause">▶</button>
+                      <button type="button" class="mini-ctrl-btn" id="btn-mini-music-next" title="Next Track" aria-label="Next Track">⏭</button>
+                    </div>
+                  </div>
+                  <button type="button" class="mini-jump-btn" id="btn-mini-jump-music" title="Jump to full Music Player">↗ Full</button>
+                </div>
+              </div>
+
               <!-- Languages & Dialects -->
               <div class="terminal-footer-row">
                 <span class="footer-label">NATURAL LANGUAGES:</span>
@@ -333,8 +363,7 @@ export class ResumeViewer {
                         <div class="gallery-3d-top">
                           <div class="gallery-3d-label">
                             <span>3DCG SHOWCASE &bull;</span>
-                            <strong id="resume-3d-title">${GALLERY_3D_ITEMS[0].title}</strong>
-                            <span class="gallery-3d-file" id="resume-3d-file">(${GALLERY_3D_ITEMS[0].filename})</span>
+                            <strong id="resume-3d-file">${GALLERY_3D_ITEMS[0].filename}</strong>
                           </div>
                           <div class="gallery-3d-nav">
                             <button type="button" class="btn-3d-nav" id="btn-3d-prev" title="Previous Render" aria-label="Previous Render">◀</button>
@@ -344,14 +373,14 @@ export class ResumeViewer {
                         </div>
 
                         <div class="gallery-3d-stage" id="resume-3d-stage" title="Click to view next render">
-                          <img id="resume-3d-img" class="gallery-3d-img" src="${GALLERY_3D_ITEMS[0].src}" alt="${GALLERY_3D_ITEMS[0].title}" />
+                          <img id="resume-3d-img" class="gallery-3d-img" src="${GALLERY_3D_ITEMS[0].src}" alt="${GALLERY_3D_ITEMS[0].filename}" />
                         </div>
 
                         <div class="gallery-3d-thumbs" id="resume-3d-thumbs">
                           ${GALLERY_3D_ITEMS.map(
                             (item, gIdx) => `
-                            <button type="button" class="gallery-3d-thumb-btn ${gIdx === 0 ? 'active' : ''}" data-gallery-idx="${gIdx}" title="${item.title}">
-                              <img src="${item.src}" alt="${item.title}" loading="lazy" />
+                            <button type="button" class="gallery-3d-thumb-btn ${gIdx === 0 ? 'active' : ''}" data-gallery-idx="${gIdx}" title="${item.filename}">
+                              <img src="${item.src}" alt="${item.filename}" loading="lazy" />
                             </button>
                           `
                           ).join('')}
@@ -1085,11 +1114,10 @@ export class ResumeViewer {
   }
 
   /* --------------------------------------------------------------------------
-     3DCG Renders Showcase Viewer
+     3DCG Renders Showcase Viewer (Synced with Mini Executive Summary Widget)
      -------------------------------------------------------------------------- */
   init3DGallery() {
     const imgEl = this.container.querySelector('#resume-3d-img');
-    const titleEl = this.container.querySelector('#resume-3d-title');
     const fileEl = this.container.querySelector('#resume-3d-file');
     const counterEl = this.container.querySelector('#resume-3d-counter');
     const btnPrev = this.container.querySelector('#btn-3d-prev');
@@ -1097,24 +1125,41 @@ export class ResumeViewer {
     const stageEl = this.container.querySelector('#resume-3d-stage');
     const thumbBtns = this.container.querySelectorAll('.gallery-3d-thumb-btn');
 
+    const miniThumb = this.container.querySelector('#mini-3d-thumb');
+    const miniName = this.container.querySelector('#mini-3d-name');
+    const miniCounter = this.container.querySelector('#mini-3d-counter');
+    const miniPrev = this.container.querySelector('#btn-mini-3d-prev');
+    const miniNext = this.container.querySelector('#btn-mini-3d-next');
+    const miniJump = this.container.querySelector('#btn-mini-jump-3d');
+
     if (!imgEl) return;
 
     const selectItem = (idx) => {
       this.currentGalleryIdx = (idx + GALLERY_3D_ITEMS.length) % GALLERY_3D_ITEMS.length;
       const item = GALLERY_3D_ITEMS[this.currentGalleryIdx];
+      const numStr = String(this.currentGalleryIdx + 1).padStart(2, '0');
+      const totStr = String(GALLERY_3D_ITEMS.length).padStart(2, '0');
+
       imgEl.src = item.src;
-      imgEl.alt = item.title;
-      if (titleEl) titleEl.textContent = item.title;
-      if (fileEl) fileEl.textContent = `(${item.filename})`;
-      if (counterEl) {
-        counterEl.textContent = `${String(this.currentGalleryIdx + 1).padStart(2, '0')} / ${String(GALLERY_3D_ITEMS.length).padStart(2, '0')}`;
-      }
+      imgEl.alt = item.filename;
+      if (fileEl) fileEl.textContent = item.filename;
+      if (counterEl) counterEl.textContent = `${numStr} / ${totStr}`;
       thumbBtns.forEach((b, i) => b.classList.toggle('active', i === this.currentGalleryIdx));
+
+      if (miniThumb) {
+        miniThumb.src = item.src;
+        miniThumb.alt = item.filename;
+      }
+      if (miniName) miniName.textContent = item.filename;
+      if (miniCounter) miniCounter.textContent = `${numStr}/${totStr}`;
     };
 
     if (btnPrev) btnPrev.addEventListener('click', () => selectItem(this.currentGalleryIdx - 1));
     if (btnNext) btnNext.addEventListener('click', () => selectItem(this.currentGalleryIdx + 1));
     if (stageEl) stageEl.addEventListener('click', () => selectItem(this.currentGalleryIdx + 1));
+    if (miniPrev) miniPrev.addEventListener('click', () => selectItem(this.currentGalleryIdx - 1));
+    if (miniNext) miniNext.addEventListener('click', () => selectItem(this.currentGalleryIdx + 1));
+    if (miniJump) miniJump.addEventListener('click', () => this.jumpToWidget('#resume-3d-viewer'));
 
     thumbBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1122,6 +1167,23 @@ export class ResumeViewer {
         selectItem(idx);
       });
     });
+  }
+
+  jumpToWidget(selector) {
+    const creativityBlock = this.container.querySelector('#block-creativity');
+    if (creativityBlock && creativityBlock.style.display === 'none') {
+      const allBtn = this.container.querySelector('.resume-filter-btn[data-filter="all"]');
+      this.container.querySelectorAll('.resume-filter-btn').forEach((b) => b.classList.remove('active'));
+      if (allBtn) allBtn.classList.add('active');
+      this.applyFilter('all', false);
+    }
+    const target = this.container.querySelector(selector);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.remove('widget-jump-flash');
+      void target.offsetWidth;
+      target.classList.add('widget-jump-flash');
+    }
   }
 
   /* --------------------------------------------------------------------------
@@ -1174,12 +1236,21 @@ export class ResumeViewer {
     const hintEl = this.container.querySelector('#resume-spectrum-hint');
     const trackBtns = this.container.querySelectorAll('.audio-track-btn');
 
+    const miniMusicThumb = this.container.querySelector('#mini-music-thumb');
+    const miniMusicName = this.container.querySelector('#mini-music-name');
+    const miniMusicTime = this.container.querySelector('#mini-music-time');
+    const miniMusicPlay = this.container.querySelector('#btn-mini-music-play');
+    const miniMusicPrev = this.container.querySelector('#btn-mini-music-prev');
+    const miniMusicNext = this.container.querySelector('#btn-mini-music-next');
+    const miniMusicJump = this.container.querySelector('#btn-mini-jump-music');
+
     if (!videoEl || !canvas) return;
     videoEl.volume = volSlider ? parseFloat(volSlider.value) : 0.8;
 
     const updatePlayUI = () => {
       const playing = !videoEl.paused && !videoEl.ended;
       if (btnPlay) btnPlay.textContent = playing ? '⏸ Pause' : '▶ Play';
+      if (miniMusicPlay) miniMusicPlay.textContent = playing ? '⏸' : '▶';
       if (hintEl) hintEl.style.opacity = playing ? '0' : '1';
     };
 
@@ -1193,6 +1264,12 @@ export class ResumeViewer {
         videoEl.removeAttribute('poster');
       }
       if (titleEl) titleEl.textContent = `NOW PLAYING • ${track.title}`;
+      if (miniMusicName) miniMusicName.textContent = track.title;
+      if (miniMusicThumb && track.thumb) {
+        miniMusicThumb.src = track.thumb;
+        miniMusicThumb.alt = track.title;
+      }
+      if (miniMusicTime) miniMusicTime.textContent = '0:00';
       trackBtns.forEach((btn, i) => btn.classList.toggle('active', i === this.currentTrackIdx));
       if (seekSlider) seekSlider.value = '0';
       if (curLabel) curLabel.textContent = '0:00';
@@ -1215,9 +1292,13 @@ export class ResumeViewer {
     };
 
     if (btnPlay) btnPlay.addEventListener('click', togglePlay);
+    if (miniMusicPlay) miniMusicPlay.addEventListener('click', togglePlay);
     videoEl.addEventListener('click', togglePlay);
     if (btnPrev) btnPrev.addEventListener('click', () => loadTrack(this.currentTrackIdx - 1, true));
     if (btnNext) btnNext.addEventListener('click', () => loadTrack(this.currentTrackIdx + 1, true));
+    if (miniMusicPrev) miniMusicPrev.addEventListener('click', () => loadTrack(this.currentTrackIdx - 1, true));
+    if (miniMusicNext) miniMusicNext.addEventListener('click', () => loadTrack(this.currentTrackIdx + 1, true));
+    if (miniMusicJump) miniMusicJump.addEventListener('click', () => this.jumpToWidget('#resume-music-player'));
 
     trackBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1267,7 +1348,9 @@ export class ResumeViewer {
       });
 
       videoEl.addEventListener('timeupdate', () => {
-        if (curLabel) curLabel.textContent = this.formatMediaTime(videoEl.currentTime);
+        const formatted = this.formatMediaTime(videoEl.currentTime);
+        if (curLabel) curLabel.textContent = formatted;
+        if (miniMusicTime) miniMusicTime.textContent = formatted;
         if (!isSeeking && seekSlider && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
           seekSlider.value = String((videoEl.currentTime / videoEl.duration) * 100);
         }
