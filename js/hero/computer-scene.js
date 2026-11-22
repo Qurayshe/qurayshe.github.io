@@ -10,6 +10,7 @@
 
 import { DoomEngine } from './doom-engine.js';
 import { MUSIC_TRACKS } from '../data/music-tracks.js';
+import { GALLERY_3D_ITEMS } from '../data/gallery-3d.js';
 
 export class ComputerScene {
   constructor(containerId) {
@@ -103,6 +104,21 @@ export class ComputerScene {
       this.wmpSelectTrack(1, false);
       this.wmpSelectTrack(0, false);
     }
+
+    // 1c. Windows XP "3D Renders" Desktop Folder & Filmstrip Image Viewer State
+    this.gallery3dState = 'closed'; // 'closed', 'normal', 'minimized', 'maximized'
+    this.gallery3dRect = { x: 145, y: 48, w: 740, h: 575 };
+    this.gallery3dNormalRect = { x: 145, y: 48, w: 740, h: 575 };
+    this.gallery3dIsDragging = false;
+    this.gallery3dDragOffset = { x: 0, y: 0 };
+    this.gallery3dIdx = 0;
+    this.gallery3dRotation = 0;
+    this.gallery3dHitZones = {};
+    this.gallery3dImages = GALLERY_3D_ITEMS.map((item) => {
+      const img = new Image();
+      img.src = item.src;
+      return img;
+    });
 
     // Mini-website navigation & pages: 'home', 'about', 'projects', 'lab', 'links', 'jukebox', 'guestbook', 'contact'
     this.webPage = 'home';
@@ -1204,6 +1220,12 @@ export class ComputerScene {
     this.playWhoosh();
   }
 
+  openGallery3d() {
+    this.gallery3dState = 'normal';
+    this.bringToFront('gallery3d');
+    this.playWhoosh();
+  }
+
   ensureWmpAudioGraph() {
     if (!this.wmpVideo) return;
     if (this.wmpAudioCtx) {
@@ -1305,6 +1327,7 @@ export class ComputerScene {
   getWindowState(winId) {
     if (winId === 'ie') return this.winState;
     if (winId === 'wmp') return this.wmpState;
+    if (winId === 'gallery3d') return this.gallery3dState;
     if (winId === 'doom') return this.doomState;
     if (winId === 'minesweeper') return this.minesweeperState;
     if (winId === 'notepad') return this.notepadState;
@@ -1316,6 +1339,7 @@ export class ComputerScene {
   setWindowState(winId, state) {
     if (winId === 'ie') this.winState = state;
     else if (winId === 'wmp') this.wmpState = state;
+    else if (winId === 'gallery3d') this.gallery3dState = state;
     else if (winId === 'doom') this.doomState = state;
     else if (winId === 'minesweeper') this.minesweeperState = state;
     else if (winId === 'notepad') this.notepadState = state;
@@ -1365,6 +1389,7 @@ export class ComputerScene {
     const desktopIcons = [
       { sym: '🌐', name: 'Internet Explorer', id: 'ie' },
       { sym: '🎵', name: 'Media Player', id: 'wmp' },
+      { sym: '📁', name: '3D Renders', id: 'gallery3d' },
       { sym: '👹', name: 'DOOM.exe', id: 'doom' },
       { sym: '💣', name: 'Minesweeper', id: 'minesweeper' },
       { sym: '📝', name: 'Notepad', id: 'notepad' },
@@ -1376,16 +1401,16 @@ export class ComputerScene {
 
     desktopIcons.forEach((di, idx) => {
       const dix = 44;
-      const diy = 18 + idx * 72;
-      ctx.font = '28px sans-serif';
+      const diy = 14 + idx * 66;
+      ctx.font = '26px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(di.sym, dix, diy + 25);
+      ctx.fillText(di.sym, dix, diy + 24);
 
       ctx.font = 'bold 11px Tahoma, sans-serif';
       ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-      ctx.fillText(di.name, dix + 1, diy + 45);
+      ctx.fillText(di.name, dix + 1, diy + 43);
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(di.name, dix, diy + 44);
+      ctx.fillText(di.name, dix, diy + 42);
     });
 
     // 3. Authentic Windows XP Luna Taskbar (y = 730 to 768)
@@ -1445,6 +1470,7 @@ export class ComputerScene {
     const openApps = [];
     if (this.winState !== 'closed') openApps.push({ id: 'ie', icon: '🌐', title: 'qurayshe.xd' });
     if (this.wmpState !== 'closed') openApps.push({ id: 'wmp', icon: '🎵', title: 'Media Player' });
+    if (this.gallery3dState !== 'closed') openApps.push({ id: 'gallery3d', icon: '🖼️', title: '3D Renders' });
     if (this.doomState !== 'closed') openApps.push({ id: 'doom', icon: '👹', title: this.doomState === 'loading' ? 'Loading DOOM...' : 'DOOM.EXE' });
     if (this.minesweeperState !== 'closed') openApps.push({ id: 'minesweeper', icon: '💣', title: 'Minesweeper' });
     if (this.notepadState !== 'closed') openApps.push({ id: 'notepad', icon: '📝', title: `${this.notepadTab} - Notepad` });
@@ -1512,6 +1538,8 @@ export class ComputerScene {
         if (this.winState !== 'closed' && this.winState !== 'minimized') this.renderIEWindow(ctx, W, H);
       } else if (winId === 'wmp') {
         if (this.wmpState !== 'closed' && this.wmpState !== 'minimized') this.renderWmpWindow(ctx, W, H);
+      } else if (winId === 'gallery3d') {
+        if (this.gallery3dState !== 'closed' && this.gallery3dState !== 'minimized') this.renderGallery3dWindow(ctx, W, H);
       } else if (winId === 'doom') {
         if (this.doomState !== 'closed' && this.doomState !== 'minimized') this.renderDoomWindow(ctx, W, H);
       } else if (winId === 'minesweeper') {
@@ -3205,6 +3233,362 @@ export class ComputerScene {
   }
 
   // =========================================================================
+  // APPLICATION WINDOW 0B: WINDOWS XP "3D RENDERS" FILMSTRIP VIEWER
+  // =========================================================================
+  renderGallery3dWindow(ctx, W, H) {
+    if (this.gallery3dState === 'closed' || this.gallery3dState === 'minimized') return;
+
+    const isMax = (this.gallery3dState === 'maximized');
+    const isActive = (this.activeWindow === 'gallery3d');
+    const wx = isMax ? 0 : this.gallery3dRect.x;
+    const wy = isMax ? 0 : this.gallery3dRect.y;
+    const ww = isMax ? W : this.gallery3dRect.w;
+    const wh = isMax ? 730 : this.gallery3dRect.h;
+
+    const item = GALLERY_3D_ITEMS[this.gallery3dIdx] || GALLERY_3D_ITEMS[0];
+    const imgObj = this.gallery3dImages?.[this.gallery3dIdx];
+
+    ctx.save();
+
+    // Window Drop Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#ece9d8';
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // XP Luna Outer Frame
+    ctx.strokeStyle = isActive ? '#0055ea' : '#5b7ac6';
+    ctx.lineWidth = 2;
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [6, 6, 0, 0]);
+    ctx.stroke();
+
+    ctx.save();
+    this.drawRoundRect(ctx, wx + 1, wy + 1, ww - 2, wh - 2, isMax ? 0 : [5, 5, 0, 0]);
+    ctx.clip();
+
+    // 1. XP Luna Titlebar (h = 26)
+    const titleH = 26;
+    const tbGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+    tbGrad.addColorStop(0, isActive ? '#0058ec' : '#7697e7');
+    tbGrad.addColorStop(0.35, isActive ? '#3b88ff' : '#8ba7ef');
+    tbGrad.addColorStop(1, isActive ? '#0047c8' : '#6688dd');
+    ctx.fillStyle = tbGrad;
+    ctx.fillRect(wx, wy, ww, titleH);
+
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('📁', wx + 8, wy + 18);
+    ctx.font = 'bold 12px Tahoma, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('3D Renders', wx + 28, wy + 17);
+
+    // Min / Max / Close Buttons
+    const btnY = wy + 4;
+    const bxMin = wx + ww - 72;
+    const bxMax = wx + ww - 48;
+    const bxClose = wx + ww - 24;
+    const drawWinBtn = (bx, bgTop, bgBot, label) => {
+      const g = ctx.createLinearGradient(0, btnY, 0, btnY + 19);
+      g.addColorStop(0, bgTop);
+      g.addColorStop(1, bgBot);
+      ctx.fillStyle = g;
+      this.drawRoundRect(ctx, bx, btnY, 20, 19, 3);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, bx + 10, btnY + 14);
+    };
+    drawWinBtn(bxMin, '#3b88ff', '#1652c5', '_');
+    drawWinBtn(bxMax, '#3b88ff', '#1652c5', isMax ? '❐' : '□');
+    drawWinBtn(bxClose, '#f87171', '#b91c1c', '×');
+
+    // 2. XP Menu Bar (h = 22)
+    const menuY = wy + titleH;
+    const menuH = 22;
+    ctx.fillStyle = '#ece9d8';
+    ctx.fillRect(wx, menuY, ww, menuH);
+    ctx.font = '11px Tahoma, sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'left';
+    ctx.fillText('File     Edit     View     Favorites     Tools     Help', wx + 10, menuY + 15);
+    // Tiny Windows Flag box on right
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(wx + ww - 32, menuY + 1, 30, 20);
+    ctx.fillStyle = '#ef4444'; ctx.fillRect(wx + ww - 22, menuY + 5, 5, 5);
+    ctx.fillStyle = '#22c55e'; ctx.fillRect(wx + ww - 16, menuY + 5, 5, 5);
+    ctx.fillStyle = '#3b82f6'; ctx.fillRect(wx + ww - 22, menuY + 11, 5, 5);
+    ctx.fillStyle = '#eab308'; ctx.fillRect(wx + ww - 16, menuY + 11, 5, 5);
+
+    // 3. XP Explorer Toolbar (h = 30)
+    const toolY = menuY + menuH;
+    const toolH = 30;
+    ctx.fillStyle = '#f1efe2';
+    ctx.fillRect(wx, toolY, ww, toolH);
+    ctx.strokeStyle = '#d4d0c8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(wx, toolY); ctx.lineTo(wx + ww, toolY);
+    ctx.moveTo(wx, toolY + toolH); ctx.lineTo(wx + ww, toolY + toolH);
+    ctx.stroke();
+
+    // Back / Forward / Folders / Filmstrip pills
+    const drawTbChip = (tx, label, active = false) => {
+      if (active) {
+        ctx.fillStyle = '#ffffff';
+        this.drawRoundRect(ctx, tx, toolY + 4, 72, 22, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#94a3b8';
+        ctx.stroke();
+      }
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, tx + 6, toolY + 19);
+    };
+    drawTbChip(wx + 8, '◀ Back');
+    drawTbChip(wx + 66, '▶');
+    drawTbChip(wx + 94, '🔍 Search');
+    drawTbChip(wx + 168, '📁 Folders', true);
+    drawTbChip(wx + 248, '🎞️ Filmstrip ▾');
+
+    // 4. Address Bar (h = 24)
+    const addrY = toolY + toolH;
+    const addrH = 24;
+    ctx.fillStyle = '#ece9d8';
+    ctx.fillRect(wx, addrY, ww, addrH);
+    ctx.font = '11px Tahoma, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'left';
+    ctx.fillText('Address', wx + 10, addrY + 16);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(wx + 60, addrY + 2, ww - 108, 20);
+    ctx.strokeStyle = '#7f9db9';
+    ctx.strokeRect(wx + 60, addrY + 2, ww - 108, 20);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText('📁 C:\\Documents and Settings\\qurayshe\\Desktop\\3D Renders', wx + 66, addrY + 16);
+
+    // Go button
+    ctx.fillStyle = '#22c55e';
+    this.drawRoundRect(ctx, wx + ww - 42, addrY + 3, 18, 18, 3);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('→', wx + ww - 33, addrY + 16);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '11px Tahoma, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Go', wx + ww - 20, addrY + 16);
+
+    // 5. Split Explorer Body: Left Folders Tree + Right Filmstrip Image Viewer
+    const bodyY = addrY + addrH + 1;
+    const bodyH = wh - (bodyY - wy);
+    const treeW = 168;
+
+    // 5a. Left Folders Tree Pane
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(wx, bodyY, treeW, bodyH);
+    ctx.fillStyle = '#ece9d8';
+    ctx.fillRect(wx, bodyY, treeW, 20);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(wx + treeW, bodyY); ctx.lineTo(wx + treeW, bodyY + bodyH);
+    ctx.moveTo(wx, bodyY + 20); ctx.lineTo(wx + treeW, bodyY + 20);
+    ctx.stroke();
+
+    ctx.font = 'bold 11px Tahoma, sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'left';
+    ctx.fillText('Folders', wx + 8, bodyY + 14);
+    ctx.fillText('×', wx + treeW - 14, bodyY + 14);
+
+    const treeNodes = [
+      { indent: 0, icon: '🖥️', label: 'Desktop', active: false },
+      { indent: 1, icon: '📁', label: '3D Renders', active: true },
+      { indent: 1, icon: '📁', label: 'My Documents', active: false },
+      { indent: 2, icon: '🖼️', label: 'My Pictures', active: false },
+      { indent: 2, icon: '🎵', label: 'My Music', active: false },
+      { indent: 1, icon: '💻', label: 'My Computer', active: false },
+      { indent: 2, icon: '💾', label: 'Local Disk (C:)', active: false },
+      { indent: 2, icon: '💿', label: 'DVD Drive (D:)', active: false },
+      { indent: 1, icon: '⚙️', label: 'Control Panel', active: false },
+      { indent: 1, icon: '🗑️', label: 'Recycle Bin', active: false }
+    ];
+    treeNodes.forEach((n, i) => {
+      const ny = bodyY + 26 + i * 20;
+      const nx = wx + 8 + n.indent * 14;
+      if (n.active) {
+        ctx.fillStyle = '#316ac5';
+        ctx.fillRect(nx + 16, ny - 2, treeW - (nx - wx) - 20, 17);
+      }
+      ctx.font = '11px Tahoma, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(n.icon, nx, ny + 10);
+      ctx.fillStyle = n.active ? '#ffffff' : '#0f172a';
+      ctx.fillText(n.label, nx + 18, ny + 10);
+    });
+
+    // 5b. Right Filmstrip Image Viewer Pane
+    const paneX = wx + treeW + 1;
+    const paneW = ww - treeW - 1;
+    ctx.fillStyle = '#eef2f6';
+    ctx.fillRect(paneX, bodyY, paneW, bodyH);
+
+    const stripH = 112;
+    const ctrlH = 34;
+    const stagePad = 14;
+    const stageH = bodyH - stripH - ctrlH - stagePad * 2;
+    const stageW = paneW - stagePad * 2;
+    const stageX = paneX + stagePad;
+    const stageY = bodyY + stagePad;
+
+    // Main Preview Frame (White mat + crisp border like XP Filmstrip)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(stageX, stageY, stageW, stageH);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(stageX, stageY, stageW, stageH);
+
+    // Subtle dark inner canvas so transparent/white renders stand out nicely
+    const innerPad = 6;
+    ctx.fillStyle = '#141722';
+    ctx.fillRect(stageX + innerPad, stageY + innerPad, stageW - innerPad * 2, stageH - innerPad * 2);
+
+    if (imgObj && imgObj.complete && imgObj.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(stageX + innerPad, stageY + innerPad, stageW - innerPad * 2, stageH - innerPad * 2);
+      ctx.clip();
+
+      const maxW = stageW - innerPad * 2 - 12;
+      const maxH = stageH - innerPad * 2 - 12;
+      const rotRad = (this.gallery3dRotation * Math.PI) / 180;
+      const rotated = this.gallery3dRotation % 180 !== 0;
+      const iw = rotated ? imgObj.naturalHeight : imgObj.naturalWidth;
+      const ih = rotated ? imgObj.naturalWidth : imgObj.naturalHeight;
+      const scale = Math.min(maxW / iw, maxH / ih);
+      const dw = imgObj.naturalWidth * scale;
+      const dh = imgObj.naturalHeight * scale;
+
+      ctx.translate(stageX + stageW / 2, stageY + stageH / 2);
+      ctx.rotate(rotRad);
+      ctx.drawImage(imgObj, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
+    }
+    this.gallery3dHitZones.stage = { x: stageX, y: stageY, w: stageW, h: stageH };
+
+    // XP Filmstrip Controls Row (Prev / Next / Rotate CCW / Rotate CW)
+    const ctrlY = stageY + stageH + 4;
+    const centerX = paneX + paneW / 2;
+
+    const drawCircleIconBtn = (cx, cy, r, symbol) => {
+      const g = ctx.createRadialGradient(cx - 3, cy - 3, 2, cx, cy, r);
+      g.addColorStop(0, '#93c5fd');
+      g.addColorStop(0.55, '#2563eb');
+      g.addColorStop(1, '#1e3a8a');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(symbol, cx, cy + 4);
+      return { x: cx - r - 2, y: cy - r - 2, w: (r + 2) * 2, h: (r + 2) * 2 };
+    };
+
+    const btnCY = ctrlY + 14;
+    this.gallery3dHitZones.prev = drawCircleIconBtn(centerX - 64, btnCY, 12, '◀');
+    this.gallery3dHitZones.next = drawCircleIconBtn(centerX - 34, btnCY, 12, '▶');
+    this.gallery3dHitZones.rotL = drawCircleIconBtn(centerX + 26, btnCY, 12, '↺');
+    this.gallery3dHitZones.rotR = drawCircleIconBtn(centerX + 56, btnCY, 12, '↻');
+
+    // Divider line between nav and rotate
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(centerX - 4, btnCY - 10);
+    ctx.lineTo(centerX - 4, btnCY + 10);
+    ctx.stroke();
+
+    // Counter label on right of control row
+    ctx.font = '11px Tahoma, sans-serif';
+    ctx.fillStyle = '#475569';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${item.title} (${this.gallery3dIdx + 1}/${GALLERY_3D_ITEMS.length})`, paneX + paneW - 14, btnCY + 4);
+
+    // Bottom Filmstrip Thumbnail Strip (white background, blue selection box)
+    const stripY = bodyY + bodyH - stripH;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(paneX, stripY, paneW, stripH);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(paneX, stripY);
+    ctx.lineTo(paneX + paneW, stripY);
+    ctx.stroke();
+
+    this.gallery3dHitZones.thumbs = [];
+    const count = GALLERY_3D_ITEMS.length;
+    const gap = 8;
+    const cellW = Math.floor((paneW - 24 - gap * (count - 1)) / count);
+    const cellH = 74;
+    const thumbY = stripY + 10;
+
+    GALLERY_3D_ITEMS.forEach((gItem, idx) => {
+      const tx = paneX + 12 + idx * (cellW + gap);
+      const isSel = idx === this.gallery3dIdx;
+
+      // White card + XP Blue active border
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(tx, thumbY, cellW, cellH);
+      ctx.strokeStyle = isSel ? '#316ac5' : '#cbd5e1';
+      ctx.lineWidth = isSel ? 2.5 : 1;
+      ctx.strokeRect(tx, thumbY, cellW, cellH);
+
+      const tImg = this.gallery3dImages?.[idx];
+      if (tImg && tImg.complete && tImg.naturalWidth > 0) {
+        const pad = 4;
+        const aw = cellW - pad * 2;
+        const ah = cellH - pad * 2;
+        const sc = Math.min(aw / tImg.naturalWidth, ah / tImg.naturalHeight);
+        const dw = tImg.naturalWidth * sc;
+        const dh = tImg.naturalHeight * sc;
+        ctx.drawImage(tImg, tx + (cellW - dw) / 2, thumbY + (cellH - dh) / 2, dw, dh);
+      }
+
+      // Filename pill below thumbnail
+      const nameY = thumbY + cellH + 4;
+      if (isSel) {
+        ctx.fillStyle = '#316ac5';
+        ctx.fillRect(tx + 2, nameY, cellW - 4, 15);
+      }
+      ctx.font = isSel ? 'bold 9.5px Tahoma, sans-serif' : '9.5px Tahoma, sans-serif';
+      ctx.fillStyle = isSel ? '#ffffff' : '#0f172a';
+      ctx.textAlign = 'center';
+      const shortName = gItem.filename.length > 13 ? `${gItem.filename.slice(0, 12)}…` : gItem.filename;
+      ctx.fillText(shortName, tx + cellW / 2, nameY + 11);
+
+      this.gallery3dHitZones.thumbs.push({ idx, x: tx, y: thumbY, w: cellW, h: cellH + 20 });
+    });
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // =========================================================================
   // APPLICATION WINDOW 1: DOOM (1993)
   // =========================================================================
   renderDoomWindow(ctx, W, H) {
@@ -4132,17 +4516,18 @@ export class ComputerScene {
     }
 
     // 8. Desktop Icons (Left side)
-    if (x >= 10 && x <= 80 && y <= 670) {
-      const iconIdx = Math.floor((y - 18) / 72);
+    if (x >= 10 && x <= 80 && y <= 680) {
+      const iconIdx = Math.floor((y - 14) / 66);
       if (iconIdx === 0) { this.openIE(); return; }
       if (iconIdx === 1) { this.openWmp(); return; }
-      if (iconIdx === 2) { this.openDoom(); return; }
-      if (iconIdx === 3) { this.openMinesweeper(); return; }
-      if (iconIdx === 4) { this.openNotepad(); return; }
-      if (iconIdx === 5) { this.openCmd(); return; }
-      if (iconIdx === 6) { this.openExplorer(); return; }
-      if (iconIdx === 7) { this.openExplorer('My Documents'); return; }
-      if (iconIdx === 8) {
+      if (iconIdx === 2) { this.openGallery3d(); return; }
+      if (iconIdx === 3) { this.openDoom(); return; }
+      if (iconIdx === 4) { this.openMinesweeper(); return; }
+      if (iconIdx === 5) { this.openNotepad(); return; }
+      if (iconIdx === 6) { this.openCmd(); return; }
+      if (iconIdx === 7) { this.openExplorer(); return; }
+      if (iconIdx === 8) { this.openExplorer('My Documents'); return; }
+      if (iconIdx === 9) {
         this.playClick();
         this.activePopup = { title: 'Recycle Bin', message: 'Recycle Bin is empty.\nNo deleted files.' };
         return;
@@ -4157,6 +4542,8 @@ export class ComputerScene {
         if (this.handleIEClick(x, y)) return;
       } else if (winId === 'wmp' && this.wmpState !== 'closed' && this.wmpState !== 'minimized') {
         if (this.handleWmpClick(x, y)) return;
+      } else if (winId === 'gallery3d' && this.gallery3dState !== 'closed' && this.gallery3dState !== 'minimized') {
+        if (this.handleGallery3dClick(x, y)) return;
       } else if (winId === 'doom' && this.doomState !== 'closed' && this.doomState !== 'minimized') {
         if (this.handleDoomClick(x, y)) return;
       } else if (winId === 'minesweeper' && this.minesweeperState !== 'closed' && this.minesweeperState !== 'minimized') {
@@ -4479,6 +4866,88 @@ export class ComputerScene {
     if (inRect(hz.volume)) {
       this.wmpIsAdjustingVolume = true;
       this.wmpSetVolumeRatio((x - hz.volume.x) / hz.volume.w);
+      this.playClick();
+      return true;
+    }
+
+    return true;
+  }
+
+  // --- CLICK HANDLER: 3D RENDERS FILMSTRIP VIEWER ---
+  handleGallery3dClick(x, y) {
+    const isMax = (this.gallery3dState === 'maximized');
+    const wx = isMax ? 0 : this.gallery3dRect.x;
+    const wy = isMax ? 0 : this.gallery3dRect.y;
+    const ww = isMax ? 1024 : this.gallery3dRect.w;
+    const wh = isMax ? 730 : this.gallery3dRect.h;
+
+    if (x < wx || x > wx + ww || y < wy || y > wy + wh) return false;
+
+    this.bringToFront('gallery3d');
+
+    const btnY = wy + 4;
+    const bxMin = wx + ww - 72;
+    const bxMax = wx + ww - 48;
+    const bxClose = wx + ww - 24;
+
+    if (x >= bxMin && x <= bxMin + 20 && y >= btnY && y <= btnY + 20) {
+      this.gallery3dState = 'minimized';
+      this.playClick();
+      return true;
+    }
+    if (x >= bxMax && x <= bxMax + 20 && y >= btnY && y <= btnY + 20) {
+      this.gallery3dState = (this.gallery3dState === 'maximized' ? 'normal' : 'maximized');
+      this.playClick();
+      return true;
+    }
+    if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 20) {
+      this.gallery3dState = 'closed';
+      this.playClick();
+      return true;
+    }
+
+    // Drag Title Bar
+    if (y >= wy && y <= wy + 26 && x >= wx && x <= wx + ww - 80) {
+      if (this.gallery3dState === 'normal') {
+        this.gallery3dIsDragging = true;
+        this.gallery3dDragOffset = { x: x - this.gallery3dRect.x, y: y - this.gallery3dRect.y };
+      }
+      return true;
+    }
+
+    const inRect = (r) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    const hz = this.gallery3dHitZones || {};
+
+    if (hz.thumbs) {
+      for (let i = 0; i < hz.thumbs.length; i++) {
+        if (inRect(hz.thumbs[i])) {
+          this.gallery3dIdx = hz.thumbs[i].idx;
+          this.gallery3dRotation = 0;
+          this.playClick();
+          return true;
+        }
+      }
+    }
+
+    if (inRect(hz.prev)) {
+      this.gallery3dIdx = (this.gallery3dIdx - 1 + GALLERY_3D_ITEMS.length) % GALLERY_3D_ITEMS.length;
+      this.gallery3dRotation = 0;
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.next) || inRect(hz.stage)) {
+      this.gallery3dIdx = (this.gallery3dIdx + 1) % GALLERY_3D_ITEMS.length;
+      this.gallery3dRotation = 0;
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.rotL)) {
+      this.gallery3dRotation = (this.gallery3dRotation + 270) % 360;
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.rotR)) {
+      this.gallery3dRotation = (this.gallery3dRotation + 90) % 360;
       this.playClick();
       return true;
     }
@@ -4810,6 +5279,11 @@ export class ComputerScene {
             this.wmpRect.y = Math.max(0, Math.min(730 - 40, Math.round(this.screenPointer.y - this.wmpDragOffset.y)));
             this.wmpNormalRect = { ...this.wmpRect };
           }
+          if (this.gallery3dIsDragging && this.gallery3dState === 'normal') {
+            this.gallery3dRect.x = Math.max(-200, Math.min(1024 - 100, Math.round(this.screenPointer.x - this.gallery3dDragOffset.x)));
+            this.gallery3dRect.y = Math.max(0, Math.min(730 - 40, Math.round(this.screenPointer.y - this.gallery3dDragOffset.y)));
+            this.gallery3dNormalRect = { ...this.gallery3dRect };
+          }
           if (this.wmpIsSeeking && this.wmpHitZones?.seek) {
             this.wmpSeekToRatio((this.screenPointer.x - this.wmpHitZones.seek.x) / this.wmpHitZones.seek.w);
           }
@@ -4853,6 +5327,7 @@ export class ComputerScene {
     window.addEventListener('pointerup', () => {
       this.winIsDragging = false;
       this.wmpIsDragging = false;
+      this.gallery3dIsDragging = false;
       this.wmpIsSeeking = false;
       this.wmpIsAdjustingVolume = false;
       this.doomIsDragging = false;
@@ -4869,6 +5344,7 @@ export class ComputerScene {
       this.screenPointer.active = false;
       this.winIsDragging = false;
       this.wmpIsDragging = false;
+      this.gallery3dIsDragging = false;
       this.wmpIsSeeking = false;
       this.wmpIsAdjustingVolume = false;
       this.doomIsDragging = false;

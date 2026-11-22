@@ -10,6 +10,7 @@
 
 import { RESUME_DATA } from '../data/resume-data.js';
 import { MUSIC_TRACKS } from '../data/music-tracks.js';
+import { GALLERY_3D_ITEMS } from '../data/gallery-3d.js';
 import { attachSmooth3DTilt } from '../utils/helpers.js';
 
 export class ResumeViewer {
@@ -23,6 +24,7 @@ export class ResumeViewer {
     this.freqData = null;
     this.peakCaps = null;
     this.currentTrackIdx = 0;
+    this.currentGalleryIdx = 0;
     this.isInitialized = false;
   }
 
@@ -35,6 +37,7 @@ export class ResumeViewer {
     this.renderLayout();
     this.renderPrintSheet();
     this.bindEvents();
+    this.init3DGallery();
     this.initAudioVisualizer();
     this.playEntranceAnimation();
     this.isInitialized = true;
@@ -301,8 +304,9 @@ export class ResumeViewer {
               ${skills.creativity
                 .map((skill, cIdx) => {
                   const isMusic = skill.category.toLowerCase().includes('music');
+                  const is3DCG = skill.category.toLowerCase().includes('3dcg');
                   return `
-                  <div class="resume-card creative-card ${isMusic ? 'creative-music-card' : ''}" data-index="${cIdx}">
+                  <div class="resume-card creative-card ${isMusic ? 'creative-music-card' : ''} ${is3DCG ? 'creative-3d-card' : ''}" data-index="${cIdx}">
                     <div class="skill-cat-header">
                       <h3 class="skill-cat-title">${skill.category}</h3>
                       <span class="skill-cat-level">${skill.level}</span>
@@ -320,6 +324,42 @@ export class ResumeViewer {
                         )
                         .join('')}
                     </div>
+
+                    ${
+                      is3DCG
+                        ? `
+                      <!-- Neat 3DCG Renders Showcase Viewer -->
+                      <div class="gallery-3d-widget" id="resume-3d-viewer">
+                        <div class="gallery-3d-top">
+                          <div class="gallery-3d-label">
+                            <span>3DCG SHOWCASE &bull;</span>
+                            <strong id="resume-3d-title">${GALLERY_3D_ITEMS[0].title}</strong>
+                            <span class="gallery-3d-file" id="resume-3d-file">(${GALLERY_3D_ITEMS[0].filename})</span>
+                          </div>
+                          <div class="gallery-3d-nav">
+                            <button type="button" class="btn-3d-nav" id="btn-3d-prev" title="Previous Render" aria-label="Previous Render">◀</button>
+                            <span class="gallery-3d-counter" id="resume-3d-counter">01 / ${String(GALLERY_3D_ITEMS.length).padStart(2, '0')}</span>
+                            <button type="button" class="btn-3d-nav" id="btn-3d-next" title="Next Render" aria-label="Next Render">▶</button>
+                          </div>
+                        </div>
+
+                        <div class="gallery-3d-stage" id="resume-3d-stage" title="Click to view next render">
+                          <img id="resume-3d-img" class="gallery-3d-img" src="${GALLERY_3D_ITEMS[0].src}" alt="${GALLERY_3D_ITEMS[0].title}" />
+                        </div>
+
+                        <div class="gallery-3d-thumbs" id="resume-3d-thumbs">
+                          ${GALLERY_3D_ITEMS.map(
+                            (item, gIdx) => `
+                            <button type="button" class="gallery-3d-thumb-btn ${gIdx === 0 ? 'active' : ''}" data-gallery-idx="${gIdx}" title="${item.title}">
+                              <img src="${item.src}" alt="${item.title}" loading="lazy" />
+                            </button>
+                          `
+                          ).join('')}
+                        </div>
+                      </div>
+                    `
+                        : ''
+                    }
 
                     ${
                       isMusic
@@ -1041,6 +1081,46 @@ export class ResumeViewer {
       perspective: 1000,
       maxTilt: 6,
       lift: -4
+    });
+  }
+
+  /* --------------------------------------------------------------------------
+     3DCG Renders Showcase Viewer
+     -------------------------------------------------------------------------- */
+  init3DGallery() {
+    const imgEl = this.container.querySelector('#resume-3d-img');
+    const titleEl = this.container.querySelector('#resume-3d-title');
+    const fileEl = this.container.querySelector('#resume-3d-file');
+    const counterEl = this.container.querySelector('#resume-3d-counter');
+    const btnPrev = this.container.querySelector('#btn-3d-prev');
+    const btnNext = this.container.querySelector('#btn-3d-next');
+    const stageEl = this.container.querySelector('#resume-3d-stage');
+    const thumbBtns = this.container.querySelectorAll('.gallery-3d-thumb-btn');
+
+    if (!imgEl) return;
+
+    const selectItem = (idx) => {
+      this.currentGalleryIdx = (idx + GALLERY_3D_ITEMS.length) % GALLERY_3D_ITEMS.length;
+      const item = GALLERY_3D_ITEMS[this.currentGalleryIdx];
+      imgEl.src = item.src;
+      imgEl.alt = item.title;
+      if (titleEl) titleEl.textContent = item.title;
+      if (fileEl) fileEl.textContent = `(${item.filename})`;
+      if (counterEl) {
+        counterEl.textContent = `${String(this.currentGalleryIdx + 1).padStart(2, '0')} / ${String(GALLERY_3D_ITEMS.length).padStart(2, '0')}`;
+      }
+      thumbBtns.forEach((b, i) => b.classList.toggle('active', i === this.currentGalleryIdx));
+    };
+
+    if (btnPrev) btnPrev.addEventListener('click', () => selectItem(this.currentGalleryIdx - 1));
+    if (btnNext) btnNext.addEventListener('click', () => selectItem(this.currentGalleryIdx + 1));
+    if (stageEl) stageEl.addEventListener('click', () => selectItem(this.currentGalleryIdx + 1));
+
+    thumbBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.galleryIdx, 10);
+        selectItem(idx);
+      });
     });
   }
 
