@@ -9,6 +9,7 @@
  */
 
 import { RESUME_DATA } from '../data/resume-data.js';
+import { MUSIC_TRACKS } from '../data/music-tracks.js';
 import { attachSmooth3DTilt } from '../utils/helpers.js';
 
 export class ResumeViewer {
@@ -16,9 +17,12 @@ export class ResumeViewer {
     this.container = container;
     this.activeFilter = 'all';
     this.audioAnimId = null;
-    this.equalizerBars = [];
-    this.audioTime = 0;
-    this.isAudioPlaying = true;
+    this.audioCtx = null;
+    this.analyser = null;
+    this.mediaSource = null;
+    this.freqData = null;
+    this.peakCaps = null;
+    this.currentTrackIdx = 0;
     this.isInitialized = false;
   }
 
@@ -320,19 +324,63 @@ export class ResumeViewer {
                     ${
                       isMusic
                         ? `
-                      <!-- Kinetic Soundwave Equalizer (Lesson 11) -->
-                      <div class="kinetic-audio-widget">
+                      <!-- Real-Time Web Audio Spectrum Visualizer & Music Video Player -->
+                      <div class="kinetic-audio-widget" id="resume-music-player">
                         <div class="audio-widget-top">
                           <div class="audio-now-playing">
-                            <span class="audio-indicator"></span>
-                            <span>KINETIC AUDIO SYNTHESIZER &bull; 64 BINS</span>
+                            <span id="resume-audio-title">NOW PLAYING &bull; ${MUSIC_TRACKS[0].title}</span>
                           </div>
-                          <button class="btn-audio-drop" id="btn-audio-drop" title="Trigger Bass Drop Shockwave">
-                            <span>⚡ Bass Drop</span>
-                          </button>
                         </div>
-                        <div class="audio-spectrum-canvas" id="audio-spectrum-bars">
-                          <!-- 32 Animated Frequency Bars rendered dynamically -->
+
+                        <div class="audio-player-grid">
+                          <div class="audio-video-stage">
+                            <video
+                              id="resume-music-video"
+                              class="resume-music-video"
+                              src="${MUSIC_TRACKS[0].src}"
+                              ${MUSIC_TRACKS[0].poster ? `poster="${MUSIC_TRACKS[0].poster}"` : ''}
+                              playsinline
+                              preload="auto"
+                            ></video>
+                            <div class="audio-seek-row">
+                              <span class="audio-time" id="resume-audio-cur">0:00</span>
+                              <input type="range" class="audio-seek-slider" id="resume-audio-seek" min="0" max="100" step="0.1" value="0" aria-label="Seek" />
+                              <span class="audio-time" id="resume-audio-dur">0:00</span>
+                            </div>
+                          </div>
+
+                          <div class="audio-track-list" id="resume-track-list" role="listbox" aria-label="Music Video Tracks">
+                            ${MUSIC_TRACKS.map(
+                              (track, tIdx) => `
+                              <button type="button" class="audio-track-btn ${tIdx === 0 ? 'active' : ''}" data-track-idx="${tIdx}">
+                                <span class="audio-track-num">${String(tIdx + 1).padStart(2, '0')}</span>
+                                <img class="audio-track-thumb" src="${track.thumb}" alt="" loading="lazy" />
+                                <span class="audio-track-meta">
+                                  <span class="audio-track-name">${track.title}</span>
+                                  <span class="audio-track-tag">${track.tag}</span>
+                                </span>
+                              </button>
+                            `
+                            ).join('')}
+                          </div>
+                        </div>
+
+                        <!-- Centered Playback Controls Dock Directly Above Audio Graph -->
+                        <div class="audio-controls-dock">
+                          <div class="audio-transport-controls">
+                            <button type="button" class="btn-audio-ctrl" id="btn-audio-prev" title="Previous Track" aria-label="Previous Track">⏮</button>
+                            <button type="button" class="btn-audio-ctrl btn-audio-play" id="btn-audio-play" title="Play / Pause">▶ Play</button>
+                            <button type="button" class="btn-audio-ctrl" id="btn-audio-next" title="Next Track" aria-label="Next Track">⏭</button>
+                            <div class="audio-vol-group">
+                              <span class="audio-vol-icon" aria-hidden="true">🔊</span>
+                              <input type="range" class="audio-vol-slider" id="resume-audio-vol" min="0" max="1" step="0.05" value="0.8" title="Volume" aria-label="Volume" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="audio-spectrum-wrap">
+                          <canvas id="resume-spectrum-canvas" class="audio-spectrum-canvas-el" width="640" height="84"></canvas>
+                          <div class="audio-spectrum-hint" id="resume-spectrum-hint">LIVE WEB AUDIO FFT SPECTRUM (PRESS PLAY)</div>
                         </div>
                       </div>
                     `
@@ -532,14 +580,6 @@ export class ResumeViewer {
 
     // 5. 3D Perspective Card Tilt (Lesson 10)
     this.bind3DTilt();
-
-    // 6. Bass Drop Shockwave Trigger
-    const btnDrop = this.container.querySelector('#btn-audio-drop');
-    if (btnDrop) {
-      btnDrop.addEventListener('click', () => {
-        this.triggerBassDrop();
-      });
-    }
   }
 
   prepareForPrint() {
@@ -1005,83 +1045,273 @@ export class ResumeViewer {
   }
 
   /* --------------------------------------------------------------------------
-     Kinetic Audio Frequency Visualizer (Lesson 11)
+     Real-Time Web Audio FFT Spectrum Visualizer & Music Video Player
      -------------------------------------------------------------------------- */
-  initAudioVisualizer() {
-    const spectrumContainer = this.container.querySelector('#audio-spectrum-bars');
-    if (!spectrumContainer) return;
-
-    spectrumContainer.innerHTML = '';
-    const barCount = 32;
-    this.equalizerBars = [];
-
-    for (let i = 0; i < barCount; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'equalizer-bar';
-      bar.style.height = '14px';
-      spectrumContainer.appendChild(bar);
-      this.equalizerBars.push({ el: bar, phase: (i / barCount) * Math.PI * 2, baseHeight: 12 });
-    }
-
-    this.startAudioLoop();
+  formatMediaTime(sec) {
+    if (!Number.isFinite(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  startAudioLoop() {
-    if (this.audioAnimId) cancelAnimationFrame(this.audioAnimId);
+  ensureAudioGraph(videoEl) {
+    if (this.audioCtx) {
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
+      return;
+    }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
 
-    const updateAudio = () => {
-      this.audioTime += 0.045;
+    this.audioCtx = new AudioCtx();
+    this.analyser = this.audioCtx.createAnalyser();
+    this.analyser.fftSize = 1024; // 512 bins for fine bass/mid resolution across log scale
+    this.analyser.smoothingTimeConstant = 0.78;
+    this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+    this.peakCaps = new Float32Array(64);
 
-      this.equalizerBars.forEach((barObj, i) => {
-        // Procedural frequency modulation using sine waveforms
-        const harmonic1 = Math.sin(this.audioTime * 2 + barObj.phase * 2);
-        const harmonic2 = Math.cos(this.audioTime * 3.5 - barObj.phase * 3);
-        const harmonic3 = Math.sin(this.audioTime * 0.8 + i * 0.3);
+    try {
+      this.mediaSource = this.audioCtx.createMediaElementSource(videoEl);
+      this.mediaSource.connect(this.analyser);
+      this.analyser.connect(this.audioCtx.destination);
+    } catch (err) {
+      console.warn('ResumeViewer Web Audio graph init failed:', err);
+    }
+  }
 
-        const amp = (harmonic1 * 0.4 + harmonic2 * 0.35 + harmonic3 * 0.25 + 1) / 2; // 0..1
-        const heightPx = Math.max(6, Math.floor(amp * 48) + 6);
+  initAudioVisualizer() {
+    const videoEl = this.container.querySelector('#resume-music-video');
+    const canvas = this.container.querySelector('#resume-spectrum-canvas');
+    const btnPlay = this.container.querySelector('#btn-audio-play');
+    const btnPrev = this.container.querySelector('#btn-audio-prev');
+    const btnNext = this.container.querySelector('#btn-audio-next');
+    const volSlider = this.container.querySelector('#resume-audio-vol');
+    const seekSlider = this.container.querySelector('#resume-audio-seek');
+    const curLabel = this.container.querySelector('#resume-audio-cur');
+    const durLabel = this.container.querySelector('#resume-audio-dur');
+    const titleEl = this.container.querySelector('#resume-audio-title');
+    const hintEl = this.container.querySelector('#resume-spectrum-hint');
+    const trackBtns = this.container.querySelectorAll('.audio-track-btn');
 
-        barObj.el.style.height = `${heightPx}px`;
+    if (!videoEl || !canvas) return;
+    videoEl.volume = volSlider ? parseFloat(volSlider.value) : 0.8;
 
-        // Modulate color from purple to cyan
-        const pct = i / this.equalizerBars.length;
-        if (amp > 0.75) {
-          barObj.el.style.background = '#45c8ff';
-          barObj.el.style.boxShadow = '0 0 8px rgba(69, 200, 255, 0.8)';
-        } else if (pct < 0.5) {
-          barObj.el.style.background = '#ff70a6';
-          barObj.el.style.boxShadow = '0 0 6px rgba(255, 112, 166, 0.5)';
+    const updatePlayUI = () => {
+      const playing = !videoEl.paused && !videoEl.ended;
+      if (btnPlay) btnPlay.textContent = playing ? '⏸ Pause' : '▶ Play';
+      if (hintEl) hintEl.style.opacity = playing ? '0' : '1';
+    };
+
+    const loadTrack = (idx, autoPlay = true) => {
+      this.currentTrackIdx = (idx + MUSIC_TRACKS.length) % MUSIC_TRACKS.length;
+      const track = MUSIC_TRACKS[this.currentTrackIdx];
+      videoEl.src = track.src;
+      if (track.poster) {
+        videoEl.setAttribute('poster', track.poster);
+      } else {
+        videoEl.removeAttribute('poster');
+      }
+      if (titleEl) titleEl.textContent = `NOW PLAYING • ${track.title}`;
+      trackBtns.forEach((btn, i) => btn.classList.toggle('active', i === this.currentTrackIdx));
+      if (seekSlider) seekSlider.value = '0';
+      if (curLabel) curLabel.textContent = '0:00';
+      if (durLabel) durLabel.textContent = '0:00';
+
+      if (autoPlay) {
+        this.ensureAudioGraph(videoEl);
+        videoEl.play().catch(() => {});
+      }
+      updatePlayUI();
+    };
+
+    const togglePlay = () => {
+      this.ensureAudioGraph(videoEl);
+      if (videoEl.paused || videoEl.ended) {
+        videoEl.play().catch(() => {});
+      } else {
+        videoEl.pause();
+      }
+    };
+
+    if (btnPlay) btnPlay.addEventListener('click', togglePlay);
+    videoEl.addEventListener('click', togglePlay);
+    if (btnPrev) btnPrev.addEventListener('click', () => loadTrack(this.currentTrackIdx - 1, true));
+    if (btnNext) btnNext.addEventListener('click', () => loadTrack(this.currentTrackIdx + 1, true));
+
+    trackBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.trackIdx, 10);
+        if (idx === this.currentTrackIdx && !videoEl.paused) {
+          videoEl.pause();
         } else {
-          barObj.el.style.background = '#c084fc';
-          barObj.el.style.boxShadow = 'none';
+          loadTrack(idx, true);
+        }
+      });
+    });
+
+    if (volSlider) {
+      volSlider.addEventListener('input', () => {
+        videoEl.volume = parseFloat(volSlider.value);
+      });
+    }
+
+    if (seekSlider) {
+      let isSeeking = false;
+      let pendingSeekRatio = null;
+
+      const applySeek = () => {
+        const ratio = Math.max(0, Math.min(1, parseFloat(seekSlider.value) / 100));
+        if (videoEl.readyState >= 1 && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
+          videoEl.currentTime = ratio * videoEl.duration;
+          pendingSeekRatio = null;
+        } else {
+          pendingSeekRatio = ratio;
+        }
+      };
+
+      seekSlider.addEventListener('pointerdown', () => { isSeeking = true; });
+      window.addEventListener('pointerup', () => { isSeeking = false; });
+      seekSlider.addEventListener('input', applySeek);
+      seekSlider.addEventListener('change', () => {
+        applySeek();
+        isSeeking = false;
+      });
+
+      videoEl.addEventListener('loadedmetadata', () => {
+        if (durLabel) durLabel.textContent = this.formatMediaTime(videoEl.duration);
+        if (pendingSeekRatio !== null && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
+          videoEl.currentTime = pendingSeekRatio * videoEl.duration;
+          pendingSeekRatio = null;
         }
       });
 
-      this.audioAnimId = requestAnimationFrame(updateAudio);
-    };
+      videoEl.addEventListener('timeupdate', () => {
+        if (curLabel) curLabel.textContent = this.formatMediaTime(videoEl.currentTime);
+        if (!isSeeking && seekSlider && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
+          seekSlider.value = String((videoEl.currentTime / videoEl.duration) * 100);
+        }
+      });
+    } else {
+      videoEl.addEventListener('loadedmetadata', () => {
+        if (durLabel) durLabel.textContent = this.formatMediaTime(videoEl.duration);
+      });
 
-    updateAudio();
+      videoEl.addEventListener('timeupdate', () => {
+        if (curLabel) curLabel.textContent = this.formatMediaTime(videoEl.currentTime);
+      });
+    }
+
+    videoEl.addEventListener('play', updatePlayUI);
+    videoEl.addEventListener('pause', updatePlayUI);
+    videoEl.addEventListener('ended', () => loadTrack(this.currentTrackIdx + 1, true));
+
+    // Automatically cycle to track 2 and back to track 1 on initial load so timeline seeking is primed
+    if (MUSIC_TRACKS.length > 1) {
+      loadTrack(1, false);
+      loadTrack(0, false);
+    }
+
+    updatePlayUI();
+    this.startAudioLoop(canvas, videoEl);
   }
 
-  triggerBassDrop() {
-    if (typeof anime === 'undefined') return;
+  startAudioLoop(canvas, videoEl) {
+    if (this.audioAnimId) cancelAnimationFrame(this.audioAnimId);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    const bars = this.container.querySelectorAll('.equalizer-bar');
-    anime({
-      targets: bars,
-      height: [
-        { value: '55px', duration: 150, easing: 'easeOutQuad' },
-        { value: '4px', duration: 120, easing: 'easeInQuad' },
-        { value: '46px', duration: 250, easing: 'easeOutElastic(1.4, 0.4)' },
-        { value: '18px', duration: 300, easing: 'easeInOutQuad' }
-      ],
-      backgroundColor: [
-        { value: '#ffffff', duration: 150 },
-        { value: '#ec4899', duration: 250 },
-        { value: '#ff70a6', duration: 300 }
-      ],
-      delay: anime.stagger(15, { from: 'center' })
-    });
+    const barCount = 48;
+    const renderSpectrum = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Subtle horizontal grid lines
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fillRect(0, Math.floor(h * 0.33), w, 1);
+      ctx.fillRect(0, Math.floor(h * 0.66), w, 1);
+
+      const isPlaying = videoEl && !videoEl.paused && !videoEl.ended;
+      if (this.analyser && this.freqData && isPlaying) {
+        this.analyser.getByteFrequencyData(this.freqData);
+      }
+
+      const gap = 3;
+      const barW = Math.max(3, (w - gap * (barCount - 1)) / barCount);
+
+      // Map bars logarithmically from ~45 Hz (bin 1) to ~11 kHz (~bin 260 of 512)
+      const minBin = 1;
+      const maxBin = this.freqData ? Math.min(this.freqData.length - 1, 260) : 260;
+
+      for (let i = 0; i < barCount; i++) {
+        let norm = 0.04;
+        if (this.analyser && this.freqData && isPlaying) {
+          const t0 = i / barCount;
+          const t1 = (i + 1) / barCount;
+          const bStart = Math.floor(minBin * Math.pow(maxBin / minBin, t0));
+          const bEnd = Math.max(bStart + 1, Math.floor(minBin * Math.pow(maxBin / minBin, t1)));
+
+          let sum = 0;
+          let count = 0;
+          for (let b = bStart; b < bEnd && b < this.freqData.length; b++) {
+            sum += this.freqData[b];
+            count++;
+          }
+          const avg = count > 0 ? sum / count / 255 : 0;
+          // Gentle perceptual tilt so mids & highs fill out the full spectrum naturally
+          const tilt = 1 + t0 * 0.75;
+          norm = Math.max(0.04, Math.min(1, Math.pow(avg * tilt, 0.92)));
+        }
+
+        if (!this.peakCaps || this.peakCaps.length < barCount) {
+          this.peakCaps = new Float32Array(barCount);
+        }
+        if (norm >= this.peakCaps[i]) {
+          this.peakCaps[i] = norm;
+        } else {
+          this.peakCaps[i] = Math.max(0.04, this.peakCaps[i] - 0.015);
+        }
+
+        const x = i * (barW + gap);
+        const barH = Math.max(3, norm * (h - 8));
+        const y = h - barH;
+
+        const pct = i / barCount;
+        const grad = ctx.createLinearGradient(0, h, 0, 0);
+        if (pct < 0.45) {
+          grad.addColorStop(0, '#ff5d8f');
+          grad.addColorStop(1, '#ff9ec4');
+        } else if (pct < 0.75) {
+          grad.addColorStop(0, '#a855f7');
+          grad.addColorStop(1, '#38bdf8');
+        } else {
+          grad.addColorStop(0, '#0ea5e9');
+          grad.addColorStop(1, '#67e8f9');
+        }
+
+        ctx.fillStyle = isPlaying ? grad : 'rgba(148, 163, 184, 0.25)';
+        ctx.fillRect(x, y, barW, barH);
+
+        // Peak cap
+        if (isPlaying && this.peakCaps[i] > 0.06) {
+          const capY = h - Math.max(4, this.peakCaps[i] * (h - 8)) - 2;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x, Math.max(0, capY), barW, 2);
+        }
+      }
+
+      this.audioAnimId = requestAnimationFrame(renderSpectrum);
+    };
+
+    renderSpectrum();
+  }
+
+  pauseMedia() {
+    const videoEl = this.container?.querySelector('#resume-music-video');
+    if (videoEl && !videoEl.paused) {
+      videoEl.pause();
+    }
   }
 
   destroy() {
@@ -1089,6 +1319,7 @@ export class ResumeViewer {
       cancelAnimationFrame(this.audioAnimId);
       this.audioAnimId = null;
     }
+    this.pauseMedia();
   }
 }
 

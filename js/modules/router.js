@@ -84,6 +84,9 @@ export class Router {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // 3. Trigger Route Handler Callback
+    if (this.routes.onRouteChange) {
+      this.routes.onRouteChange(section, subParam);
+    }
     if (this.routes[section]) {
       this.routes[section](subParam);
     }

@@ -9,6 +9,7 @@
  */
 
 import { DoomEngine } from './doom-engine.js';
+import { MUSIC_TRACKS } from '../data/music-tracks.js';
 
 export class ComputerScene {
   constructor(containerId) {
@@ -49,16 +50,59 @@ export class ComputerScene {
     this.audioCtx = null;
 
     // Window Management & Stacking Order (z-index)
-    this.windowOrder = ['ie'];
-    this.activeWindow = 'ie'; // 'ie', 'doom', 'notepad', 'minesweeper', 'cmd', 'explorer'
+    // Windows Media Player is open behind Internet Explorer by default, offset diagonally
+    this.windowOrder = ['wmp', 'ie'];
+    this.activeWindow = 'ie'; // 'ie', 'wmp', 'doom', 'notepad', 'minesweeper', 'cmd', 'explorer'
 
-    // 1. Internet Explorer & qurayshe.xd State
+    // 1. Internet Explorer & qurayshe.xd State (shifted up-left so WMP peeks out bottom-right)
     this.winState = 'normal'; // 'normal', 'maximized', 'minimized'
-    this.winRect = { x: 70, y: 30, w: 884, h: 670 };
-    this.winNormalRect = { x: 70, y: 30, w: 884, h: 670 };
+    this.winRect = { x: 74, y: 18, w: 720, h: 550 };
+    this.winNormalRect = { x: 74, y: 18, w: 720, h: 550 };
     this.winIsDragging = false;
     this.winDragOffset = { x: 0, y: 0 };
     this.lastTitleClick = 0;
+
+    // 1b. Windows Media Player (2000s XP Edition) State — open behind IE, shifted down-right
+    this.wmpState = 'normal'; // 'closed', 'normal', 'minimized', 'maximized'
+    this.wmpRect = { x: 356, y: 178, w: 644, h: 520 };
+    this.wmpNormalRect = { x: 356, y: 178, w: 644, h: 520 };
+    this.wmpIsDragging = false;
+    this.wmpIsSeeking = false;
+    this.wmpIsAdjustingVolume = false;
+    this.wmpPendingSeekRatio = null;
+    this.wmpDragOffset = { x: 0, y: 0 };
+    this.wmpTrackIdx = 0;
+    this.wmpVolume = 0.8;
+    this.wmpMuted = false;
+    this.wmpAudioCtx = null;
+    this.wmpAnalyser = null;
+    this.wmpSource = null;
+    this.wmpFreqData = null;
+    this.wmpHitZones = {};
+    this.wmpThumbImages = MUSIC_TRACKS.map((tr) => {
+      const img = new Image();
+      if (tr.thumb) img.src = tr.thumb;
+      return img;
+    });
+    this.wmpVideo = document.createElement('video');
+    this.wmpVideo.playsInline = true;
+    this.wmpVideo.preload = 'auto';
+    this.wmpVideo.volume = this.wmpVolume;
+    this.wmpVideo.src = MUSIC_TRACKS[0].src;
+    this.wmpVideo.addEventListener('loadedmetadata', () => {
+      if (this.wmpPendingSeekRatio !== null && Number.isFinite(this.wmpVideo.duration) && this.wmpVideo.duration > 0) {
+        this.wmpVideo.currentTime = this.wmpPendingSeekRatio * this.wmpVideo.duration;
+        this.wmpPendingSeekRatio = null;
+      }
+    });
+    this.wmpVideo.addEventListener('ended', () => {
+      this.wmpSelectTrack(this.wmpTrackIdx + 1, true);
+    });
+    // Cycle to track 2 and back to track 1 on initial load so timeline seeking is primed
+    if (MUSIC_TRACKS.length > 1) {
+      this.wmpSelectTrack(1, false);
+      this.wmpSelectTrack(0, false);
+    }
 
     // Mini-website navigation & pages: 'home', 'about', 'projects', 'lab', 'links', 'jukebox', 'guestbook', 'contact'
     this.webPage = 'home';
@@ -1154,6 +1198,100 @@ export class ComputerScene {
     this.playWhoosh();
   }
 
+  openWmp() {
+    this.wmpState = 'normal';
+    this.bringToFront('wmp');
+    this.playWhoosh();
+  }
+
+  ensureWmpAudioGraph() {
+    if (!this.wmpVideo) return;
+    if (this.wmpAudioCtx) {
+      if (this.wmpAudioCtx.state === 'suspended') {
+        this.wmpAudioCtx.resume().catch(() => {});
+      }
+      return;
+    }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    try {
+      this.wmpAudioCtx = new AudioCtx();
+      this.wmpAnalyser = this.wmpAudioCtx.createAnalyser();
+      this.wmpAnalyser.fftSize = 1024;
+      this.wmpAnalyser.smoothingTimeConstant = 0.78;
+      this.wmpFreqData = new Uint8Array(this.wmpAnalyser.frequencyBinCount);
+      this.wmpSource = this.wmpAudioCtx.createMediaElementSource(this.wmpVideo);
+      this.wmpSource.connect(this.wmpAnalyser);
+      this.wmpAnalyser.connect(this.wmpAudioCtx.destination);
+    } catch (err) {
+      console.warn('WMP Web Audio init failed:', err);
+    }
+  }
+
+  wmpSelectTrack(idx, autoPlay = true) {
+    this.wmpTrackIdx = (idx + MUSIC_TRACKS.length) % MUSIC_TRACKS.length;
+    const track = MUSIC_TRACKS[this.wmpTrackIdx];
+    if (!this.wmpVideo || !track) return;
+    this.wmpVideo.src = track.src;
+    this.wmpVideo.currentTime = 0;
+    if (autoPlay) {
+      this.ensureWmpAudioGraph();
+      this.wmpVideo.play().catch(() => {});
+    }
+  }
+
+  wmpTogglePlay() {
+    if (!this.wmpVideo) return;
+    this.ensureWmpAudioGraph();
+    if (this.wmpVideo.paused || this.wmpVideo.ended) {
+      this.wmpVideo.play().catch(() => {});
+    } else {
+      this.wmpVideo.pause();
+    }
+  }
+
+  wmpStop() {
+    if (!this.wmpVideo) return;
+    this.wmpVideo.pause();
+    this.wmpVideo.currentTime = 0;
+    this.wmpPendingSeekRatio = null;
+  }
+
+  pauseMedia() {
+    if (this.wmpVideo && !this.wmpVideo.paused) {
+      this.wmpVideo.pause();
+    }
+    this.jukeboxPlaying = false;
+  }
+
+  wmpSeekToRatio(ratio) {
+    if (!this.wmpVideo) return;
+    const clamped = Math.max(0, Math.min(1, ratio));
+    if (this.wmpVideo.readyState >= 1 && Number.isFinite(this.wmpVideo.duration) && this.wmpVideo.duration > 0) {
+      this.wmpVideo.currentTime = clamped * this.wmpVideo.duration;
+      this.wmpPendingSeekRatio = null;
+    } else {
+      this.wmpPendingSeekRatio = clamped;
+    }
+  }
+
+  wmpSetVolumeRatio(ratio) {
+    const clamped = Math.max(0, Math.min(1, ratio));
+    this.wmpVolume = clamped;
+    this.wmpMuted = false;
+    if (this.wmpVideo) {
+      this.wmpVideo.muted = false;
+      this.wmpVideo.volume = clamped;
+    }
+  }
+
+  formatWmpTime(sec) {
+    if (!Number.isFinite(sec) || sec < 0) return '00:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
   navigateToWebPage(page) {
     if (this.webPage === page) return;
     this.webPage = page;
@@ -1166,6 +1304,7 @@ export class ComputerScene {
 
   getWindowState(winId) {
     if (winId === 'ie') return this.winState;
+    if (winId === 'wmp') return this.wmpState;
     if (winId === 'doom') return this.doomState;
     if (winId === 'minesweeper') return this.minesweeperState;
     if (winId === 'notepad') return this.notepadState;
@@ -1176,6 +1315,7 @@ export class ComputerScene {
 
   setWindowState(winId, state) {
     if (winId === 'ie') this.winState = state;
+    else if (winId === 'wmp') this.wmpState = state;
     else if (winId === 'doom') this.doomState = state;
     else if (winId === 'minesweeper') this.minesweeperState = state;
     else if (winId === 'notepad') this.notepadState = state;
@@ -1224,6 +1364,7 @@ export class ComputerScene {
     // 2. Desktop Icons (Left side)
     const desktopIcons = [
       { sym: '🌐', name: 'Internet Explorer', id: 'ie' },
+      { sym: '🎵', name: 'Media Player', id: 'wmp' },
       { sym: '👹', name: 'DOOM.exe', id: 'doom' },
       { sym: '💣', name: 'Minesweeper', id: 'minesweeper' },
       { sym: '📝', name: 'Notepad', id: 'notepad' },
@@ -1303,6 +1444,7 @@ export class ComputerScene {
     // Dynamic Multi-Window Taskbar Tabs
     const openApps = [];
     if (this.winState !== 'closed') openApps.push({ id: 'ie', icon: '🌐', title: 'qurayshe.xd' });
+    if (this.wmpState !== 'closed') openApps.push({ id: 'wmp', icon: '🎵', title: 'Media Player' });
     if (this.doomState !== 'closed') openApps.push({ id: 'doom', icon: '👹', title: this.doomState === 'loading' ? 'Loading DOOM...' : 'DOOM.EXE' });
     if (this.minesweeperState !== 'closed') openApps.push({ id: 'minesweeper', icon: '💣', title: 'Minesweeper' });
     if (this.notepadState !== 'closed') openApps.push({ id: 'notepad', icon: '📝', title: `${this.notepadTab} - Notepad` });
@@ -1368,6 +1510,8 @@ export class ComputerScene {
     this.windowOrder.forEach((winId) => {
       if (winId === 'ie') {
         if (this.winState !== 'closed' && this.winState !== 'minimized') this.renderIEWindow(ctx, W, H);
+      } else if (winId === 'wmp') {
+        if (this.wmpState !== 'closed' && this.wmpState !== 'minimized') this.renderWmpWindow(ctx, W, H);
       } else if (winId === 'doom') {
         if (this.doomState !== 'closed' && this.doomState !== 'minimized') this.renderDoomWindow(ctx, W, H);
       } else if (winId === 'minesweeper') {
@@ -1423,11 +1567,11 @@ export class ComputerScene {
       // White Left Panel
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(smX, smY + 54, 180, smH - 96);
-      const leftItems = ['🌐 Internet Explorer', '👹 DOOM', '💣 Minesweeper', '📝 Notepad', '💻 Command Prompt'];
+      const leftItems = ['🌐 Internet Explorer', '🎵 Media Player', '👹 DOOM', '💣 Minesweeper', '📝 Notepad', '💻 Command Prompt'];
       ctx.font = '12px Tahoma, sans-serif';
       ctx.fillStyle = '#0f172a';
       leftItems.forEach((it, i) => {
-        ctx.fillText(it, smX + 10, smY + 84 + i * 40);
+        ctx.fillText(it, smX + 10, smY + 82 + i * 38);
       });
 
       // Blue Right Panel
@@ -2583,6 +2727,484 @@ export class ComputerScene {
   }
 
   // =========================================================================
+  // APPLICATION WINDOW 0: WINDOWS MEDIA PLAYER (2000s XP EDITION)
+  // =========================================================================
+  renderWmpWindow(ctx, W, H) {
+    if (this.wmpState === 'closed' || this.wmpState === 'minimized') return;
+
+    const isMax = (this.wmpState === 'maximized');
+    const isActive = (this.activeWindow === 'wmp');
+    const wx = isMax ? 0 : this.wmpRect.x;
+    const wy = isMax ? 0 : this.wmpRect.y;
+    const ww = isMax ? W : this.wmpRect.w;
+    const wh = isMax ? 730 : this.wmpRect.h;
+
+    const track = MUSIC_TRACKS[this.wmpTrackIdx] || MUSIC_TRACKS[0];
+    const video = this.wmpVideo;
+    const isPlaying = video && !video.paused && !video.ended;
+    const curTime = video ? video.currentTime : 0;
+    const durTime = video && Number.isFinite(video.duration) ? video.duration : 0;
+
+    ctx.save();
+
+    // Window Drop Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.48)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#0d1b36';
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [7, 7, 3, 3]);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Outer XP Blue Metallic Frame
+    ctx.strokeStyle = isActive ? '#0055ea' : '#5b7ac6';
+    ctx.lineWidth = 2;
+    this.drawRoundRect(ctx, wx, wy, ww, wh, isMax ? 0 : [7, 7, 3, 3]);
+    ctx.stroke();
+
+    // Clip interior
+    ctx.save();
+    this.drawRoundRect(ctx, wx + 1, wy + 1, ww - 2, wh - 2, isMax ? 0 : [6, 6, 2, 2]);
+    ctx.clip();
+
+    // 1. Classic Windows XP Luna Title Bar (h = 26)
+    const titleH = 26;
+    const tbGrad = ctx.createLinearGradient(0, wy, 0, wy + titleH);
+    tbGrad.addColorStop(0, isActive ? '#0058ec' : '#7697e7');
+    tbGrad.addColorStop(0.35, isActive ? '#3b88ff' : '#8ba7ef');
+    tbGrad.addColorStop(1, isActive ? '#0047c8' : '#6688dd');
+    ctx.fillStyle = tbGrad;
+    ctx.fillRect(wx, wy, ww, titleH);
+
+    // WMP Mini Orb Icon in Title Bar
+    const orbX = wx + 13;
+    const orbY = wy + 13;
+    const orbGrad = ctx.createRadialGradient(orbX - 2, orbY - 2, 1, orbX, orbY, 7);
+    orbGrad.addColorStop(0, '#ffffff');
+    orbGrad.addColorStop(0.45, '#38bdf8');
+    orbGrad.addColorStop(1, '#1d4ed8');
+    ctx.fillStyle = orbGrad;
+    ctx.beginPath();
+    ctx.arc(orbX, orbY, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.moveTo(orbX - 2, orbY - 3);
+    ctx.lineTo(orbX + 4, orbY);
+    ctx.lineTo(orbX - 2, orbY + 3);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.font = 'bold 12px Tahoma, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText('Windows Media Player', wx + 26, wy + 17);
+
+    // XP Min / Max / Close Buttons
+    const btnY = wy + 4;
+    const bxMin = wx + ww - 72;
+    const bxMax = wx + ww - 48;
+    const bxClose = wx + ww - 24;
+
+    const drawWinBtn = (bx, bgTop, bgBot, label) => {
+      const g = ctx.createLinearGradient(0, btnY, 0, btnY + 19);
+      g.addColorStop(0, bgTop);
+      g.addColorStop(1, bgBot);
+      ctx.fillStyle = g;
+      this.drawRoundRect(ctx, bx, btnY, 20, 19, 3);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, bx + 10, btnY + 14);
+    };
+    drawWinBtn(bxMin, '#3b88ff', '#1652c5', '_');
+    drawWinBtn(bxMax, '#3b88ff', '#1652c5', isMax ? '❐' : '□');
+    drawWinBtn(bxClose, '#f87171', '#b91c1c', '×');
+
+    // 2. Classic WMP 10/11 Metallic Tab Strip (h = 26)
+    const tabBarY = wy + titleH;
+    const tabBarH = 26;
+    const tabGrad = ctx.createLinearGradient(0, tabBarY, 0, tabBarY + tabBarH);
+    tabGrad.addColorStop(0, '#3a4c6e');
+    tabGrad.addColorStop(0.5, '#1d2b45');
+    tabGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = tabGrad;
+    ctx.fillRect(wx, tabBarY, ww, tabBarH);
+
+    // Active "Now Playing" glossy blue tab
+    const npTabX = wx + 12;
+    const npGrad = ctx.createLinearGradient(0, tabBarY + 2, 0, tabBarY + tabBarH);
+    npGrad.addColorStop(0, '#60a5fa');
+    npGrad.addColorStop(0.45, '#2563eb');
+    npGrad.addColorStop(1, '#1e3a8a');
+    ctx.fillStyle = npGrad;
+    this.drawRoundRect(ctx, npTabX, tabBarY + 2, 92, tabBarH - 2, [4, 4, 0, 0]);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(147, 197, 253, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = 'bold 11px Tahoma, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('Now Playing', npTabX + 46, tabBarY + 17);
+
+    // Inactive WMP tabs
+    const otherTabs = ['Library', 'Rip', 'Burn', 'Sync'];
+    ctx.font = '11px Tahoma, sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    otherTabs.forEach((t, i) => {
+      ctx.fillText(t, npTabX + 128 + i * 64, tabBarY + 17);
+    });
+
+    // 3. Main Split Content: Left Video/Visualizer Stage + Right Now Playing Playlist
+    const contentY = tabBarY + tabBarH;
+    const footerH = 106;
+    const contentH = wh - titleH - tabBarH - footerH;
+    const sideW = Math.min(196, Math.max(162, Math.floor(ww * 0.29)));
+    const stageW = ww - sideW;
+
+    // 3a. Video / Visualization Stage (Left)
+    ctx.fillStyle = '#05060a';
+    ctx.fillRect(wx, contentY, stageW, contentH);
+
+    const hasVideoFrame = video && video.readyState >= 2 && (isPlaying || curTime > 0);
+    if (hasVideoFrame && video.videoWidth > 0 && video.videoHeight > 0) {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const scale = Math.min(stageW / vw, contentH / vh);
+      const dw = vw * scale;
+      const dh = vh * scale;
+      const dx = wx + (stageW - dw) / 2;
+      const dy = contentY + (contentH - dh) / 2;
+      ctx.drawImage(video, dx, dy, dw, dh);
+    } else {
+      // Classic 2000s WMP Swirling Pink/Orange Tunnel Visualization when idle
+      const cx = wx + stageW / 2;
+      const cy = contentY + contentH / 2;
+      const t = performance.now() * 0.0014;
+      const maxR = Math.max(stageW, contentH) * 0.65;
+
+      const bgVis = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxR);
+      bgVis.addColorStop(0, '#09020c');
+      bgVis.addColorStop(0.24, '#f59e0b');
+      bgVis.addColorStop(0.45, '#ec4899');
+      bgVis.addColorStop(0.75, '#be185d');
+      bgVis.addColorStop(1, '#1e0b2e');
+      ctx.fillStyle = bgVis;
+      ctx.fillRect(wx, contentY, stageW, contentH);
+
+      // Swirling plasma rings
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(wx, contentY, stageW, contentH);
+      ctx.clip();
+      for (let r = 0; r < 6; r++) {
+        const ang = t * (0.7 + r * 0.15) + r * 1.05;
+        const rx = cx + Math.cos(ang) * (18 + r * 14);
+        const ry = cy + Math.sin(ang * 1.2) * (14 + r * 10);
+        const rad = 36 + r * 26 + Math.sin(t * 2 + r) * 8;
+        ctx.strokeStyle = r % 2 === 0 ? 'rgba(254, 240, 138, 0.28)' : 'rgba(255, 180, 210, 0.25)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(rx, ry, rad, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // Dark center vortex
+      const coreG = ctx.createRadialGradient(cx, cy, 4, cx, cy, 52);
+      coreG.addColorStop(0, 'rgba(6, 2, 10, 0.96)');
+      coreG.addColorStop(0.6, 'rgba(18, 4, 20, 0.72)');
+      coreG.addColorStop(1, 'rgba(18, 4, 20, 0)');
+      ctx.fillStyle = coreG;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 52, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Click-to-Play prompt badge
+      const pillW = 210;
+      const pillH = 30;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.76)';
+      this.drawRoundRect(ctx, cx - pillW / 2, contentY + contentH - 46, pillW, pillH, 15);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(147, 197, 253, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('▶ Click Play to Watch & Listen', cx, contentY + contentH - 27);
+      ctx.restore();
+    }
+
+    // Live Web Audio Spectrum Overlay along bottom of WMP video stage when playing (log-mapped)
+    if (isPlaying && this.wmpAnalyser && this.wmpFreqData) {
+      this.wmpAnalyser.getByteFrequencyData(this.wmpFreqData);
+      const bars = 28;
+      const specH = 38;
+      const specY = contentY + contentH - specH;
+      ctx.fillStyle = 'rgba(5, 8, 18, 0.48)';
+      ctx.fillRect(wx, specY, stageW, specH);
+      const bw = Math.max(4, (stageW - 16 - (bars - 1) * 2) / bars);
+      const minBin = 1;
+      const maxBin = Math.min(this.wmpFreqData.length - 1, 260);
+      for (let i = 0; i < bars; i++) {
+        const t0 = i / bars;
+        const t1 = (i + 1) / bars;
+        const bStart = Math.floor(minBin * Math.pow(maxBin / minBin, t0));
+        const bEnd = Math.max(bStart + 1, Math.floor(minBin * Math.pow(maxBin / minBin, t1)));
+        let sum = 0;
+        let cnt = 0;
+        for (let b = bStart; b < bEnd && b < this.wmpFreqData.length; b++) {
+          sum += this.wmpFreqData[b];
+          cnt++;
+        }
+        const avg = cnt > 0 ? sum / cnt / 255 : 0;
+        const val = Math.min(1, Math.pow(avg * (1 + t0 * 0.75), 0.92));
+        const bh = Math.max(2, val * (specH - 6));
+        const bx = wx + 8 + i * (bw + 2);
+        const bg = ctx.createLinearGradient(0, contentY + contentH, 0, specY);
+        bg.addColorStop(0, '#38bdf8');
+        bg.addColorStop(1, '#f472b6');
+        ctx.fillStyle = bg;
+        ctx.fillRect(bx, contentY + contentH - bh - 2, bw, bh);
+      }
+    }
+
+    // Save stage click area (clicking video toggles play/pause)
+    this.wmpHitZones.stage = { x: wx, y: contentY, w: stageW, h: contentH };
+
+    // 3b. Right Sidebar — Classic WMP Now Playing Playlist
+    const sideX = wx + stageW;
+    ctx.fillStyle = '#f4f8fe';
+    ctx.fillRect(sideX, contentY, sideW, contentH);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sideX, contentY);
+    ctx.lineTo(sideX, contentY + contentH);
+    ctx.stroke();
+
+    // Top Blue Musical Note Art Box (inspired by WMP 11 Now Playing sidebar)
+    const artH = 88;
+    const artGrad = ctx.createLinearGradient(sideX, contentY, sideX, contentY + artH);
+    artGrad.addColorStop(0, '#ffffff');
+    artGrad.addColorStop(1, '#dbeafe');
+    ctx.fillStyle = artGrad;
+    ctx.fillRect(sideX + 1, contentY, sideW - 1, artH);
+
+    // Glossy Blue Music Note Emblem
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillStyle = '#2563eb';
+    ctx.textAlign = 'center';
+    ctx.fillText('♫', sideX + sideW / 2, contentY + 52);
+
+    ctx.font = 'bold 10px Tahoma, sans-serif';
+    ctx.fillStyle = '#1e3a8a';
+    const shortTitle = track.title.length > 22 ? `${track.title.slice(0, 21)}…` : track.title;
+    ctx.fillText(shortTitle, sideX + sideW / 2, contentY + 76);
+
+    // Playlist Section Header
+    const listHeaderY = contentY + artH;
+    ctx.fillStyle = '#e2ecfb';
+    ctx.fillRect(sideX + 1, listHeaderY, sideW - 1, 22);
+    ctx.strokeStyle = '#bfdbfe';
+    ctx.beginPath();
+    ctx.moveTo(sideX + 1, listHeaderY);
+    ctx.lineTo(sideX + sideW, listHeaderY);
+    ctx.moveTo(sideX + 1, listHeaderY + 22);
+    ctx.lineTo(sideX + sideW, listHeaderY + 22);
+    ctx.stroke();
+
+    ctx.font = 'bold 10px Tahoma, sans-serif';
+    ctx.fillStyle = '#1e3a8a';
+    ctx.textAlign = 'left';
+    ctx.fillText('Now Playing ▾', sideX + 8, listHeaderY + 14);
+
+    // Clickable 6-Track Playlist Items with Preview Thumbnails
+    this.wmpHitZones.tracks = [];
+    const listStartY = listHeaderY + 26;
+    const rowH = 30;
+    MUSIC_TRACKS.forEach((tr, idx) => {
+      const ry = listStartY + idx * rowH;
+      if (ry + rowH > contentY + contentH) return;
+      const isCur = idx === this.wmpTrackIdx;
+      if (isCur) {
+        ctx.fillStyle = '#dbeafe';
+        ctx.fillRect(sideX + 3, ry, sideW - 6, rowH - 2);
+        ctx.strokeStyle = '#93c5fd';
+        ctx.strokeRect(sideX + 3, ry, sideW - 6, rowH - 2);
+      }
+
+      // Tiny preview thumbnail
+      const thumbImg = this.wmpThumbImages?.[idx];
+      const tx = sideX + 6;
+      const ty = ry + 4;
+      const tw = 26;
+      const th = 20;
+      if (thumbImg && thumbImg.complete && thumbImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.drawImage(thumbImg, tx, ty, tw, th);
+        ctx.strokeStyle = isCur ? '#2563eb' : '#94a3b8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tx, ty, tw, th);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(tx, ty, tw, th);
+      }
+
+      ctx.font = isCur ? 'bold 10px Tahoma, sans-serif' : '10px Tahoma, sans-serif';
+      ctx.fillStyle = isCur ? '#1d4ed8' : '#0f172a';
+      ctx.textAlign = 'left';
+      const prefix = isCur ? (isPlaying ? '▶ ' : '• ') : `${idx + 1}. `;
+      const label = `${prefix}${tr.title}`;
+      ctx.fillText(label.length > 19 ? `${label.slice(0, 18)}…` : label, sideX + 36, ry + 13);
+
+      ctx.font = '9px Tahoma, sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(tr.tag, sideX + 36, ry + 24);
+
+      this.wmpHitZones.tracks.push({ idx, x: sideX + 2, y: ry, w: sideW - 4, h: rowH });
+    });
+
+    // 4. Bottom Status Strip + Large Glossy Blue WMP Transport Controls
+    const footY = contentY + contentH;
+
+    // 4a. Dark Status Bar (h = 24)
+    ctx.fillStyle = '#090d16';
+    ctx.fillRect(wx, footY, ww, 24);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 11px Tahoma, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${isPlaying ? '▶ Playing:' : '❚❚ Ready:'}  ${track.title}`, wx + 10, footY + 16);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 11px "Courier New", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${this.formatWmpTime(curTime)} / ${this.formatWmpTime(durTime)}`, wx + ww - 10, footY + 16);
+
+    // 4b. Classic Glossy Blue WMP Control Deck (h = 82)
+    const ctrlY = footY + 24;
+    const ctrlH = footerH - 24;
+    const deckGrad = ctx.createLinearGradient(0, ctrlY, 0, ctrlY + ctrlH);
+    deckGrad.addColorStop(0, '#5ea1f7');
+    deckGrad.addColorStop(0.2, '#2d72d9');
+    deckGrad.addColorStop(0.52, '#1b4ea8');
+    deckGrad.addColorStop(1, '#3b82f6');
+    ctx.fillStyle = deckGrad;
+    ctx.fillRect(wx, ctrlY, ww, ctrlH);
+
+    // Larger, Easier-to-Click Seek Bar across top of control deck
+    const seekX = wx + 16;
+    const seekY = ctrlY + 9;
+    const seekW = ww - 32;
+    const seekH = 12;
+    ctx.fillStyle = '#0f2347';
+    this.drawRoundRect(ctx, seekX, seekY, seekW, seekH, 6);
+    ctx.fill();
+    const progRatio = durTime > 0 ? Math.min(1, curTime / durTime) : 0;
+    if (progRatio > 0) {
+      const pGrad = ctx.createLinearGradient(seekX, 0, seekX + seekW, 0);
+      pGrad.addColorStop(0, '#38bdf8');
+      pGrad.addColorStop(1, '#93c5fd');
+      ctx.fillStyle = pGrad;
+      this.drawRoundRect(ctx, seekX + 1, seekY + 1, Math.max(8, (seekW - 2) * progRatio), seekH - 2, 5);
+      ctx.fill();
+    }
+    // Larger Seek thumb
+    const thumbX = seekX + Math.max(7, Math.min(seekW - 7, seekW * progRatio));
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(thumbX, seekY + seekH / 2, 7.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    this.wmpHitZones.seek = { x: seekX, y: seekY - 6, w: seekW, h: seekH + 12 };
+
+    // Large Transport Buttons Row
+    const btnCenterY = ctrlY + 52;
+    const playX = wx + Math.floor(ww * 0.41);
+
+    // Helper for large metallic pill buttons
+    const drawPillBtn = (cx, cy, w, h, label, fontSize = 15) => {
+      const g = ctx.createLinearGradient(0, cy - h / 2, 0, cy + h / 2);
+      g.addColorStop(0, '#f8fafc');
+      g.addColorStop(0.5, '#cbd5e1');
+      g.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = g;
+      this.drawRoundRect(ctx, cx - w / 2, cy - h / 2, w, h, h / 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#0f172a';
+      ctx.font = `bold ${fontSize}px Tahoma, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(label, cx, cy + Math.round(fontSize * 0.36));
+      return { x: cx - w / 2, y: cy - h / 2, w, h };
+    };
+
+    this.wmpHitZones.stop = drawPillBtn(playX - 122, btnCenterY, 50, 34, '■', 15);
+    this.wmpHitZones.prev = drawPillBtn(playX - 64, btnCenterY, 54, 34, '⏮', 16);
+    this.wmpHitZones.next = drawPillBtn(playX + 64, btnCenterY, 54, 34, '⏭', 16);
+
+    // Large Center Glossy Round Blue Play/Pause Button (iconic WMP orb)
+    const playR = 25;
+    const playGrad = ctx.createRadialGradient(playX - 6, btnCenterY - 7, 3, playX, btnCenterY, playR);
+    playGrad.addColorStop(0, '#dbeafe');
+    playGrad.addColorStop(0.45, '#2563eb');
+    playGrad.addColorStop(1, '#1e3a8a');
+    ctx.fillStyle = playGrad;
+    ctx.beginPath();
+    ctx.arc(playX, btnCenterY, playR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e0f2fe';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 19px Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(isPlaying ? '❚❚' : '▶', playX + (isPlaying ? 0 : 2), btnCenterY + 7);
+    this.wmpHitZones.play = { x: playX - playR, y: btnCenterY - playR, w: playR * 2, h: playR * 2 };
+
+    // Large Mute + Volume Slider (Right side of control deck)
+    const muteX = playX + 132;
+    this.wmpHitZones.mute = drawPillBtn(muteX, btnCenterY, 44, 34, this.wmpMuted ? '🔇' : '🔊', 16);
+
+    const volX = muteX + 32;
+    const volY = btnCenterY - 6;
+    const volW = Math.min(120, wx + ww - volX - 18);
+    if (volW > 36) {
+      ctx.fillStyle = '#0f2347';
+      this.drawRoundRect(ctx, volX, volY, volW, 12, 6);
+      ctx.fill();
+      const vRatio = this.wmpMuted ? 0 : this.wmpVolume;
+      ctx.fillStyle = '#38bdf8';
+      this.drawRoundRect(ctx, volX + 1, volY + 1, Math.max(6, (volW - 2) * vRatio), 10, 5);
+      ctx.fill();
+      const vThumbX = volX + Math.max(6, Math.min(volW - 6, volW * vRatio));
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(vThumbX, volY + 6, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      this.wmpHitZones.volume = { x: volX, y: volY - 8, w: volW, h: 28 };
+    }
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // =========================================================================
   // APPLICATION WINDOW 1: DOOM (1993)
   // =========================================================================
   renderDoomWindow(ctx, W, H) {
@@ -3409,6 +4031,7 @@ export class ComputerScene {
         const { ok, cancel } = this.renderedShutdownButtons;
         if (x >= ok.x && x <= ok.x + ok.w && y >= ok.y && y <= ok.y + ok.h) {
           this.shutdownOpen = false;
+          this.wmpStop();
           this.playWhoosh();
           this.activePopup = {
             title: 'Windows',
@@ -3446,12 +4069,13 @@ export class ComputerScene {
       const smY = 320;
       // Left Column (White)
       if (x >= smX + 10 && x <= smX + 180 && y >= smY + 54 && y <= smY + 368) {
-        const itemIdx = Math.floor((y - (smY + 64)) / 40);
+        const itemIdx = Math.floor((y - (smY + 62)) / 38);
         if (itemIdx === 0) this.openIE();
-        else if (itemIdx === 1) this.openDoom();
-        else if (itemIdx === 2) this.openMinesweeper();
-        else if (itemIdx === 3) this.openNotepad();
-        else if (itemIdx === 4) this.openCmd();
+        else if (itemIdx === 1) this.openWmp();
+        else if (itemIdx === 2) this.openDoom();
+        else if (itemIdx === 3) this.openMinesweeper();
+        else if (itemIdx === 4) this.openNotepad();
+        else if (itemIdx === 5) this.openCmd();
         this.startMenuOpen = false;
         return;
       }
@@ -3508,16 +4132,17 @@ export class ComputerScene {
     }
 
     // 8. Desktop Icons (Left side)
-    if (x >= 10 && x <= 80 && y <= 600) {
+    if (x >= 10 && x <= 80 && y <= 670) {
       const iconIdx = Math.floor((y - 18) / 72);
       if (iconIdx === 0) { this.openIE(); return; }
-      if (iconIdx === 1) { this.openDoom(); return; }
-      if (iconIdx === 2) { this.openMinesweeper(); return; }
-      if (iconIdx === 3) { this.openNotepad(); return; }
-      if (iconIdx === 4) { this.openCmd(); return; }
-      if (iconIdx === 5) { this.openExplorer(); return; }
-      if (iconIdx === 6) { this.openExplorer('My Documents'); return; }
-      if (iconIdx === 7) {
+      if (iconIdx === 1) { this.openWmp(); return; }
+      if (iconIdx === 2) { this.openDoom(); return; }
+      if (iconIdx === 3) { this.openMinesweeper(); return; }
+      if (iconIdx === 4) { this.openNotepad(); return; }
+      if (iconIdx === 5) { this.openCmd(); return; }
+      if (iconIdx === 6) { this.openExplorer(); return; }
+      if (iconIdx === 7) { this.openExplorer('My Documents'); return; }
+      if (iconIdx === 8) {
         this.playClick();
         this.activePopup = { title: 'Recycle Bin', message: 'Recycle Bin is empty.\nNo deleted files.' };
         return;
@@ -3530,6 +4155,8 @@ export class ComputerScene {
       const winId = reversedOrder[i];
       if (winId === 'ie' && this.winState !== 'closed' && this.winState !== 'minimized') {
         if (this.handleIEClick(x, y)) return;
+      } else if (winId === 'wmp' && this.wmpState !== 'closed' && this.wmpState !== 'minimized') {
+        if (this.handleWmpClick(x, y)) return;
       } else if (winId === 'doom' && this.doomState !== 'closed' && this.doomState !== 'minimized') {
         if (this.handleDoomClick(x, y)) return;
       } else if (winId === 'minesweeper' && this.minesweeperState !== 'closed' && this.minesweeperState !== 'minimized') {
@@ -3756,6 +4383,107 @@ export class ComputerScene {
       return true;
     }
     return false;
+  }
+
+  // --- CLICK HANDLER: WINDOWS MEDIA PLAYER ---
+  handleWmpClick(x, y) {
+    const isMax = (this.wmpState === 'maximized');
+    const wx = isMax ? 0 : this.wmpRect.x;
+    const wy = isMax ? 0 : this.wmpRect.y;
+    const ww = isMax ? 1024 : this.wmpRect.w;
+    const wh = isMax ? 730 : this.wmpRect.h;
+
+    if (x < wx || x > wx + ww || y < wy || y > wy + wh) return false;
+
+    this.bringToFront('wmp');
+
+    // Title Bar Window Buttons
+    const btnY = wy + 4;
+    const bxMin = wx + ww - 72;
+    const bxMax = wx + ww - 48;
+    const bxClose = wx + ww - 24;
+
+    if (x >= bxMin && x <= bxMin + 20 && y >= btnY && y <= btnY + 20) {
+      this.wmpState = 'minimized';
+      this.playClick();
+      return true;
+    }
+    if (x >= bxMax && x <= bxMax + 20 && y >= btnY && y <= btnY + 20) {
+      this.wmpState = (this.wmpState === 'maximized' ? 'normal' : 'maximized');
+      this.playClick();
+      return true;
+    }
+    if (x >= bxClose && x <= bxClose + 24 && y >= btnY && y <= btnY + 20) {
+      this.wmpStop();
+      this.wmpState = 'closed';
+      this.playClick();
+      return true;
+    }
+
+    // Drag Title Bar
+    if (y >= wy && y <= wy + 26 && x >= wx && x <= wx + ww - 80) {
+      if (this.wmpState === 'normal') {
+        this.wmpIsDragging = true;
+        this.wmpDragOffset = { x: x - this.wmpRect.x, y: y - this.wmpRect.y };
+      }
+      return true;
+    }
+
+    const inRect = (r) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    const hz = this.wmpHitZones || {};
+
+    // Playlist Track Selection
+    if (hz.tracks) {
+      for (let i = 0; i < hz.tracks.length; i++) {
+        if (inRect(hz.tracks[i])) {
+          this.wmpSelectTrack(hz.tracks[i].idx, true);
+          this.playClick();
+          return true;
+        }
+      }
+    }
+
+    // Transport Controls
+    if (inRect(hz.play) || inRect(hz.stage)) {
+      this.wmpTogglePlay();
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.stop)) {
+      this.wmpStop();
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.prev)) {
+      this.wmpSelectTrack(this.wmpTrackIdx - 1, true);
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.next)) {
+      this.wmpSelectTrack(this.wmpTrackIdx + 1, true);
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.mute)) {
+      this.wmpMuted = !this.wmpMuted;
+      if (this.wmpVideo) this.wmpVideo.muted = this.wmpMuted;
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.seek)) {
+      this.wmpIsSeeking = true;
+      this.wmpSeekToRatio((x - hz.seek.x) / hz.seek.w);
+      this.playClick();
+      return true;
+    }
+    if (inRect(hz.volume)) {
+      this.wmpIsAdjustingVolume = true;
+      this.wmpSetVolumeRatio((x - hz.volume.x) / hz.volume.w);
+      this.playClick();
+      return true;
+    }
+
+    return true;
   }
 
   // --- CLICK HANDLER: DOOM ---
@@ -4077,6 +4805,17 @@ export class ComputerScene {
             this.winRect.y = Math.max(0, Math.min(730 - 40, Math.round(this.screenPointer.y - this.winDragOffset.y)));
             this.winNormalRect = { ...this.winRect };
           }
+          if (this.wmpIsDragging && this.wmpState === 'normal') {
+            this.wmpRect.x = Math.max(-200, Math.min(1024 - 100, Math.round(this.screenPointer.x - this.wmpDragOffset.x)));
+            this.wmpRect.y = Math.max(0, Math.min(730 - 40, Math.round(this.screenPointer.y - this.wmpDragOffset.y)));
+            this.wmpNormalRect = { ...this.wmpRect };
+          }
+          if (this.wmpIsSeeking && this.wmpHitZones?.seek) {
+            this.wmpSeekToRatio((this.screenPointer.x - this.wmpHitZones.seek.x) / this.wmpHitZones.seek.w);
+          }
+          if (this.wmpIsAdjustingVolume && this.wmpHitZones?.volume) {
+            this.wmpSetVolumeRatio((this.screenPointer.x - this.wmpHitZones.volume.x) / this.wmpHitZones.volume.w);
+          }
           if (this.doomIsDragging && this.doomState === 'normal') {
             this.doomRect.x = Math.max(-200, Math.min(1024 - 100, Math.round(this.screenPointer.x - this.doomDragOffset.x)));
             this.doomRect.y = Math.max(0, Math.min(730 - 40, Math.round(this.screenPointer.y - this.doomDragOffset.y)));
@@ -4113,6 +4852,9 @@ export class ComputerScene {
 
     window.addEventListener('pointerup', () => {
       this.winIsDragging = false;
+      this.wmpIsDragging = false;
+      this.wmpIsSeeking = false;
+      this.wmpIsAdjustingVolume = false;
       this.doomIsDragging = false;
       this.minesweeperIsDragging = false;
       this.notepadIsDragging = false;
@@ -4126,6 +4868,9 @@ export class ComputerScene {
     this.container.addEventListener('pointerleave', () => {
       this.screenPointer.active = false;
       this.winIsDragging = false;
+      this.wmpIsDragging = false;
+      this.wmpIsSeeking = false;
+      this.wmpIsAdjustingVolume = false;
       this.doomIsDragging = false;
       this.minesweeperIsDragging = false;
       this.notepadIsDragging = false;

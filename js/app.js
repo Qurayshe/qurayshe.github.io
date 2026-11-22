@@ -108,6 +108,7 @@ class App {
 
     // 3. Initialize Router
     this.router = new Router({
+      onRouteChange: (section) => this.onRouteChange(section),
       home: () => this.onHomeActive(),
       systems: (moduleId) => this.onSystemsActive(moduleId),
       graphics: (moduleId) => this.onGraphicsActive(moduleId),
@@ -117,6 +118,13 @@ class App {
       resume: (filter) => this.onResumeActive(filter),
       misc: (toolId) => this.onMiscActive(toolId),
       about: () => this.router.navigate('#home')
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.computerScene?.pauseMedia();
+        this.resumeViewer?.pauseMedia();
+      }
     });
 
     // 4. Initialize Command Palette Search
@@ -133,6 +141,15 @@ class App {
 
     // 6. Start Routing
     this.router.init();
+  }
+
+  onRouteChange(section) {
+    if (section !== 'home') {
+      this.computerScene?.pauseMedia();
+    }
+    if (section !== 'resume') {
+      this.resumeViewer?.pauseMedia();
+    }
   }
 
   onHomeActive() {
