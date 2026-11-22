@@ -28,6 +28,7 @@ export class ResumeViewer {
     }
 
     this.renderLayout();
+    this.renderPrintSheet();
     this.bindEvents();
     this.initAudioVisualizer();
     this.playEntranceAnimation();
@@ -77,10 +78,6 @@ export class ResumeViewer {
 
             <div class="resume-header-copy">
               <div class="resume-badge-row">
-                <span class="resume-status-pill">
-                  <span class="pulse-indicator"></span>
-                  <span>${profile.badge}</span>
-                </span>
                 <span class="resume-loc-pill">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                   <span>${profile.location}</span>
@@ -517,6 +514,7 @@ export class ResumeViewer {
     });
 
     window.addEventListener('afterprint', () => {
+      document.body.classList.remove('is-printing-resume');
       if (this._printPrevFilter && this._printPrevFilter !== 'all') {
         this.applyFilter(this._printPrevFilter, false);
       }
@@ -544,6 +542,13 @@ export class ResumeViewer {
   }
 
   prepareForPrint() {
+    const resumeSection = document.getElementById('section-resume');
+    const isResumeActive = !resumeSection || resumeSection.classList.contains('active') || resumeSection.style.display !== 'none';
+    if (isResumeActive) {
+      this.renderPrintSheet();
+      document.body.classList.add('is-printing-resume');
+    }
+
     // 1. Cancel running anime animations across all elements in container
     if (typeof anime !== 'undefined') {
       anime.remove(this.container.querySelectorAll('*'));
@@ -563,6 +568,248 @@ export class ResumeViewer {
       el.style.opacity = '1';
       el.style.transform = 'none';
     });
+  }
+
+  renderPrintSheet() {
+    const { profile, summary, education, experience, skills, awards } = RESUME_DATA;
+    let sheet = document.getElementById('resume-print-sheet');
+    if (!sheet) {
+      sheet = document.createElement('div');
+      sheet.id = 'resume-print-sheet';
+      sheet.className = 'resume-print-sheet';
+      sheet.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(sheet);
+    }
+
+    const githubDisplay = profile.github ? profile.github.replace(/^https?:\/\//, '') : 'github.com/qurayshe';
+
+    sheet.innerHTML = `
+      <div class="rps-accent-bar"></div>
+
+      <header class="rps-header">
+        <div class="rps-header-left">
+          <div class="rps-crest" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="38" height="38">
+              <defs>
+                <linearGradient id="rpsCrestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0ea5e9" />
+                  <stop offset="50%" stop-color="#6366f1" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <polygon points="24,2 41,9 46,24 41,39 24,46 7,39 2,24 7,9"
+                fill="#f8fafc" stroke="url(#rpsCrestGrad)" stroke-width="2.2" />
+              <circle cx="24" cy="24" r="14" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2" />
+              <text x="24" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#0f172a">◆</text>
+            </svg>
+          </div>
+          <div class="rps-title-wrap">
+            <div class="rps-name-row">
+              <h1 class="rps-name">${profile.handle}</h1>
+              <span class="rps-doc-tag">CURRICULUM VITAE</span>
+            </div>
+            <div class="rps-role-line">
+              <span class="rps-role-primary">${profile.title}</span>
+              <span class="rps-role-sep">&bull;</span>
+              <span class="rps-role-sub">${profile.subtitle}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rps-header-right">
+          <div class="rps-meta-badge">${profile.badge}</div>
+          <div class="rps-meta-line">${profile.location}</div>
+          <div class="rps-meta-line rps-meta-link">${githubDisplay}</div>
+        </div>
+      </header>
+
+      <!-- Stylized Terminal Summary Block -->
+      <section class="rps-terminal">
+        <div class="rps-terminal-bar">
+          <div class="rps-term-dots">
+            <span class="rps-dot rps-dot-red"></span>
+            <span class="rps-dot rps-dot-yellow"></span>
+            <span class="rps-dot rps-dot-green"></span>
+          </div>
+          <div class="rps-term-title">~/qurayshe/executive_summary.sys</div>
+          <div class="rps-term-status">SYS: OK</div>
+        </div>
+        <div class="rps-terminal-body">
+          <div class="rps-objective-row">
+            <span class="rps-prompt">&gt;</span>
+            <span class="rps-keyword">OBJECTIVE:</span>
+            <span class="rps-objective-text">${profile.objective}</span>
+          </div>
+          <p class="rps-overview-text">${summary.overview}</p>
+
+          <div class="rps-highlights-grid">
+            ${summary.highlights
+              .map(
+                (h) => `
+              <div class="rps-highlight-cell">
+                <div class="rps-highlight-title"><span class="rps-diamond">&diams;</span> ${h.title}</div>
+                <p class="rps-highlight-desc">${h.desc}</p>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+
+          <div class="rps-languages-row">
+            <span class="rps-lang-label">NATURAL LANGUAGES:</span>
+            <div class="rps-lang-list">
+              ${summary.languages
+                .map((l) => `<span class="rps-lang-pill"><strong>${l.name}:</strong> ${l.level}</span>`)
+                .join('')}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01: Work Experience -->
+      <section class="rps-section">
+        <div class="rps-section-head">
+          <span class="rps-sec-num">01</span>
+          <h2 class="rps-sec-title">Work Experience &amp; Engineering Research</h2>
+          <div class="rps-sec-rule"></div>
+        </div>
+        <div class="rps-exp-list">
+          ${experience
+            .map(
+              (exp) => `
+            <article class="rps-exp-item">
+              <div class="rps-exp-top">
+                <div class="rps-exp-left">
+                  <h3 class="rps-exp-company">${exp.company}</h3>
+                  <div class="rps-exp-role">${exp.role}</div>
+                </div>
+                <span class="rps-period-pill">${exp.period}</span>
+              </div>
+              <p class="rps-exp-summary">${exp.summary}</p>
+              <ul class="rps-exp-bullets">
+                ${exp.bullets.map((b) => `<li>${b}</li>`).join('')}
+              </ul>
+              <div class="rps-tags-row">
+                ${exp.tags.map((t) => `<span class="rps-tag">${t}</span>`).join('')}
+              </div>
+            </article>
+          `
+            )
+            .join('')}
+        </div>
+      </section>
+
+      <!-- 02: Technical Skills -->
+      <section class="rps-section">
+        <div class="rps-section-head">
+          <span class="rps-sec-num">02</span>
+          <h2 class="rps-sec-title">Technical Skills Matrix</h2>
+          <div class="rps-sec-rule"></div>
+        </div>
+        <div class="rps-grid-2">
+          ${skills.tech
+            .map(
+              (cat) => `
+            <div class="rps-skill-card">
+              <div class="rps-skill-head">
+                <h3 class="rps-skill-title">${cat.category}</h3>
+                <span class="rps-skill-level">${cat.level}</span>
+              </div>
+              <p class="rps-skill-desc">${cat.desc}</p>
+              <div class="rps-tags-row">
+                ${cat.tools.map((t) => `<span class="rps-tag">${t}</span>`).join('')}
+              </div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </section>
+
+      <!-- 03: Creative Lab & Audio -->
+      <section class="rps-section">
+        <div class="rps-section-head">
+          <span class="rps-sec-num">03</span>
+          <h2 class="rps-sec-title">Creative Lab, 3DCG &amp; Audio Engineering</h2>
+          <div class="rps-sec-rule"></div>
+        </div>
+        <div class="rps-grid-2">
+          ${skills.creativity
+            .map(
+              (cat) => `
+            <div class="rps-skill-card">
+              <div class="rps-skill-head">
+                <h3 class="rps-skill-title">${cat.category}</h3>
+                <span class="rps-skill-level">${cat.level}</span>
+              </div>
+              <p class="rps-skill-desc">${cat.desc}</p>
+              <div class="rps-tags-row">
+                ${cat.tools.map((t) => `<span class="rps-tag">${t}</span>`).join('')}
+              </div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </section>
+
+      <!-- 04: Education -->
+      <section class="rps-section">
+        <div class="rps-section-head">
+          <span class="rps-sec-num">04</span>
+          <h2 class="rps-sec-title">Education &amp; Certifications</h2>
+          <div class="rps-sec-rule"></div>
+        </div>
+        <div class="rps-edu-grid">
+          ${education
+            .map(
+              (edu) => `
+            <article class="rps-edu-card">
+              <div class="rps-edu-top">
+                <div>
+                  <h3 class="rps-edu-inst">${edu.institution}</h3>
+                  <div class="rps-edu-degree">${edu.degree}</div>
+                </div>
+                <div class="rps-edu-meta">
+                  <span class="rps-period-pill">${edu.year}</span>
+                  <span class="rps-edu-loc">${edu.location}</span>
+                </div>
+              </div>
+              <ul class="rps-edu-bullets">
+                ${edu.highlights.map((h) => `<li>${h}</li>`).join('')}
+              </ul>
+            </article>
+          `
+            )
+            .join('')}
+        </div>
+      </section>
+
+      <!-- 05: Honors & Awards -->
+      <section class="rps-section">
+        <div class="rps-section-head">
+          <span class="rps-sec-num">05</span>
+          <h2 class="rps-sec-title">Honors &amp; Awards</h2>
+          <div class="rps-sec-rule"></div>
+        </div>
+        <div class="rps-awards-grid">
+          ${awards
+            .map(
+              (aw) => `
+            <article class="rps-award-card">
+              <div class="rps-award-top">
+                <h3 class="rps-award-title">${aw.title}</h3>
+                <span class="rps-period-pill">${aw.year}</span>
+              </div>
+              <div class="rps-award-org">${aw.organization}</div>
+              <p class="rps-award-desc">${aw.desc}</p>
+            </article>
+          `
+            )
+            .join('')}
+        </div>
+      </section>
+    `;
   }
 
   applyFilter(filter, animate = true) {
@@ -747,10 +994,54 @@ export class ResumeViewer {
 
   /* --------------------------------------------------------------------------
      3D Perspective Tilt & Radial Glow Follower (Lesson 10)
+     Uses per-card rAF lerp so entering at card borders eases smoothly
+     instead of snapping from flat to full tilt.
      -------------------------------------------------------------------------- */
   bind3DTilt() {
     const cards = this.container.querySelectorAll('.resume-card');
     cards.forEach((card) => {
+      const state = {
+        curX: 0,
+        curY: 0,
+        curLift: 0,
+        tgtX: 0,
+        tgtY: 0,
+        tgtLift: 0,
+        rafId: null,
+        hovering: false
+      };
+
+      const step = () => {
+        const ease = state.hovering ? 0.14 : 0.12;
+        state.curX += (state.tgtX - state.curX) * ease;
+        state.curY += (state.tgtY - state.curY) * ease;
+        state.curLift += (state.tgtLift - state.curLift) * ease;
+
+        const done =
+          !state.hovering &&
+          Math.abs(state.tgtX - state.curX) < 0.01 &&
+          Math.abs(state.tgtY - state.curY) < 0.01 &&
+          Math.abs(state.tgtLift - state.curLift) < 0.01;
+
+        if (done) {
+          state.curX = 0;
+          state.curY = 0;
+          state.curLift = 0;
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+          state.rafId = null;
+          return;
+        }
+
+        card.style.transform = `perspective(1000px) rotateX(${state.curX.toFixed(3)}deg) rotateY(${state.curY.toFixed(3)}deg) translateY(${state.curLift.toFixed(2)}px)`;
+        state.rafId = requestAnimationFrame(step);
+      };
+
+      const startLoop = () => {
+        if (!state.rafId) {
+          state.rafId = requestAnimationFrame(step);
+        }
+      };
+
       card.addEventListener('mousemove', (e) => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -761,14 +1052,19 @@ export class ResumeViewer {
 
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -6;
-        const rotateY = ((x - centerX) / centerX) * 6;
-
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+        state.tgtX = ((y - centerY) / centerY) * -6;
+        state.tgtY = ((x - centerX) / centerX) * 6;
+        state.tgtLift = -4;
+        state.hovering = true;
+        startLoop();
       });
 
       card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        state.hovering = false;
+        state.tgtX = 0;
+        state.tgtY = 0;
+        state.tgtLift = 0;
+        startLoop();
       });
     });
   }

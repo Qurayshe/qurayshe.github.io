@@ -5061,588 +5061,658 @@ code[class*="language-"] {
 }
 
 /* ==========================================================================
-   PROFESSIONAL PRINT STYLESHEET (@media print)
-   Optimized for physical white paper & high-resolution clean PDF export.
+   DEDICATED PRINT PDF SHEET (#resume-print-sheet)
+   Completely decoupled from the site's dark/doodle UI.
+   Clean Inter sans-serif typography, stylized terminal intro, professional body.
    ========================================================================== */
+.resume-print-sheet {
+  display: none;
+}
+
 @page {
   size: letter portrait;
-  margin: 12mm 15mm 15mm 15mm;
+  margin: 9mm 12mm 10mm 12mm;
 }
 
 @media print {
-  /* 1. Universal Print Reset & High-Contrast Enforcement */
-  *,
-  *::before,
-  *::after {
-    background-color: transparent !important;
-    color: #000000 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    filter: none !important;
-    transform: none !important;
-    animation: none !important;
-    transition: none !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  :root,
+  html {
+    color-scheme: light !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  html,
   body {
     background: #ffffff !important;
-    color: #000000 !important;
-    font-size: 10pt !important;
-    line-height: 1.45 !important;
-    width: 100% !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide everything outside of the resume */
-  .global-navbar,
-  .global-footer,
-  .grain-overlay,
-  #section-home,
-  #section-systems,
-  #section-servers,
-  #section-ai,
-  #section-motion,
-  .search-modal-backdrop,
-  .resume-actions-dock,
-  .resume-filter-bar,
-  .resume-ambient-glow,
-  .kinetic-audio-widget,
-  .btn-audio-drop,
-  .btn-resume-wave,
-  .btn-resume-print,
-  .resume-footer-block,
-  .resume-svg-frame,
-  .ripple-particle,
-  canvas {
+  /* Hide all site chrome & sections when printing the resume */
+  body.is-printing-resume > *:not(#resume-print-sheet),
+  body:has(#section-resume.active) > *:not(#resume-print-sheet) {
     display: none !important;
   }
 
-  #section-resume {
+  #resume-print-sheet {
     display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .resume-viewport {
-    padding: 0 !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  .resume-container {
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  /* Force Full Opacity & Visibility Across All Resume Cards & Blocks */
-  .resume-section-block,
-  .resume-card,
-  .experience-card,
-  .skill-cat-card,
-  .creative-card,
-  .education-card,
-  .award-card,
-  .resume-terminal-card,
-  .terminal-body,
-  .terminal-lead-line,
-  .terminal-keyword,
-  .terminal-text,
-  .terminal-overview,
-  .highlight-item,
-  .highlight-title,
-  .highlight-desc,
-  .exp-company,
-  .exp-role,
-  .exp-summary,
-  .exp-bullet-list,
-  .exp-bullet,
-  .bullet-caret,
-  .skill-node,
-  .skill-cat-title,
-  .skill-cat-desc,
-  .edu-institution,
-  .edu-degree,
-  .edu-year,
-  .award-title,
-  .award-giver,
-  .award-year {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: none !important;
-  }
-
-  /* 2. Header & Clean Typography */
-  .resume-header {
-    display: block !important;
-    padding-bottom: 0.9rem !important;
-    margin-bottom: 1rem !important;
-    border-bottom: 2.5px solid #000000 !important;
-  }
-
-  .resume-hero-crest {
-    display: none !important;
-  }
-
-  .resume-header-copy {
     width: 100% !important;
-  }
-
-  .resume-badge-row {
-    margin-bottom: 0.35rem !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.8rem !important;
-  }
-
-  .resume-status-pill {
-    display: inline-block !important;
-    padding: 2px 8px !important;
-    border: 1.5px solid #000000 !important;
-    background: #f1f5f9 !important;
-    color: #000000 !important;
-    font-size: 8pt !important;
-    font-weight: 800 !important;
-  }
-
-  .resume-status-pill .status-pulse,
-  .resume-status-pill .pulse-indicator {
-    display: none !important;
-  }
-
-  .resume-loc-pill {
-    color: #111827 !important;
-    font-size: 8pt !important;
-    font-weight: 600 !important;
-  }
-
-  .resume-loc-pill svg {
-    stroke: #000000 !important;
-  }
-
-  .resume-kinetic-title {
-    font-size: 22pt !important;
-    font-weight: 900 !important;
-    color: #000000 !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.1 !important;
-    margin-bottom: 0.35rem !important;
-  }
-
-  .resume-kinetic-title .letter,
-  .resume-kinetic-title .letter-unit,
-  .resume-kinetic-title .letter-separator {
-    color: #000000 !important;
-    background: none !important;
-    -webkit-text-fill-color: #000000 !important;
-    text-shadow: none !important;
-    transform: none !important;
-    display: inline !important;
-    opacity: 1 !important;
-  }
-
-  .resume-role-line {
-    font-size: 10.5pt !important;
-    color: #111827 !important;
-    margin-bottom: 0.4rem !important;
-  }
-
-  .role-primary {
-    color: #000000 !important;
-    font-weight: 800 !important;
-  }
-
-  .role-pipe {
-    color: #64748b !important;
-    font-weight: 700 !important;
-  }
-
-  .role-secondary {
-    color: #111827 !important;
-    font-weight: 600 !important;
-  }
-
-  /* 3. Section Titles & Headings */
-  .section-headline {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
-    margin-top: 1.1rem !important;
-    margin-bottom: 0.5rem !important;
-    border-bottom: 2px solid #000000 !important;
-    padding-bottom: 0.25rem !important;
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  .section-num {
-    font-family: var(--font-mono) !important;
-    font-size: 9pt !important;
-    font-weight: 800 !important;
-    color: #000000 !important;
-  }
-
-  .section-heading {
-    font-size: 12pt !important;
-    font-weight: 900 !important;
-    color: #000000 !important;
-    letter-spacing: -0.01em !important;
-  }
-
-  .section-line {
-    display: none !important;
-  }
-
-  /* 4. Cards & Section Blocks */
-  .resume-section-block {
-    display: block !important;
-    margin-bottom: 0.9rem !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  .resume-card {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 4px !important;
-    padding: 0.85rem 1.05rem !important;
-    margin-bottom: 0.75rem !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    box-shadow: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  /* 5. Terminal Summary Card */
-  .resume-terminal-card {
-    border-left: 3.5px solid #000000 !important;
-    border-top: 1px solid #cbd5e1 !important;
-    border-right: 1px solid #cbd5e1 !important;
-    border-bottom: 1px solid #cbd5e1 !important;
-    background: #f8fafc !important;
-    padding: 0.85rem 1.05rem !important;
-  }
-
-  .terminal-bar {
-    display: none !important;
-  }
-
-  .terminal-body {
+    max-width: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
-  }
-
-  .terminal-lead-line {
-    font-size: 9.5pt !important;
-    margin-bottom: 0.4rem !important;
-    line-height: 1.4 !important;
-    color: #000000 !important;
-  }
-
-  .prompt-arrow {
-    color: #000000 !important;
-    font-weight: 900 !important;
-  }
-
-  .terminal-keyword {
-    color: #000000 !important;
-    font-weight: 900 !important;
-  }
-
-  .terminal-text {
-    color: #000000 !important;
-    font-weight: 600 !important;
-  }
-
-  .terminal-overview {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     font-size: 9pt !important;
-    color: #111827 !important;
     line-height: 1.45 !important;
-    margin-bottom: 0.6rem !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #resume-print-sheet *,
+  #resume-print-sheet *::before,
+  #resume-print-sheet *::after {
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #resume-print-sheet h1,
+  #resume-print-sheet h2,
+  #resume-print-sheet h3,
+  #resume-print-sheet h4,
+  #resume-print-sheet p,
+  #resume-print-sheet li,
+  #resume-print-sheet span,
+  #resume-print-sheet div {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  }
+
+  #resume-print-sheet .rps-doc-tag,
+  #resume-print-sheet .rps-meta-link,
+  #resume-print-sheet .rps-term-title,
+  #resume-print-sheet .rps-term-status,
+  #resume-print-sheet .rps-prompt,
+  #resume-print-sheet .rps-keyword,
+  #resume-print-sheet .rps-lang-label,
+  #resume-print-sheet .rps-sec-num,
+  #resume-print-sheet .rps-period-pill {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  }
+
+  /* Top Beautification Accent Bar */
+  .rps-accent-bar {
+    height: 3.5px !important;
+    width: 100% !important;
+    border-radius: 2px !important;
+    background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 55%, #ec4899 100%) !important;
+    margin-bottom: 11px !important;
+  }
+
+  /* Modern Header */
+  .rps-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 12px !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+
+  .rps-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+  }
+
+  .rps-crest {
+    flex-shrink: 0 !important;
+    line-height: 0 !important;
+  }
+
+  .rps-name-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-name {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 20pt !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1.05 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+  }
+
+  .rps-doc-tag {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 6.8pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    color: #4f46e5 !important;
+    background: #eef2ff !important;
+    border: 1px solid #c7d2fe !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+  }
+
+  .rps-role-line {
+    font-size: 8pt !important;
+    color: #475569 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+  }
+
+  .rps-role-primary {
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .rps-role-sep {
+    color: #94a3b8 !important;
+  }
+
+  .rps-role-sub {
+    font-weight: 500 !important;
+    color: #475569 !important;
+  }
+
+  .rps-header-right {
+    text-align: right !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 2px !important;
+  }
+
+  .rps-meta-badge {
+    font-size: 7pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 2px 7px !important;
+    border-radius: 4px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-meta-line {
+    font-size: 8pt !important;
+    color: #475569 !important;
     font-weight: 500 !important;
   }
 
-  .terminal-highlights-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.55rem !important;
-    margin-bottom: 0.55rem !important;
+  .rps-meta-link {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 7.5pt !important;
+    color: #0284c7 !important;
+    font-weight: 600 !important;
   }
 
-  .highlight-item {
+  /* Stylized Terminal Block at Start */
+  .rps-terminal {
     border: 1px solid #cbd5e1 !important;
-    background: #ffffff !important;
-    padding: 0.45rem 0.65rem !important;
+    border-radius: 7px !important;
+    overflow: hidden !important;
+    margin-bottom: 14px !important;
+    background: #f8fafc !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .rps-terminal-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    padding: 5px 10px !important;
+  }
+
+  .rps-term-dots {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+
+  .rps-dot {
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+  }
+
+  .rps-dot-red { background: #fb7185 !important; }
+  .rps-dot-yellow { background: #fbbf24 !important; }
+  .rps-dot-green { background: #34d399 !important; }
+
+  .rps-term-title {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 7.5pt !important;
+    font-weight: 600 !important;
+    color: #cbd5e1 !important;
+  }
+
+  .rps-term-status {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 6.8pt !important;
+    font-weight: 700 !important;
+    color: #34d399 !important;
+    background: rgba(52, 211, 153, 0.14) !important;
+    border: 1px solid rgba(52, 211, 153, 0.4) !important;
+    padding: 1px 6px !important;
     border-radius: 3px !important;
   }
 
-  .highlight-diamond {
-    color: #000000 !important;
-    font-size: 8.5pt !important;
-    font-weight: 800 !important;
+  .rps-terminal-body {
+    padding: 10px 12px !important;
+    border-left: 3.5px solid #0ea5e9 !important;
+    background: #f8fafc !important;
   }
 
-  .highlight-title {
-    color: #000000 !important;
-    font-size: 8.5pt !important;
-    font-weight: 800 !important;
-  }
-
-  .highlight-desc {
-    color: #111827 !important;
-    font-size: 8pt !important;
-    line-height: 1.35 !important;
-    font-weight: 500 !important;
-  }
-
-  .terminal-footer-row {
-    font-size: 8pt !important;
-    color: #000000 !important;
-    border-top: 1px solid #cbd5e1 !important;
-    padding-top: 0.4rem !important;
-    font-weight: 700 !important;
-  }
-
-  .footer-label {
-    color: #000000 !important;
-    font-weight: 800 !important;
-  }
-
-  .language-pill {
-    background: #f1f5f9 !important;
-    border: 1px solid #94a3b8 !important;
-    color: #000000 !important;
-    padding: 2px 6px !important;
-    border-radius: 2px !important;
-    font-size: 7.5pt !important;
-    font-weight: 600 !important;
-  }
-
-  .language-pill strong {
-    color: #000000 !important;
-    font-weight: 800 !important;
-  }
-
-  /* 6. Experience Deck & Cards */
-  .experience-deck {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.75rem !important;
-  }
-
-  .experience-card {
-    border: 1px solid #cbd5e1 !important;
-    background: #ffffff !important;
-    padding: 0.85rem 1.05rem !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .exp-card-header {
-    display: flex !important;
-    align-items: flex-start !important;
-    gap: 0.8rem !important;
-    margin-bottom: 0.45rem !important;
-  }
-
-  .exp-logo-col {
-    display: none !important;
-  }
-
-  .exp-meta-col {
-    flex: 1 !important;
-  }
-
-  .exp-company-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-  }
-
-  .exp-company {
-    font-size: 11pt !important;
-    font-weight: 900 !important;
-    color: #000000 !important;
-  }
-
-  .exp-period-pill {
-    background: #f1f5f9 !important;
-    border: 1px solid #94a3b8 !important;
-    color: #000000 !important;
-    font-size: 8pt !important;
-    padding: 2px 6px !important;
-    font-weight: 700 !important;
-  }
-
-  .exp-role {
-    font-size: 9pt !important;
-    font-weight: 700 !important;
-    color: #111827 !important;
-    margin-top: 0.1rem !important;
-  }
-
-  .exp-summary {
+  .rps-objective-row {
     font-size: 8.8pt !important;
-    color: #111827 !important;
-    margin-bottom: 0.45rem !important;
-    line-height: 1.4 !important;
-    font-weight: 500 !important;
+    line-height: 1.42 !important;
+    color: #0f172a !important;
+    margin-bottom: 5px !important;
   }
 
-  .exp-bullet-list {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-    list-style: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.3rem !important;
-    margin-bottom: 0.45rem !important;
-  }
-
-  .exp-bullet {
-    position: relative !important;
-    padding-left: 1rem !important;
-    font-size: 8.5pt !important;
-    color: #111827 !important;
-    line-height: 1.4 !important;
-    font-weight: 500 !important;
-  }
-
-  .bullet-caret {
-    position: absolute !important;
-    left: 0 !important;
-    color: #000000 !important;
+  .rps-prompt {
+    font-family: 'JetBrains Mono', monospace !important;
     font-weight: 800 !important;
+    color: #0284c7 !important;
+    margin-right: 3px !important;
   }
 
-  .exp-tags-row {
+  .rps-keyword {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    color: #4f46e5 !important;
+    margin-right: 4px !important;
+  }
+
+  .rps-objective-text {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+  }
+
+  .rps-overview-text {
+    font-size: 8.3pt !important;
+    color: #334155 !important;
+    line-height: 1.42 !important;
+    margin: 0 0 8px 0 !important;
+  }
+
+  .rps-highlights-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .rps-highlight-cell {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 4px !important;
+    padding: 5px 7px !important;
+  }
+
+  .rps-highlight-title {
+    font-size: 7.8pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-diamond {
+    color: #0ea5e9 !important;
+    margin-right: 2px !important;
+  }
+
+  .rps-highlight-desc {
+    font-size: 7.2pt !important;
+    line-height: 1.32 !important;
+    color: #475569 !important;
+    margin: 0 !important;
+  }
+
+  .rps-languages-row {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding-top: 6px !important;
+    border-top: 1px solid #e2e8f0 !important;
+  }
+
+  .rps-lang-label {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 7pt !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+  }
+
+  .rps-lang-list {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 0.25rem !important;
-    border-top: 1px solid #e2e8f0 !important;
-    padding-top: 0.4rem !important;
+    gap: 5px !important;
   }
 
-  .skill-node,
-  .skill-node-compact {
-    background: #f1f5f9 !important;
-    border: 1px solid #94a3b8 !important;
-    color: #000000 !important;
-    font-size: 7.5pt !important;
+  .rps-lang-pill {
+    font-size: 7.4pt !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 1px 7px !important;
+    border-radius: 3px !important;
+  }
+
+  /* Standard Professional Sections */
+  .rps-section {
+    margin-bottom: 10px !important;
+  }
+
+  .rps-section-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin-bottom: 6px !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .rps-sec-num {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    color: #4f46e5 !important;
+    background: #eef2ff !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+  }
+
+  .rps-sec-title {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .rps-sec-rule {
+    flex: 1 !important;
+    height: 1px !important;
+    background: #cbd5e1 !important;
+  }
+
+  /* Experience Items (Clean, Professional, No Heavy Boxes) */
+  .rps-exp-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+  }
+
+  .rps-exp-item {
+    padding: 0 0 6px 9px !important;
+    border-left: 2px solid #cbd5e1 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .rps-exp-item:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  .rps-exp-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-exp-company {
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+  }
+
+  .rps-exp-role {
+    font-size: 8.6pt !important;
     font-weight: 600 !important;
-    padding: 2px 5px !important;
-    border-radius: 2px !important;
-    cursor: default !important;
+    color: #334155 !important;
   }
 
-  .node-bullet {
-    display: none !important;
+  .rps-period-pill {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 7.4pt !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 1px 6px !important;
+    border-radius: 3px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
-  /* 7. Skills Matrix & Creativity */
-  .skills-matrix-grid,
-  .creativity-grid {
+  .rps-exp-summary {
+    font-size: 8.3pt !important;
+    color: #334155 !important;
+    margin: 3px 0 4px 0 !important;
+    line-height: 1.38 !important;
+  }
+
+  .rps-exp-bullets {
+    margin: 0 0 5px 14px !important;
+    padding: 0 !important;
+    list-style-type: disc !important;
+  }
+
+  .rps-exp-bullets li {
+    font-size: 8.1pt !important;
+    color: #1e293b !important;
+    line-height: 1.38 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-tags-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .rps-tag {
+    font-size: 7pt !important;
+    font-weight: 500 !important;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+  }
+
+  /* 2-Column Grids for Skills & Creative */
+  .rps-grid-2 {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.65rem !important;
-    break-inside: avoid;
+    gap: 6px !important;
   }
 
-  .skill-cat-card,
-  .creative-card {
-    border: 1px solid #cbd5e1 !important;
+  .rps-skill-card {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 5px !important;
+    padding: 6px 8px !important;
     background: #ffffff !important;
-    padding: 0.7rem 0.9rem !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
-  .skill-cat-header {
+  .rps-skill-head {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    margin-bottom: 0.25rem !important;
+    gap: 6px !important;
+    margin-bottom: 3px !important;
   }
 
-  .skill-cat-title {
-    font-size: 9.5pt !important;
-    font-weight: 800 !important;
-    color: #000000 !important;
-  }
-
-  .skill-cat-level {
-    font-size: 7.5pt !important;
-    color: #000000 !important;
+  .rps-skill-title {
+    font-size: 8.8pt !important;
     font-weight: 700 !important;
-    border: 1px solid #94a3b8 !important;
-    padding: 1px 4px !important;
-    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
   }
 
-  .skill-cat-desc {
-    font-size: 8pt !important;
-    color: #111827 !important;
-    margin-bottom: 0.4rem !important;
-    font-weight: 500 !important;
-  }
-
-  .skill-nodes-wrap {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.25rem !important;
-  }
-
-  /* 8. Education & Awards */
-  .education-grid,
-  .awards-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.65rem !important;
-    break-inside: avoid;
-  }
-
-  .education-card,
-  .award-card {
-    border: 1px solid #cbd5e1 !important;
-    background: #ffffff !important;
-    padding: 0.7rem 0.9rem !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .edu-institution,
-  .award-title {
-    font-size: 9.5pt !important;
-    font-weight: 800 !important;
-    color: #000000 !important;
-  }
-
-  .edu-degree,
-  .award-giver {
-    font-size: 8.5pt !important;
-    color: #111827 !important;
+  .rps-skill-level {
+    font-size: 6.8pt !important;
     font-weight: 600 !important;
+    color: #475569 !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+    white-space: nowrap !important;
   }
 
-  .edu-year,
-  .award-year {
+  .rps-skill-desc {
     font-size: 7.5pt !important;
-    color: #1f2937 !important;
+    color: #475569 !important;
+    line-height: 1.35 !important;
+    margin: 0 0 5px 0 !important;
+  }
+
+  /* Education */
+  .rps-edu-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+  }
+
+  .rps-edu-card {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 5px !important;
+    padding: 7px 10px !important;
+    background: #ffffff !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .rps-edu-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .rps-edu-inst {
+    font-size: 9.2pt !important;
     font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+  }
+
+  .rps-edu-degree {
+    font-size: 8.2pt !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+  }
+
+  .rps-edu-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .rps-edu-loc {
+    font-size: 7.2pt !important;
+    color: #64748b !important;
+  }
+
+  .rps-edu-bullets {
+    margin: 2px 0 0 14px !important;
+    padding: 0 !important;
+    list-style-type: disc !important;
+  }
+
+  .rps-edu-bullets li {
+    font-size: 7.7pt !important;
+    color: #334155 !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Honors & Awards */
+  .rps-awards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  .rps-award-card {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 5px !important;
+    padding: 7px 9px !important;
+    background: #ffffff !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .rps-award-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 5px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .rps-award-title {
+    font-size: 8.3pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+  }
+
+  .rps-award-org {
+    font-size: 7.5pt !important;
+    font-weight: 600 !important;
+    color: #4f46e5 !important;
+    margin-bottom: 3px !important;
+  }
+
+  .rps-award-desc {
+    font-size: 7.3pt !important;
+    color: #475569 !important;
+    line-height: 1.32 !important;
+    margin: 0 !important;
   }
 }
 

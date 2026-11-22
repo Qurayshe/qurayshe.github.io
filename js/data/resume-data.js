@@ -10,7 +10,7 @@ export const RESUME_DATA = {
     title: 'DEVELOPER // DESIGNER',
     subtitle: 'Computer Engineer \u2022 Systems \u2022 Machine Learning \u2022 3D Creative Tech',
     badge: 'VIRGINIA TECH ALUM \u2022 BS COMPUTER ENGINEERING',
-    location: 'Blacksburg, VA / International',
+    location: 'Dubai, UAE / Blacksburg, VA / International',
     github: 'https://github.com/qurayshe',
     objective:
       'To secure a suitable position as a Computer Engineer where I can further my education, gain experience and serve the host organization in the process, while also evolving & diversifying my own skillset.'
