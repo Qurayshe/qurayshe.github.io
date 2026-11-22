@@ -13,7 +13,7 @@ export const RESUME_DATA = {
     location: 'Dubai, UAE / Blacksburg, VA / International',
     github: 'https://github.com/qurayshe',
     objective:
-      'To secure a suitable position as a Computer Engineer where I can further my education, gain experience and serve the host organization in the process, while also evolving & diversifying my own skillset.'
+      'To continue work as a computer engineer where I can further my education (learn cool stuff), gain experience (do cool stuff), and serve the host organization in the process (help others do cool stuff), while also evolving & diversifying my own skillset.'
   },
 
   summary: {
@@ -104,6 +104,40 @@ export const RESUME_DATA = {
   ],
 
   experience: [
+    {
+      id: 'exp-naga-bim',
+      company: 'NAGA',
+      role: 'BIM Developer + Software Development',
+      period: 'Nov 2025 \u2013 Present',
+      logo: 'assets/images/logonagasmol.png',
+      logoFallback: 'assets/img/logonagasmol.png',
+      category: 'software',
+      summary:
+        'Transitioned to full-stack BIM software development and AI integration/modernization for architectural workflows (Dubai, UAE \u2022 On-site).',
+      bullets: [
+        'Developed custom plugins and automation extensions for Autodesk Revit to streamline Building Information Modeling (BIM) workflows.',
+        'Engineered full-stack web and desktop applications supporting architectural production and building simulation pipelines.',
+        'Integrated AI-driven modernizations and automated tooling across internal engineering and design workflows.'
+      ],
+      tags: ['BIM', 'Autodesk Revit', 'Building Simulation', 'AI Integration', 'Full-Stack Web', 'Desktop Apps']
+    },
+    {
+      id: 'exp-naga-it',
+      company: 'NAGA',
+      role: 'IT Specialist & Server Tech',
+      period: 'Nov 2024 \u2013 Nov 2025',
+      logo: 'assets/images/logonagasmol.png',
+      logoFallback: 'assets/img/logonagasmol.png',
+      category: 'systems',
+      summary:
+        'Provided full-time technical support and infrastructure administration across on-premises office hardware, cloud systems, and DevOps workflows (Dubai, UAE \u2022 On-site).',
+      bullets: [
+        'Maintained and troubleshot on-premises office workstations, enterprise printers, and local network equipment.',
+        'Administered cloud systems and DevOps tooling to support internal engineering and server operations.',
+        'Assisted and improved technical integrations and remote-access workflows for distributed staff.'
+      ],
+      tags: ['IT Infrastructure', 'Server Administration', 'DevOps', 'Cloud Systems', 'Networking', 'Technical Support']
+    },
     {
       id: 'exp-collins',
       company: 'Collins Aerospace',
