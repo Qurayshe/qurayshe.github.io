@@ -265,6 +265,17 @@ export class ResumeViewer {
                       .join('')}
                   </ul>
 
+                  ${
+                    exp.photo
+                      ? `
+                    <figure class="exp-photo-figure">
+                      <img src="${exp.photo}" alt="${exp.photoCaption || exp.company}" class="exp-photo-img" loading="lazy" />
+                      ${exp.photoCaption ? `<figcaption class="exp-photo-caption">${exp.photoCaption}</figcaption>` : ''}
+                    </figure>
+                  `
+                      : ''
+                  }
+
                   <div class="exp-tags-row">
                     ${exp.tags
                       .map(
@@ -691,7 +702,11 @@ export class ResumeViewer {
       document.body.appendChild(sheet);
     }
 
-    const githubDisplay = profile.github ? profile.github.replace(/^https?:\/\//, '') : 'github.com/qurayshe';
+    const siteUrl = profile.website || 'https://qurayshe.github.io';
+    const siteDisplay = siteUrl.replace(/^https?:\/\//, '');
+    const githubUrl = profile.github || 'https://github.com/qurayshe';
+    const githubDisplay = githubUrl.replace(/^https?:\/\//, '');
+    const linkedinUrl = profile.linkedin || 'https://www.linkedin.com/in/kourosh-k-381ba81a4/';
 
     sheet.innerHTML = `
       <div class="rps-accent-bar"></div>
@@ -699,7 +714,7 @@ export class ResumeViewer {
       <header class="rps-header">
         <div class="rps-header-left">
           <div class="rps-crest" aria-hidden="true">
-            <svg viewBox="0 0 48 48" width="38" height="38">
+            <svg viewBox="0 0 48 48" width="40" height="40">
               <defs>
                 <linearGradient id="rpsCrestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stop-color="#0ea5e9" />
@@ -708,7 +723,7 @@ export class ResumeViewer {
                 </linearGradient>
               </defs>
               <polygon points="24,2 41,9 46,24 41,39 24,46 7,39 2,24 7,9"
-                fill="#f8fafc" stroke="url(#rpsCrestGrad)" stroke-width="2.2" />
+                fill="#ffffff" stroke="url(#rpsCrestGrad)" stroke-width="2.2" />
               <circle cx="24" cy="24" r="14" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2" />
               <text x="24" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#0f172a">◆</text>
             </svg>
@@ -716,12 +731,26 @@ export class ResumeViewer {
           <div class="rps-title-wrap">
             <div class="rps-name-row">
               <h1 class="rps-name">${profile.handle}</h1>
-              <span class="rps-doc-tag">CURRICULUM VITAE</span>
             </div>
             <div class="rps-role-line">
               <span class="rps-role-primary">${profile.title}</span>
               <span class="rps-role-sep">&bull;</span>
-              <span class="rps-role-sub">${profile.subtitle}</span>
+              <span class="rps-role-cv">CURRICULUM VITAE</span>
+            </div>
+            <div class="rps-subtitle-line">${profile.subtitle}</div>
+            <div class="rps-links-bar">
+              <a class="rps-link-chip" href="${siteUrl}">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>${siteDisplay}</span>
+              </a>
+              <a class="rps-link-chip" href="${githubUrl}">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                <span>${githubDisplay}</span>
+              </a>
+              <a class="rps-link-chip rps-link-linkedin" href="${linkedinUrl}">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                <span>LinkedIn (Kourosh Khoie)</span>
+              </a>
             </div>
           </div>
         </div>
@@ -729,7 +758,6 @@ export class ResumeViewer {
         <div class="rps-header-right">
           <div class="rps-meta-badge">${profile.badge}</div>
           <div class="rps-meta-line">${profile.location}</div>
-          <div class="rps-meta-line rps-meta-link">${githubDisplay}</div>
         </div>
       </header>
 
@@ -787,7 +815,7 @@ export class ResumeViewer {
           ${experience
             .map(
               (exp) => `
-            <article class="rps-exp-item">
+            <article class="rps-exp-item ${exp.photo ? 'rps-exp-with-photo' : ''}">
               <div class="rps-exp-top">
                 <div class="rps-exp-left">
                   <h3 class="rps-exp-company">${exp.company}</h3>
@@ -796,9 +824,25 @@ export class ResumeViewer {
                 <span class="rps-period-pill">${exp.period}</span>
               </div>
               <p class="rps-exp-summary">${exp.summary}</p>
-              <ul class="rps-exp-bullets">
-                ${exp.bullets.map((b) => `<li>${b}</li>`).join('')}
-              </ul>
+              ${
+                exp.photo
+                  ? `
+                <div class="rps-exp-body-split">
+                  <ul class="rps-exp-bullets">
+                    ${exp.bullets.map((b) => `<li>${b}</li>`).join('')}
+                  </ul>
+                  <figure class="rps-exp-photo-box">
+                    <img src="${exp.photo}" alt="${exp.photoCaption || exp.company}" class="rps-exp-photo-img" />
+                    ${exp.photoCaption ? `<figcaption class="rps-exp-photo-cap">${exp.photoCaption}</figcaption>` : ''}
+                  </figure>
+                </div>
+              `
+                  : `
+                <ul class="rps-exp-bullets">
+                  ${exp.bullets.map((b) => `<li>${b}</li>`).join('')}
+                </ul>
+              `
+              }
               <div class="rps-tags-row">
                 ${exp.tags.map((t) => `<span class="rps-tag">${t}</span>`).join('')}
               </div>
