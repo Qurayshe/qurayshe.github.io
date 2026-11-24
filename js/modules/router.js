@@ -103,6 +103,7 @@ export class Router {
     // The rest of /misc (blorbo, petpet, qrcode, heartlocket, caption, ascii) use the 'blorbo' doodle theme.
     const isBlorboTheme = isMisc && activeTool !== 'lancer';
 
+    document.documentElement.classList.toggle('theme-blorbo', isBlorboTheme);
     document.body.classList.toggle('theme-blorbo', isBlorboTheme);
     const navbar = document.querySelector('.global-navbar');
     if (navbar) {
