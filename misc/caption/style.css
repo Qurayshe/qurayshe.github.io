@@ -99,6 +99,11 @@
   padding: 0;
 }
 
+html {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 body {
   background-color: var(--bg-color);
   background-image:
@@ -111,6 +116,9 @@ body {
   line-height: 1.4;
   color: var(--ink);
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
   align-items: center;

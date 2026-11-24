@@ -333,7 +333,12 @@ h4 {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
-  min-width: 320px;
+  min-width: 300px;
+  max-width: min(360px, calc(100vw - 24px));
+  max-height: min(74vh, calc(100vh - 92px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border: 2.5px solid var(--ink-line);
@@ -570,14 +575,35 @@ h4 {
 }
 
 @media (max-width: 900px) {
+  .global-navbar {
+    padding: 0.65rem 0.9rem;
+    gap: 0.5rem;
+    max-width: 100vw;
+  }
+  .brand-wrap {
+    font-size: 1.08rem;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .nav-actions {
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  .search-kbd {
+    display: none;
+  }
   .nav-mobile-toggle {
     display: flex;
+    flex-shrink: 0;
   }
   .nav-links-wrap {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
+    max-height: calc(100dvh - 58px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background-color: rgba(21, 19, 28, 0.98);
     background-image:
       radial-gradient(var(--ink-dot) 1.2px, transparent 1.2px),
@@ -585,23 +611,57 @@ h4 {
     background-size: 24px 24px;
     backdrop-filter: blur(20px);
     border-bottom: 2.5px solid var(--ink-line);
-    box-shadow: 0 3px 0 var(--doodle-void);
-    padding: 1rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    padding: 0.85rem;
     flex-direction: column;
     align-items: stretch;
+    gap: 0.35rem;
     display: none;
   }
   .nav-links-wrap.open {
     display: flex;
   }
+  .nav-dropdown:hover .nav-dropdown-menu {
+    display: none;
+  }
+  .nav-dropdown.open .nav-dropdown-menu {
+    display: flex;
+  }
   .nav-dropdown-menu {
     position: static;
+    min-width: 0;
+    max-width: 100%;
+    max-height: none;
+    overflow-y: visible;
     width: 100%;
     box-shadow: none;
-    border-left: 2px solid var(--accent-purple);
-    margin-top: 0.5rem;
+    border-left: 3px solid var(--accent-purple);
+    margin-top: 0.4rem;
+    padding: 0.45rem;
+  }
+  .dropdown-item {
+    padding: 0.5rem 0.65rem;
+    gap: 0.65rem;
   }
   .nav-status-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn-search-trigger {
+    padding: 0.36rem 0.55rem;
+  }
+  .btn-search-trigger > span {
+    display: none;
+  }
+  .btn-nav-github {
+    padding: 0.34rem 0.55rem;
+  }
+  .btn-nav-github > span {
+    display: none;
+  }
+  #btn-nav-fullscreen {
     display: none;
   }
 }
@@ -4083,8 +4143,22 @@ code[class*="language-"] {
 }
 
 @media (max-width: 600px) {
-  .nav-links-wrap {
-    display: none;
+  .home-container {
+    padding: 0 0.85rem;
+  }
+  .hero-grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hero-pc-col {
+    height: 360px;
+    min-height: 320px;
+    overflow: hidden;
+  }
+  .hero-3d-col {
+    height: 360px;
+    min-height: 320px;
+    overflow: hidden;
   }
   .global-footer {
     flex-direction: column;
@@ -4092,7 +4166,8 @@ code[class*="language-"] {
     text-align: center;
   }
   .hero-title-main {
-    font-size: 2.2rem;
+    font-size: 2rem;
+    word-break: break-word;
   }
 }
 
@@ -8431,20 +8506,65 @@ html.fast-boot #terminal-boot-screen {
 
 /* Mobile & Vertical Screen Adaptations */
 @media (max-width: 860px), (orientation: portrait) {
+  .terminal-boot-header {
+    padding: 0.5rem 0.65rem;
+    gap: 0.5rem;
+  }
+  .terminal-boot-badge {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .terminal-boot-title {
+    font-size: 0.68rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .terminal-boot-skip-btn {
+    flex-shrink: 0;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.68rem;
+  }
+  .terminal-line {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .terminal-line .t-msg {
+    min-width: 0;
+    word-break: break-word;
+  }
   .terminal-ascii-shelf {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 1.5rem;
-    margin: 1rem auto 0;
+    gap: 1.1rem;
+    margin: 0.75rem auto 0;
     padding: 0.5rem 0 1rem;
+    max-width: 100%;
+    overflow: hidden;
   }
   .terminal-ascii-art {
-    font-size: clamp(3.4px, 1.55vw, 6.5px);
+    font-size: clamp(2.1px, 0.98vw, 4.8px);
+    max-width: 100%;
+    overflow: hidden;
   }
   .terminal-ascii-art.ascii-miyabi {
     margin-left: 0;
   }
+}
+
+html {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+.wa-inline-icon {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  vertical-align: -2px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 600px) {

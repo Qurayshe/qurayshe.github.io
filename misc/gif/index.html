@@ -33,7 +33,8 @@
           maker · video→gif · transform · optimize · effects · split
         </div>
         <a class="site-link-btn" href="#misc/sticker" title="Open WhatsApp Sticker Maker">
-          💚 WhatsApp Stickers
+          <svg class="wa-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" stroke="#111" stroke-width="1.5" d="M16.01 2.67C8.65 2.67 2.67 8.64 2.67 16c0 2.35.61 4.65 1.78 6.67L2.67 29.33l6.83-1.79A13.28 13.28 0 0 0 16.01 29.33C23.36 29.33 29.33 23.36 29.33 16S23.36 2.67 16.01 2.67Z"/><path fill="#fff" d="M23.56 19.63c-.33-.17-1.97-.97-2.28-1.08-.31-.11-.53-.17-.75.17-.22.33-.86 1.08-1.06 1.3-.19.22-.39.25-.72.08-.33-.17-1.4-.52-2.67-1.65-.99-.88-1.66-1.97-1.85-2.3-.19-.33-.02-.51.15-.68.15-.15.33-.39.5-.58.17-.19.22-.33.33-.56.11-.22.06-.42-.03-.58-.08-.17-.75-1.81-1.03-2.47-.27-.65-.55-.56-.75-.57h-.64c-.22 0-.58.08-.89.42-.31.33-1.17 1.14-1.17 2.78s1.2 3.22 1.36 3.44c.17.22 2.35 3.59 5.7 5.04.8.34 1.42.55 1.9.7.8.25 1.53.22 2.1.13.64-.1 1.97-.81 2.25-1.58.28-.78.28-1.44.19-1.58-.08-.14-.31-.22-.64-.39Z"/></svg>
+          WhatsApp Stickers
         </a>
         <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener">
           🏠 qurayshe.github.io
@@ -290,22 +291,102 @@
         <div class="tab-panel" data-panel="optimize" hidden>
           <div class="control-section">
             <div class="section-title-row"><span>🧹 GIF Optimizer &amp; Compressor</span></div>
+
+            <div class="control-row">
+              <label class="control-label" for="optMethodSelect">Method:</label>
+              <select class="sketchy-select" id="optMethodSelect" style="flex: 1; max-width: 290px;">
+                <optgroup label="Lossy GIF compression">
+                  <option value="lossy" selected>Lossy GIF</option>
+                </optgroup>
+                <optgroup label="Combined">
+                  <option value="combined">Combined: dedup + transparency + lossy</option>
+                </optgroup>
+                <optgroup label="Color Reduction">
+                  <option value="color-reduce">Color Reduction</option>
+                  <option value="color-dither">Color Reduction + dither</option>
+                  <option value="global-palette">Use single color table for all frames</option>
+                </optgroup>
+                <optgroup label="Drop frames">
+                  <option value="dedup">Remove duplicate frames</option>
+                  <option value="drop-2">Remove every 2nd frame</option>
+                  <option value="drop-3">Remove every 3rd frame</option>
+                  <option value="drop-4">Remove every 4th frame</option>
+                </optgroup>
+                <optgroup label="Transparency">
+                  <option value="opt-transparency">Optimize Transparency</option>
+                </optgroup>
+                <optgroup label="Coalesce">
+                  <option value="coalesce">Coalesce (unoptimize)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="lossySlider">Compression / Fuzz:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="lossySlider" type="range" min="0" max="200" step="5" value="35" />
+                <span class="slider-val-badge" id="lblLossy">35</span>
+              </div>
+            </div>
+
             <div class="control-row">
               <label class="control-label" for="maxColorsSlider">Max Palette Colors:</label>
               <div class="slider-wrap">
-                <input class="sketchy-range" id="maxColorsSlider" type="range" min="16" max="256" step="8" value="256" />
+                <input class="sketchy-range" id="maxColorsSlider" type="range" min="8" max="256" step="8" value="256" />
                 <span class="slider-val-badge" id="lblMaxColors">256</span>
               </div>
             </div>
+
             <div class="control-row">
               <label class="control-label" for="frameDropSelect">Drop Frames:</label>
               <select class="sketchy-select" id="frameDropSelect">
                 <option value="1" selected>Keep every frame</option>
-                <option value="2">Drop every 2nd frame (½ frames)</option>
-                <option value="3">Keep 1 of every 3 frames</option>
-                <option value="4">Keep 1 of every 4 frames</option>
+                <option value="2">Remove every 2nd frame</option>
+                <option value="3">Remove every 3rd frame</option>
+                <option value="4">Remove every 4th frame</option>
               </select>
             </div>
+
+            <div class="control-row">
+              <label class="control-label" for="optDither">Floyd-Steinberg Dither:</label>
+              <label class="sketchy-toggle">
+                <input id="optDither" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="optGlobalPalette">Single Global Palette:</label>
+              <label class="sketchy-toggle">
+                <input id="optGlobalPalette" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="optDedup">Remove Duplicate Frames:</label>
+              <label class="sketchy-toggle">
+                <input id="optDedup" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="optTransparency">Optimize Transparency:</label>
+              <label class="sketchy-toggle">
+                <input id="optTransparency" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row">
+              <label class="control-label" for="optCoalesce">Coalesce (Unoptimize):</label>
+              <label class="sketchy-toggle">
+                <input id="optCoalesce" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
             <div class="control-row">
               <label class="control-label" for="webpQualitySlider">WebP Quality:</label>
               <div class="slider-wrap">
@@ -313,8 +394,9 @@
                 <span class="slider-val-badge" id="lblWebpQuality">82%</span>
               </div>
             </div>
-            <div class="helper-text">
-              💡 Dropping frames automatically preserves total animation timing by adding skipped frame delays to the kept frames. Lowering palette colors (e.g. 64–128) shrinks GIF size dramatically!
+
+            <div class="helper-text" id="optMethodHint">
+              💡 <b>Lossy GIF</b> smooths subtle pixel noise before LZW encoding to cut file size by 25–50%. Pick <b>Combined</b> for maximum shrinkage!
             </div>
           </div>
         </div>

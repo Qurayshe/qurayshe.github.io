@@ -288,55 +288,289 @@ export async function extractVideoFrames(videoEl, {
 }
 
 /**
- * Encode rendered frames ({ imageData, delay } or { canvas, delay }) into an animated GIF Blob.
+ * Apply subtle spatial lossy smoothing (reduces high-frequency noise so LZW compresses 25-50% smaller).
+ */
+function applyLossySmooth(rgba, width, height, level) {
+  if (level <= 0) return rgba;
+  const out = new Uint8ClampedArray(rgba);
+  // Threshold scales from 0..200 -> max channel diff 0..42
+  const thresh = Math.round((level / 200) * 42);
+  if (thresh <= 0) return out;
+  for (let y = 0; y < height; y++) {
+    const row = y * width * 4;
+    for (let x = 1; x < width; x++) {
+      const i = row + x * 4;
+      const p = i - 4;
+      if (out[i + 3] < 128 || out[p + 3] < 128) continue;
+      if (
+        Math.abs(out[i] - out[p]) <= thresh &&
+        Math.abs(out[i + 1] - out[p + 1]) <= thresh &&
+        Math.abs(out[i + 2] - out[p + 2]) <= thresh
+      ) {
+        out[i] = out[p];
+        out[i + 1] = out[p + 1];
+        out[i + 2] = out[p + 2];
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Floyd-Steinberg error-diffusion dithering into a palette.
+ */
+function applyPaletteDithered(rgba, width, height, palette, transparentIndex = -1) {
+  const buf = new Float32Array(rgba.length);
+  for (let i = 0; i < rgba.length; i++) buf[i] = rgba[i];
+  const out = new Uint8Array(width * height);
+  const palLen = palette.length;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      const o = idx * 4;
+      if (transparentIndex >= 0 && buf[o + 3] < 128) {
+        out[idx] = transparentIndex;
+        continue;
+      }
+      const r = Math.max(0, Math.min(255, buf[o]));
+      const g = Math.max(0, Math.min(255, buf[o + 1]));
+      const b = Math.max(0, Math.min(255, buf[o + 2]));
+
+      let best = 0;
+      let bestDist = Infinity;
+      for (let p = 0; p < palLen; p++) {
+        if (p === transparentIndex) continue;
+        const c = palette[p];
+        const dr = r - c[0];
+        const dg = g - c[1];
+        const db = b - c[2];
+        const d = dr * dr + dg * dg + db * db;
+        if (d < bestDist) {
+          bestDist = d;
+          best = p;
+          if (d === 0) break;
+        }
+      }
+      out[idx] = best;
+      const chosen = palette[best];
+      const er = r - chosen[0];
+      const eg = g - chosen[1];
+      const eb = b - chosen[2];
+
+      const spread = (nx, ny, w) => {
+        if (nx < 0 || nx >= width || ny >= height) return;
+        const no = (ny * width + nx) * 4;
+        if (transparentIndex >= 0 && buf[no + 3] < 128) return;
+        buf[no] += er * w;
+        buf[no + 1] += eg * w;
+        buf[no + 2] += eb * w;
+      };
+      spread(x + 1, y, 7 / 16);
+      spread(x - 1, y + 1, 3 / 16);
+      spread(x, y + 1, 5 / 16);
+      spread(x + 1, y + 1, 1 / 16);
+    }
+  }
+  return out;
+}
+
+/**
+ * Remove consecutive duplicate (or near-duplicate within fuzz) frames, summing delays.
+ */
+export function deduplicateFrames(frameDatas, fuzz = 8) {
+  if (frameDatas.length <= 1) return frameDatas;
+  const out = [{ ...frameDatas[0] }];
+  const tol = Math.max(0, fuzz);
+
+  for (let i = 1; i < frameDatas.length; i++) {
+    const prev = out[out.length - 1].data;
+    const cur = frameDatas[i].data;
+    let diffCount = 0;
+    const totalPixels = cur.length / 4;
+    const maxDiffPixels = Math.floor(totalPixels * 0.004); // <0.4% pixels changed -> duplicate
+
+    for (let p = 0; p < cur.length; p += 4) {
+      if (
+        Math.abs(cur[p] - prev[p]) > tol ||
+        Math.abs(cur[p + 1] - prev[p + 1]) > tol ||
+        Math.abs(cur[p + 2] - prev[p + 2]) > tol ||
+        Math.abs(cur[p + 3] - prev[p + 3]) > 32
+      ) {
+        diffCount++;
+        if (diffCount > maxDiffPixels) break;
+      }
+    }
+
+    if (diffCount <= maxDiffPixels) {
+      out[out.length - 1].delay += frameDatas[i].delay;
+    } else {
+      out.push({ ...frameDatas[i] });
+    }
+  }
+  return out;
+}
+
+/**
+ * Encode rendered frames ({ imageData, delay } or { canvas, delay }) into an animated GIF Blob
+ * with ezgif-style optimization options (lossy smoothing, dithering, global palette,
+ * duplicate removal, delta transparency optimization, coalesce).
  */
 export async function encodeGifFrames(frames, {
   width,
   height,
   maxColors = 256,
   repeat = 0,
+  lossyLevel = 0,
+  dither = false,
+  globalPalette = false,
+  removeDuplicates = false,
+  optimizeTransparency = false,
+  coalesce = false,
+  fuzz = 10,
   onProgress = null,
 } = {}) {
   const { GIFEncoder, quantize, applyPalette } = await getGifEncoder();
   const gif = GIFEncoder();
 
-  for (let i = 0; i < frames.length; i++) {
-    const f = frames[i];
-    const data = f.imageData
-      ? f.imageData.data
-      : f.canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data;
+  // Extract raw RGBA buffers
+  let working = frames.map((f) => {
+    const raw = f.imageData
+      ? new Uint8ClampedArray(f.imageData.data)
+      : new Uint8ClampedArray(
+          f.canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data
+        );
+    return { data: raw, delay: Math.max(20, Math.round(f.delay || 100)) };
+  });
 
-    let hasAlpha = false;
-    for (let p = 3; p < data.length; p += 4) {
-      if (data[p] < 128) {
-        hasAlpha = true;
+  if (removeDuplicates && working.length > 1) {
+    working = deduplicateFrames(working, Math.max(4, fuzz));
+  }
+
+  // Detect if source frames already contain transparent pixels
+  let sourceHasAlpha = false;
+  for (const w of working) {
+    for (let p = 3; p < w.data.length; p += 4) {
+      if (w.data[p] < 128) {
+        sourceHasAlpha = true;
         break;
       }
     }
+    if (sourceHasAlpha) break;
+  }
 
-    const format = hasAlpha ? 'rgba4444' : 'rgb565';
-    const palette = quantize(data, Math.max(2, Math.min(256, maxColors)), {
-      format,
-      oneBitAlpha: hasAlpha,
+  // Delta transparency optimization only works cleanly when source frames don't have moving cutouts
+  const useDeltaTrans = optimizeTransparency && !coalesce && !sourceHasAlpha && working.length > 1;
+  const needsAlphaSlot = sourceHasAlpha || useDeltaTrans;
+  const colorCount = Math.max(2, Math.min(256, maxColors));
+
+  // Optional shared global color table across all frames
+  let sharedPalette = null;
+  let sharedTransIdx = -1;
+  if (globalPalette && working.length > 1) {
+    const sampleStride = Math.max(1, Math.floor((working.length * width * height) / 48000));
+    const samples = [];
+    for (let f = 0; f < working.length; f++) {
+      const d = working[f].data;
+      for (let p = 0; p < d.length; p += 4 * sampleStride) {
+        samples.push(d[p], d[p + 1], d[p + 2], d[p + 3]);
+      }
+    }
+    const sampleBuf = new Uint8ClampedArray(samples);
+    const fmt = needsAlphaSlot ? 'rgba4444' : 'rgb565';
+    sharedPalette = quantize(sampleBuf, Math.max(2, needsAlphaSlot ? colorCount - 1 : colorCount), {
+      format: fmt,
+      oneBitAlpha: needsAlphaSlot,
     });
-    const index = applyPalette(data, palette, format);
+    if (needsAlphaSlot) {
+      sharedTransIdx = sharedPalette.findIndex((c) => c.length >= 4 && c[3] === 0);
+      if (sharedTransIdx === -1) {
+        if (sharedPalette.length < 256) {
+          sharedTransIdx = sharedPalette.length;
+          sharedPalette.push([0, 0, 0, 0]);
+        } else {
+          sharedTransIdx = sharedPalette.length - 1;
+          sharedPalette[sharedTransIdx] = [0, 0, 0, 0];
+        }
+      }
+    }
+  }
 
-    let transparentIndex = -1;
-    if (hasAlpha) {
-      transparentIndex = palette.findIndex((c) => c.length >= 4 && c[3] === 0);
-      if (transparentIndex === -1) transparentIndex = 0;
+  let prevData = null;
+
+  for (let i = 0; i < working.length; i++) {
+    let data = working[i].data;
+    if (lossyLevel > 0 && !coalesce) {
+      data = applyLossySmooth(data, width, height, lossyLevel);
+    }
+
+    // Apply delta-frame transparency (unchanged pixels -> alpha 0, keep previous frame with dispose=1)
+    let frameData = data;
+    let frameIsDelta = false;
+    if (useDeltaTrans && prevData) {
+      frameIsDelta = true;
+      const delta = new Uint8ClampedArray(data);
+      const tol = Math.max(2, Math.round(fuzz + lossyLevel * 0.12));
+      for (let p = 0; p < delta.length; p += 4) {
+        if (
+          Math.abs(delta[p] - prevData[p]) <= tol &&
+          Math.abs(delta[p + 1] - prevData[p + 1]) <= tol &&
+          Math.abs(delta[p + 2] - prevData[p + 2]) <= tol
+        ) {
+          delta[p + 3] = 0;
+        }
+      }
+      frameData = delta;
+    }
+
+    const frameHasAlpha = sourceHasAlpha || frameIsDelta;
+    const format = frameHasAlpha ? 'rgba4444' : 'rgb565';
+
+    let palette = sharedPalette;
+    let transparentIndex = sharedTransIdx;
+
+    if (!palette) {
+      palette = quantize(frameData, colorCount, {
+        format,
+        oneBitAlpha: frameHasAlpha,
+      });
+      if (frameHasAlpha) {
+        transparentIndex = palette.findIndex((c) => c.length >= 4 && c[3] === 0);
+        if (transparentIndex === -1) {
+          if (palette.length < 256) {
+            transparentIndex = palette.length;
+            palette.push([0, 0, 0, 0]);
+          } else {
+            transparentIndex = 0;
+          }
+        }
+      } else {
+        transparentIndex = -1;
+      }
+    }
+
+    const index = dither
+      ? applyPaletteDithered(frameData, width, height, palette, frameHasAlpha ? transparentIndex : -1)
+      : applyPalette(frameData, palette, format);
+
+    // If delta transparency was applied, force transparent pixels to transparentIndex
+    if (frameIsDelta && transparentIndex >= 0) {
+      for (let p = 0, px = 0; p < frameData.length; p += 4, px++) {
+        if (frameData[p + 3] === 0) index[px] = transparentIndex;
+      }
     }
 
     gif.writeFrame(index, width, height, {
-      palette,
-      delay: Math.max(20, Math.round(f.delay || 100)),
+      palette: globalPalette && i > 0 ? undefined : palette,
+      delay: working[i].delay,
       repeat: i === 0 ? repeat : undefined,
-      transparent: hasAlpha,
-      transparentIndex: hasAlpha ? transparentIndex : 0,
-      dispose: hasAlpha ? 2 : 1,
+      transparent: frameHasAlpha,
+      transparentIndex: frameHasAlpha ? Math.max(0, transparentIndex) : 0,
+      dispose: coalesce ? 2 : sourceHasAlpha ? 2 : 1,
     });
 
-    if (onProgress) onProgress((i + 1) / frames.length);
+    prevData = data;
+    if (onProgress) onProgress((i + 1) / working.length);
     if (i % 3 === 0) await new Promise((r) => setTimeout(r, 0));
   }
 

@@ -41,8 +41,15 @@ const state = {
   boomerang: false,
 
   // Optimize
+  optMethod: 'lossy',
+  lossyLevel: 35,
   maxColors: 256,
   frameDrop: 1,
+  optDither: false,
+  optGlobalPalette: false,
+  optDedup: false,
+  optTransparency: false,
+  optCoalesce: false,
   webpQuality: 0.82,
 
   // Effects
@@ -636,6 +643,13 @@ async function exportGif() {
       width,
       height,
       maxColors: state.maxColors,
+      lossyLevel: state.lossyLevel,
+      dither: state.optDither,
+      globalPalette: state.optGlobalPalette,
+      removeDuplicates: state.optDedup,
+      optimizeTransparency: state.optTransparency,
+      coalesce: state.optCoalesce,
+      fuzz: Math.max(4, Math.round(state.lossyLevel * 0.25)),
       onProgress: (p) => setExportProgress(true, 'Encoding GIF…', p),
     });
     showResult(blob, 'studio-output.gif');
@@ -896,6 +910,87 @@ function wireEvents() {
   });
 
   // Optimize
+  const methodHints = {
+    lossy: '💡 <b>Lossy GIF</b> smooths subtle pixel noise before LZW encoding to cut file size by 25–50%.',
+    combined: '💡 <b>Combined</b> removes duplicate frames, applies delta transparency, global palette, and lossy compression for maximum shrinkage!',
+    'color-reduce': '💡 <b>Color Reduction</b> shrinks the color table (e.g. 64–128 colors) to reduce file size.',
+    'color-dither': '💡 <b>Color Reduction + Dither</b> uses Floyd-Steinberg error diffusion to keep gradients smooth with fewer colors.',
+    'global-palette': '💡 <b>Single Color Table</b> shares one palette across all frames instead of storing a separate table per frame.',
+    dedup: '💡 <b>Remove Duplicate Frames</b> merges identical/near-identical consecutive frames while preserving timing.',
+    'drop-2': '💡 Removes every 2nd frame and adds its delay to the kept frame.',
+    'drop-3': '💡 Removes every 3rd frame (keeps 1 of 3) while preserving total playback speed.',
+    'drop-4': '💡 Removes every 4th frame (keeps 1 of 4) for aggressive size reduction.',
+    'opt-transparency': '💡 <b>Optimize Transparency</b> replaces pixels unchanged from the previous frame with transparency.',
+    coalesce: '💡 <b>Coalesce (Unoptimize)</b> writes full composited frames with no delta transparency to repair glitchy GIFs.',
+  };
+
+  const syncOptimizeUI = () => {
+    $('#lossySlider').value = state.lossyLevel;
+    $('#lblLossy').textContent = `${state.lossyLevel}`;
+    $('#maxColorsSlider').value = state.maxColors;
+    $('#lblMaxColors').textContent = `${state.maxColors}`;
+    $('#frameDropSelect').value = String(state.frameDrop);
+    $('#optDither').checked = state.optDither;
+    $('#optGlobalPalette').checked = state.optGlobalPalette;
+    $('#optDedup').checked = state.optDedup;
+    $('#optTransparency').checked = state.optTransparency;
+    $('#optCoalesce').checked = state.optCoalesce;
+  };
+
+  $('#optMethodSelect').addEventListener('change', (e) => {
+    const m = e.target.value;
+    state.optMethod = m;
+    // Apply sensible preset defaults for the chosen method
+    state.lossyLevel = 0;
+    state.maxColors = 256;
+    state.frameDrop = 1;
+    state.optDither = false;
+    state.optGlobalPalette = false;
+    state.optDedup = false;
+    state.optTransparency = false;
+    state.optCoalesce = false;
+
+    if (m === 'lossy') {
+      state.lossyLevel = 35;
+    } else if (m === 'combined') {
+      state.lossyLevel = 45;
+      state.maxColors = 128;
+      state.optGlobalPalette = true;
+      state.optDedup = true;
+      state.optTransparency = true;
+    } else if (m === 'color-reduce') {
+      state.maxColors = 64;
+    } else if (m === 'color-dither') {
+      state.maxColors = 64;
+      state.optDither = true;
+    } else if (m === 'global-palette') {
+      state.maxColors = 128;
+      state.optGlobalPalette = true;
+    } else if (m === 'dedup') {
+      state.optDedup = true;
+      state.lossyLevel = 15;
+    } else if (m === 'drop-2') {
+      state.frameDrop = 2;
+    } else if (m === 'drop-3') {
+      state.frameDrop = 3;
+    } else if (m === 'drop-4') {
+      state.frameDrop = 4;
+    } else if (m === 'opt-transparency') {
+      state.optTransparency = true;
+      state.lossyLevel = 15;
+    } else if (m === 'coalesce') {
+      state.optCoalesce = true;
+    }
+
+    $('#optMethodHint').innerHTML = methodHints[m] || '';
+    syncOptimizeUI();
+    renderCurrentPreview();
+  });
+
+  $('#lossySlider').addEventListener('input', (e) => {
+    state.lossyLevel = parseInt(e.target.value, 10) || 0;
+    $('#lblLossy').textContent = `${state.lossyLevel}`;
+  });
   $('#maxColorsSlider').addEventListener('input', (e) => {
     state.maxColors = parseInt(e.target.value, 10) || 256;
     $('#lblMaxColors').textContent = `${state.maxColors}`;
@@ -904,6 +999,11 @@ function wireEvents() {
     state.frameDrop = parseInt(e.target.value, 10) || 1;
     renderCurrentPreview();
   });
+  $('#optDither').addEventListener('change', (e) => (state.optDither = e.target.checked));
+  $('#optGlobalPalette').addEventListener('change', (e) => (state.optGlobalPalette = e.target.checked));
+  $('#optDedup').addEventListener('change', (e) => (state.optDedup = e.target.checked));
+  $('#optTransparency').addEventListener('change', (e) => (state.optTransparency = e.target.checked));
+  $('#optCoalesce').addEventListener('change', (e) => (state.optCoalesce = e.target.checked));
   $('#webpQualitySlider').addEventListener('input', (e) => {
     state.webpQuality = (parseInt(e.target.value, 10) || 82) / 100;
     $('#lblWebpQuality').textContent = `${e.target.value}%`;
