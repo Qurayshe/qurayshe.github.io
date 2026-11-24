@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="WhatsApp Sticker Maker — convert any image, GIF, or video into a 512×512 WebP sticker (≤100KB static, ≤500KB animated) with optional 16px transparent safe margin." />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>WhatsApp Sticker Maker 💚✨</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=JetBrains+Mono:wght@600;700&family=Patrick+Hand&family=Shantell+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <aside class="credit-banner" aria-label="About WhatsApp Sticker Maker">
+    <span class="sparkle-icon">💚</span>
+    <span>
+      instant <strong>WhatsApp Sticker Maker</strong> — exports spec-ready <strong>512×512 WebP</strong>
+      (≤100 KB static · ≤500 KB animated) with the recommended <strong>16px safe margin</strong>!
+    </span>
+    <span class="sparkle-icon">✨</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>💚 whatsapp stickers</span>
+        <span style="font-size: 21px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          512×512 webp · 16px margin · ≤100kb static · ≤500kb animated
+        </div>
+        <a class="site-link-btn" href="#misc/gif" title="Open full GIF Studio">
+          🎞️ GIF Studio
+        </a>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Samples -->
+    <section class="sample-bar" aria-label="Quick Samples">
+      <div class="sample-bar-left">
+        <span>✨ quick samples:</span>
+        <button class="sketchy-btn sm yellow" id="samplePlink" type="button">🐱 Plink (Static)</button>
+        <button class="sketchy-btn sm pink" id="sampleKirby" type="button">👾 Kirby (Animated)</button>
+        <button class="sketchy-btn sm lime" id="sampleBlorbo" type="button">🎨 Doodle Sticker</button>
+      </div>
+      <button class="sketchy-btn sm bone" id="btnReset" type="button">↺ reset</button>
+    </section>
+
+    <main class="card-grid">
+      <!-- COLUMN 1: 512×512 PREVIEW & EXPORT -->
+      <section class="sketchy-card" aria-label="Sticker Preview and Export">
+        <div class="card-header-badge badge-wa">
+          <span>👀 512×512 preview</span>
+        </div>
+
+        <div class="stage-wrap">
+          <div class="sticker-stage-canvas-wrap">
+            <canvas id="stickerCanvas" class="sticker-canvas" width="512" height="512" title="Drag to reposition sticker content"></canvas>
+          </div>
+          <div class="helper-text" style="margin-top: 8px;">
+            drag inside the preview to nudge position · dashed box = 16px WhatsApp safe zone (480×480)
+          </div>
+        </div>
+
+        <!-- WhatsApp Spec Status Pills -->
+        <div class="spec-pill-row">
+          <span class="stat-chip wa">512 × 512 WebP</span>
+          <span class="stat-chip" id="specModePill">Static (≤ 100 KB)</span>
+          <span class="stat-chip" id="specMarginPill">Margin: 16px (480×480)</span>
+          <span class="stat-chip" id="specSizePill">Not exported yet</span>
+        </div>
+
+        <!-- Playback Bar (shown when animated) -->
+        <div class="playback-card" id="playbackCard" hidden>
+          <div class="playback-controls">
+            <div class="playback-btn-group">
+              <button class="sketchy-btn sm" id="btnPrev" type="button">⏮</button>
+              <button class="sketchy-btn sm yellow" id="btnPlayPause" type="button">⏸ Pause</button>
+              <button class="sketchy-btn sm" id="btnNext" type="button">⏭</button>
+            </div>
+            <span class="time-readout" id="frameReadout">Frame 1 / 1</span>
+          </div>
+          <input class="sketchy-range" id="scrubber" type="range" min="0" max="0" value="0" />
+        </div>
+
+        <!-- Export Actions -->
+        <div class="action-rows">
+          <div class="primary-actions">
+            <button class="sketchy-btn lg lime" id="btnExportSticker" type="button">💚 Export .webp Sticker</button>
+            <button class="sketchy-btn lg" id="btnDownloadPng" type="button" title="Also save as 512×512 transparent PNG">🖼️ Save PNG</button>
+          </div>
+
+          <div class="export-status-box" id="exportStatusBox" hidden>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+              <span id="exportStatusText">Encoding WebP…</span>
+              <span id="exportPercentText">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="exportProgressFill"></div>
+            </div>
+          </div>
+
+          <div class="result-box" id="resultBox" hidden>
+            <img id="resultPreview" class="result-thumb" alt="Exported WebP sticker" />
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <div id="resultSummary" style="font-weight: bold; font-size: 15px;">Ready!</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a class="sketchy-btn sm yellow" id="btnDownloadResult" download="whatsapp-sticker.webp">⬇ Download .webp</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 2: SIMPLE STICKER CONTROLS -->
+      <section class="sketchy-card" aria-label="Sticker Settings">
+        <div class="card-header-badge badge-yellow">
+          <span>⚙️ sticker setup</span>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div class="dropzone-box" id="dropzoneBox">
+          <input type="file" id="fileInput" class="file-input-hidden" accept="image/*,video/*,.gif,.webp,.apng" multiple />
+          <div style="font-size: 28px;">📁</div>
+          <div style="font-size: 18px; font-weight: 800;">drop image, GIF, WebP, or video</div>
+          <div class="helper-text">click to browse · drop multiple images for animated sticker · ctrl+v to paste</div>
+        </div>
+
+        <!-- Video Trim (hidden unless video loaded) -->
+        <div class="control-section" id="videoSection" hidden>
+          <div class="section-title-row">
+            <span>🎬 Video to Animated Sticker</span>
+            <span class="stat-chip" id="videoDurLabel">0.0s</span>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="vidStart">Start (s):</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="vidStart" type="range" min="0" max="10" step="0.1" value="0" />
+              <span class="slider-val-badge" id="lblVidStart">0.0s</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="vidEnd">End (s):</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="vidEnd" type="range" min="0.2" max="10" step="0.1" value="3" />
+              <span class="slider-val-badge" id="lblVidEnd">3.0s</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <label class="control-label" for="vidFps">FPS:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="vidFps" type="range" min="5" max="20" step="1" value="12" />
+              <span class="slider-val-badge" id="lblVidFps">12 fps</span>
+            </div>
+          </div>
+          <button class="sketchy-btn yellow" id="btnExtractVideo" type="button">🎬 Extract Sticker Frames</button>
+        </div>
+
+        <!-- Safe Margin & Framing -->
+        <div class="control-section">
+          <div class="section-title-row"><span>📐 WhatsApp Margin &amp; Fit</span></div>
+
+          <div class="control-row">
+            <label class="control-label" for="toggleMargin">16px Transparent Margin:</label>
+            <label class="sketchy-toggle">
+              <input id="toggleMargin" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row" id="marginSliderRow">
+            <label class="control-label" for="marginSlider">Margin Size:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="marginSlider" type="range" min="0" max="48" step="2" value="16" />
+              <span class="slider-val-badge" id="lblMargin">16px</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="toggleGuide">Show Safe-Zone Guide:</label>
+            <label class="sketchy-toggle">
+              <input id="toggleGuide" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Fit Mode:</label>
+            <div class="segmented-group" id="fitGroup">
+              <button class="segmented-btn active" data-fit="contain" type="button">Contain</button>
+              <button class="segmented-btn" data-fit="cover" type="button">Cover</button>
+              <button class="segmented-btn" data-fit="stretch" type="button">Stretch</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="zoomSlider">Zoom:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="zoomSlider" type="range" min="50" max="200" step="2" value="100" />
+              <span class="slider-val-badge" id="lblZoom">100%</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label">Quick Adjust:</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="sketchy-btn sm" id="btnFlipH" type="button">↔ Flip H</button>
+              <button class="sketchy-btn sm" id="btnCenter" type="button">🎯 Center</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticker Polish (Shape & Outline) -->
+        <div class="control-section">
+          <div class="section-title-row"><span>✂️ Shape &amp; Sticker Border</span></div>
+
+          <div class="control-row">
+            <label class="control-label" for="roundSlider">Round Corners:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="roundSlider" type="range" min="0" max="50" step="1" value="0" />
+              <span class="slider-val-badge" id="lblRound">0%</span>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="outlineSlider">White Sticker Outline:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="outlineSlider" type="range" min="0" max="14" step="1" value="0" />
+              <span class="slider-val-badge" id="lblOutline">Off</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Animation & Compression -->
+        <div class="control-section">
+          <div class="section-title-row"><span>🗜️ Compression &amp; Speed</span></div>
+
+          <div class="control-row">
+            <label class="control-label" for="toggleAutoFit">Auto-Fit WhatsApp Limit:</label>
+            <label class="sketchy-toggle">
+              <input id="toggleAutoFit" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label class="control-label" for="qualitySlider">WebP Quality:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="qualitySlider" type="range" min="15" max="100" step="5" value="85" />
+              <span class="slider-val-badge" id="lblQuality">85%</span>
+            </div>
+          </div>
+
+          <div class="control-row" id="animSpeedRow" hidden>
+            <label class="control-label" for="speedSlider">Animation Speed:</label>
+            <div class="slider-wrap">
+              <input class="sketchy-range" id="speedSlider" type="range" min="0.25" max="3" step="0.05" value="1" />
+              <span class="slider-val-badge" id="lblSpeed">1.00×</span>
+            </div>
+          </div>
+
+          <div class="helper-text">
+            💡 WhatsApp requires exact <b>512×512 WebP</b> files under <b>100 KB</b> (static) or <b>500 KB</b> (animated). With Auto-Fit on, quality (and frame rate if needed) adjusts automatically to pass!
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-credit-card">
+      <div class="bottom-credit-title">💚 whatsapp sticker maker · 100% client-side</div>
+      <p class="bottom-credit-text">
+        Encodes static and animated 512×512 WebP stickers right in your browser (transparent RIFF VP8X/ANIM/ANMF muxer).
+        Need full editing, effects, or GIF conversion? Try <a href="#misc/gif"><strong>GIF Studio</strong></a>!
+      </p>
+      <div class="bottom-links">
+        <a href="https://qurayshe.github.io/" class="sketchy-btn sm yellow">🏠 home</a>
+        <a href="#misc/gif" class="sketchy-btn sm pink">🎞️ gif studio</a>
+        <a href="#misc/caption" class="sketchy-btn sm">💬 caption</a>
+        <a href="#misc/petpet" class="sketchy-btn sm">🐾 petpet</a>
+        <a href="#misc/ascii" class="sketchy-btn sm">🔤 ascii</a>
+        <a href="#misc/blorbo" class="sketchy-btn sm lime">🎨 blorbo</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toastBox">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Ready!</span>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

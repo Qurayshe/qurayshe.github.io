@@ -1,0 +1,50 @@
+@charset "UTF-8";
+@import url('../gif/style.css');
+
+/* Sticker-specific accents & 512x512 canvas stage */
+:root {
+  --wa-green: #25d366;
+  --wa-soft: #d9fbd9;
+}
+
+.badge-wa {
+  background: var(--wa-green);
+  color: #111;
+}
+
+.sticker-stage-canvas-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.sticker-canvas {
+  display: block;
+  width: 320px;
+  height: 320px;
+  max-width: 100%;
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  cursor: grab;
+  touch-action: none;
+}
+
+.sticker-canvas:active {
+  cursor: grabbing;
+}
+
+.spec-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat-chip.fail {
+  background: #ffd1d1;
+}
+
+.stat-chip.wa {
+  background: var(--wa-soft);
+}

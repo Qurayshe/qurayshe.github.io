@@ -329,6 +329,32 @@ export class SearchModal {
       route: '#misc/ascii'
     });
 
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '🎞️',
+      badge: 'GIF Studio',
+      badgeClass: 'badge-misc',
+      id: 'misc-gif',
+      title: 'GIF Studio',
+      desc: 'All-in-one ezgif-style GIF utility: maker, video to GIF, resize, crop, speed, optimize, effects, text overlay, frame splitter & WebP/WebM converter.',
+      keywords: 'gif studio ezgif maker video to gif optimizer compress effects transform resize crop rotate reverse boomerang split frames webp webm convert misc',
+      route: '#misc/gif'
+    });
+
+    this.items.push({
+      type: 'misc',
+      category: 'Misc Tools',
+      icon: '💚',
+      badge: 'Stickers',
+      badgeClass: 'badge-misc',
+      id: 'misc-sticker',
+      title: 'WhatsApp Sticker Maker',
+      desc: 'Convert images, GIFs, or videos into 512x512 WhatsApp WebP stickers (<=100KB static, <=500KB animated) with optional 16px transparent safe margin.',
+      keywords: 'whatsapp sticker maker 512x512 webp animated static 500kb 100kb 16px margin transparent border outline misc',
+      route: '#misc/sticker'
+    });
+
   }
 
   renderModal() {

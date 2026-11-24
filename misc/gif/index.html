@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Client-side GIF Studio — build GIFs from images or video, transform, optimize, add effects & text, split frames, and convert between GIF, WebP & WebM." />
+  <meta name="theme-color" content="#ffe66d" />
+  <title>GIF Studio 🎞️✨</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@600;700;800;900&family=Gaegu:wght@400;700&family=JetBrains+Mono:wght@600;700&family=Patrick+Hand&family=Shantell+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <aside class="credit-banner" aria-label="About GIF Studio">
+    <span class="sparkle-icon">🎞️</span>
+    <span>
+      all-in-one client-side <strong>GIF Studio</strong> — make, transform, optimize, add effects &amp; text, split frames, or convert to <strong>WebP / WebM</strong>!
+    </span>
+    <span class="sparkle-icon">✨</span>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header-bar">
+      <div class="title-badge" id="titleBadge">
+        <span>🎞️ gif studio</span>
+        <span style="font-size: 21px;">✨</span>
+      </div>
+      <div class="header-right">
+        <div class="subtitle-badge">
+          maker · video→gif · transform · optimize · effects · split
+        </div>
+        <a class="site-link-btn" href="#misc/sticker" title="Open WhatsApp Sticker Maker">
+          💚 WhatsApp Stickers
+        </a>
+        <a class="site-link-btn" href="https://qurayshe.github.io/" target="_blank" rel="noopener">
+          🏠 qurayshe.github.io
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Samples -->
+    <section class="sample-bar" aria-label="Quick Samples">
+      <div class="sample-bar-left">
+        <span>✨ quick samples:</span>
+        <button class="sketchy-btn sm pink" id="sampleKirby" type="button">👾 Kirby GIF</button>
+        <button class="sketchy-btn sm yellow" id="samplePlink" type="button">🐱 Plink Photo</button>
+        <button class="sketchy-btn sm lime" id="sampleDoodle" type="button">🌈 Bouncing Doodle</button>
+      </div>
+      <button class="sketchy-btn sm bone" id="btnResetAll" type="button">↺ reset edits</button>
+    </section>
+
+    <!-- Ezgif-style Tool Tabs -->
+    <nav class="tool-tabs" id="toolTabs" role="tablist" aria-label="GIF Tools">
+      <button class="tool-tab-btn active" data-tab="maker" role="tab" type="button">🎞️ Maker / Input</button>
+      <button class="tool-tab-btn" data-tab="transform" role="tab" type="button">✂️ Transform</button>
+      <button class="tool-tab-btn" data-tab="optimize" role="tab" type="button">🧹 Optimize</button>
+      <button class="tool-tab-btn" data-tab="effects" role="tab" type="button">🪄 Effects</button>
+      <button class="tool-tab-btn" data-tab="text" role="tab" type="button">🔤 Text</button>
+      <button class="tool-tab-btn" data-tab="split" role="tab" type="button">🔀 Split &amp; Convert</button>
+    </nav>
+
+    <main class="card-grid">
+      <!-- COLUMN 1: LIVE PREVIEW & EXPORT -->
+      <section class="sketchy-card" aria-label="Preview and Export">
+        <div class="card-header-badge badge-yellow">
+          <span>👀 live preview</span>
+        </div>
+
+        <div class="stage-wrap" id="stageWrap">
+          <canvas id="previewCanvas" class="preview-canvas" width="320" height="320"></canvas>
+        </div>
+
+        <div class="media-info-bar">
+          <span class="stat-chip" id="statDims">320 × 320 px</span>
+          <span class="stat-chip" id="statFrames">1 frame</span>
+          <span class="stat-chip" id="statOrigSize">src: —</span>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="playback-card" id="playbackCard">
+          <div class="playback-controls">
+            <div class="playback-btn-group">
+              <button class="sketchy-btn sm" id="btnPrev" type="button" title="Previous frame">⏮</button>
+              <button class="sketchy-btn sm yellow" id="btnPlayPause" type="button">⏸ Pause</button>
+              <button class="sketchy-btn sm" id="btnNext" type="button" title="Next frame">⏭</button>
+            </div>
+            <span class="time-readout" id="frameReadout">Frame 1 / 1</span>
+          </div>
+          <input class="sketchy-range" id="scrubber" type="range" min="0" max="0" value="0" />
+        </div>
+
+        <!-- Export Actions -->
+        <div class="action-rows">
+          <div class="primary-actions">
+            <button class="sketchy-btn lg pink" id="btnExportGif" type="button">💾 Export GIF</button>
+            <button class="sketchy-btn lg lime" id="btnExportWebp" type="button">🟢 Export WebP</button>
+          </div>
+          <div class="secondary-actions">
+            <span class="helper-text"><b>convert:</b></span>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="sketchy-btn sm cyan" id="btnExportWebm" type="button">🎬 WebM Video</button>
+              <button class="sketchy-btn sm" id="btnExportPng" type="button">🖼️ Frame PNG</button>
+            </div>
+          </div>
+
+          <div class="export-status-box" id="exportStatusBox" hidden>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+              <span id="exportStatusText">Encoding…</span>
+              <span id="exportPercentText">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="exportProgressFill"></div>
+            </div>
+          </div>
+
+          <!-- Exported Output Result -->
+          <div class="result-box" id="resultBox" hidden>
+            <img id="resultPreview" class="result-thumb" alt="Exported result" />
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <div id="resultSummary" style="font-weight: bold; font-size: 15px;">Ready!</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a class="sketchy-btn sm yellow" id="btnDownloadResult" download="output.gif">⬇ Download</a>
+                <button class="sketchy-btn sm" id="btnLoadResultBack" type="button" title="Load this output back into the editor">↩ Edit Output</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 2: TABBED TOOL CONTROLS -->
+      <section class="sketchy-card" aria-label="Tool Controls">
+        <div class="card-header-badge badge-cyan" id="activeTabBadge">
+          <span>🎞️ maker &amp; input</span>
+        </div>
+
+        <!-- TAB 1: MAKER / INPUT -->
+        <div class="tab-panel" data-panel="maker">
+          <div class="dropzone-box" id="dropzoneBox">
+            <input type="file" id="fileInput" class="file-input-hidden" accept="image/*,video/*,.gif,.webp,.apng" multiple />
+            <div style="font-size: 30px;">📁</div>
+            <div style="font-size: 18px; font-weight: 800;">drop GIF, video, or multiple images</div>
+            <div class="helper-text">click to browse · select multiple images to build a GIF · ctrl+v to paste</div>
+          </div>
+
+          <!-- Video-to-GIF Controls (shown when video loaded) -->
+          <div class="control-section" id="videoSection" hidden style="margin-top: 10px;">
+            <div class="section-title-row">
+              <span>🎬 Video → GIF Extractor</span>
+              <span class="stat-chip" id="videoDurLabel">0.0s</span>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="vidStart">Start (s):</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="vidStart" type="range" min="0" max="10" step="0.1" value="0" />
+                <span class="slider-val-badge" id="lblVidStart">0.0s</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="vidEnd">End (s):</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="vidEnd" type="range" min="0.2" max="10" step="0.1" value="3" />
+                <span class="slider-val-badge" id="lblVidEnd">3.0s</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="vidFps">Capture FPS:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="vidFps" type="range" min="4" max="24" step="1" value="12" />
+                <span class="slider-val-badge" id="lblVidFps">12 fps</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="vidMaxW">Max Width:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="vidMaxW" type="range" min="160" max="640" step="16" value="384" />
+                <span class="slider-val-badge" id="lblVidMaxW">384px</span>
+              </div>
+            </div>
+            <button class="sketchy-btn yellow" id="btnExtractVideo" type="button">🎬 Extract Video Frames</button>
+          </div>
+
+          <!-- Multi-Image / Frame Maker Section -->
+          <div class="control-section" style="margin-top: 10px;">
+            <div class="section-title-row">
+              <span>🧩 Frames &amp; Timing</span>
+              <label class="sketchy-btn sm lime" style="position: relative; overflow: hidden;">
+                + Add Images
+                <input type="file" id="appendFilesInput" accept="image/*" multiple style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" />
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="globalDelay">Set All Delay:</label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input class="sketchy-input num-input" id="globalDelay" type="number" min="20" max="3000" step="10" value="100" />
+                <span class="helper-text">ms</span>
+                <button class="sketchy-btn sm" id="btnApplyDelay" type="button">Apply</button>
+              </div>
+            </div>
+            <div class="frame-strip" id="makerFrameStrip"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TRANSFORM -->
+        <div class="tab-panel" data-panel="transform" hidden>
+          <div class="control-section">
+            <div class="section-title-row"><span>📐 Resize</span></div>
+            <div class="control-row">
+              <label class="control-label">Width × Height:</label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input class="sketchy-input num-input" id="resizeW" type="number" min="16" max="1200" value="320" />
+                <span>×</span>
+                <input class="sketchy-input num-input" id="resizeH" type="number" min="16" max="1200" value="320" />
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="lockAspect">Lock Aspect Ratio:</label>
+              <label class="sketchy-toggle">
+                <input id="lockAspect" type="checkbox" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="sketchy-btn sm" data-scale-preset="1" type="button">100%</button>
+              <button class="sketchy-btn sm" data-scale-preset="0.75" type="button">75%</button>
+              <button class="sketchy-btn sm" data-scale-preset="0.5" type="button">50%</button>
+              <button class="sketchy-btn sm yellow" data-width-preset="320" type="button">320px</button>
+              <button class="sketchy-btn sm yellow" data-width-preset="480" type="button">480px</button>
+            </div>
+          </div>
+
+          <div class="control-section" style="margin-top: 10px;">
+            <div class="section-title-row"><span>✂️ Crop &amp; Orientation</span></div>
+            <div class="control-row">
+              <label class="control-label" for="cropPreset">Aspect Crop:</label>
+              <div class="segmented-group" id="cropGroup">
+                <button class="segmented-btn active" data-crop="none" type="button">Full</button>
+                <button class="segmented-btn" data-crop="1:1" type="button">1:1</button>
+                <button class="segmented-btn" data-crop="16:9" type="button">16:9</button>
+                <button class="segmented-btn" data-crop="4:3" type="button">4:3</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label">Rotate:</label>
+              <div class="segmented-group" id="rotateGroup">
+                <button class="segmented-btn active" data-rot="0" type="button">0°</button>
+                <button class="segmented-btn" data-rot="90" type="button">90°</button>
+                <button class="segmented-btn" data-rot="180" type="button">180°</button>
+                <button class="segmented-btn" data-rot="270" type="button">270°</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label">Flip:</label>
+              <div style="display: flex; gap: 8px;">
+                <button class="sketchy-btn sm" id="btnFlipH" type="button">↔ Flip H</button>
+                <button class="sketchy-btn sm" id="btnFlipV" type="button">↕ Flip V</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-section" style="margin-top: 10px;">
+            <div class="section-title-row"><span>⚡ Speed &amp; Playback</span></div>
+            <div class="control-row">
+              <label class="control-label" for="speedSlider">Speed:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="speedSlider" type="range" min="0.25" max="4" step="0.05" value="1" />
+                <span class="slider-val-badge" id="lblSpeed">1.00×</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="toggleReverse">Reverse Order:</label>
+              <label class="sketchy-toggle">
+                <input id="toggleReverse" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="toggleBoomerang">Boomerang (Ping-Pong):</label>
+              <label class="sketchy-toggle">
+                <input id="toggleBoomerang" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: OPTIMIZE -->
+        <div class="tab-panel" data-panel="optimize" hidden>
+          <div class="control-section">
+            <div class="section-title-row"><span>🧹 GIF Optimizer &amp; Compressor</span></div>
+            <div class="control-row">
+              <label class="control-label" for="maxColorsSlider">Max Palette Colors:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="maxColorsSlider" type="range" min="16" max="256" step="8" value="256" />
+                <span class="slider-val-badge" id="lblMaxColors">256</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="frameDropSelect">Drop Frames:</label>
+              <select class="sketchy-select" id="frameDropSelect">
+                <option value="1" selected>Keep every frame</option>
+                <option value="2">Drop every 2nd frame (½ frames)</option>
+                <option value="3">Keep 1 of every 3 frames</option>
+                <option value="4">Keep 1 of every 4 frames</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="webpQualitySlider">WebP Quality:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="webpQualitySlider" type="range" min="15" max="100" step="5" value="82" />
+                <span class="slider-val-badge" id="lblWebpQuality">82%</span>
+              </div>
+            </div>
+            <div class="helper-text">
+              💡 Dropping frames automatically preserves total animation timing by adding skipped frame delays to the kept frames. Lowering palette colors (e.g. 64–128) shrinks GIF size dramatically!
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: EFFECTS -->
+        <div class="tab-panel" data-panel="effects" hidden>
+          <div class="control-section">
+            <div class="section-title-row">
+              <span>🎨 Color &amp; Filters</span>
+              <button class="sketchy-btn sm bone" id="btnResetEffects" type="button">↺ clear</button>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxBright">Brightness:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxBright" type="range" min="40" max="180" value="100" />
+                <span class="slider-val-badge" id="lblFxBright">100%</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxContrast">Contrast:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxContrast" type="range" min="40" max="200" value="100" />
+                <span class="slider-val-badge" id="lblFxContrast">100%</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxSat">Saturation:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxSat" type="range" min="0" max="250" value="100" />
+                <span class="slider-val-badge" id="lblFxSat">100%</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxHue">Hue Rotate:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxHue" type="range" min="0" max="360" value="0" />
+                <span class="slider-val-badge" id="lblFxHue">0°</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <label class="control-label" style="cursor: pointer;">
+                <input type="checkbox" id="fxGray" /> Grayscale
+              </label>
+              <label class="control-label" style="cursor: pointer;">
+                <input type="checkbox" id="fxSepia" /> Sepia
+              </label>
+              <label class="control-label" style="cursor: pointer;">
+                <input type="checkbox" id="fxInvert" /> Invert
+              </label>
+            </div>
+          </div>
+
+          <div class="control-section" style="margin-top: 10px;">
+            <div class="section-title-row"><span>✨ Stylize &amp; Static-to-GIF Motion</span></div>
+            <div class="control-row">
+              <label class="control-label" for="fxPixel">Pixel Art:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxPixel" type="range" min="1" max="20" value="1" />
+                <span class="slider-val-badge" id="lblFxPixel">Off</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxRound">Round Corners:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="fxRound" type="range" min="0" max="50" value="0" />
+                <span class="slider-val-badge" id="lblFxRound">0%</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="fxMotion">Static→GIF FX:</label>
+              <select class="sketchy-select" id="fxMotion">
+                <option value="none" selected>None</option>
+                <option value="shake">Intense Shake</option>
+                <option value="pulse">Zoom Pulse</option>
+                <option value="spin">Spin</option>
+                <option value="rainbow">Rainbow Hue Cycle</option>
+              </select>
+            </div>
+            <div class="helper-text">
+              💡 Pick a Static→GIF motion on any single photo to auto-generate a 12-frame animated loop!
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: TEXT -->
+        <div class="tab-panel" data-panel="text" hidden>
+          <div class="control-section">
+            <div class="section-title-row"><span>🔤 Overlay Text</span></div>
+            <input class="sketchy-input" id="overlayText" type="text" placeholder="Type overlay text..." />
+            <div class="control-row">
+              <label class="control-label">Position:</label>
+              <div class="segmented-group" id="textPosGroup">
+                <button class="segmented-btn" data-tpos="top" type="button">Top</button>
+                <button class="segmented-btn" data-tpos="center" type="button">Center</button>
+                <button class="segmented-btn active" data-tpos="bottom" type="button">Bottom</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label" for="textSizeSlider">Font Size:</label>
+              <div class="slider-wrap">
+                <input class="sketchy-range" id="textSizeSlider" type="range" min="14" max="88" value="34" />
+                <span class="slider-val-badge" id="lblTextSize">34px</span>
+              </div>
+            </div>
+            <div class="control-row">
+              <label class="control-label">Fill / Stroke:</label>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input class="sketchy-color-input" id="textFillColor" type="color" value="#ffffff" title="Text fill color" />
+                <input class="sketchy-color-input" id="textStrokeColor" type="color" value="#111111" title="Text outline color" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 6: SPLIT & CONVERT -->
+        <div class="tab-panel" data-panel="split" hidden>
+          <div class="control-section">
+            <div class="section-title-row">
+              <span>🔀 Frame Splitter</span>
+              <span class="stat-chip" id="splitCountBadge">0 frames</span>
+            </div>
+            <div class="helper-text">
+              Click any frame below to jump to it in the preview, or click <b>⬇</b> to download that individual frame as PNG.
+            </div>
+            <div class="frame-strip" id="splitFrameStrip"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-credit-card">
+      <div class="bottom-credit-title">🎞️ gif studio · 100% client-side</div>
+      <p class="bottom-credit-text">
+        Inspired by <a href="https://ezgif.com/" target="_blank" rel="noopener"><strong>ezgif</strong></a>.
+        GIFs decoded with <a href="https://github.com/deanm/omggif" target="_blank" rel="noopener"><strong>omggif</strong></a>,
+        encoded with <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener"><strong>gifenc</strong></a>,
+        and animated WebP muxed directly in your browser.
+      </p>
+      <div class="bottom-links">
+        <a href="https://qurayshe.github.io/" class="sketchy-btn sm yellow">🏠 home</a>
+        <a href="#misc/sticker" class="sketchy-btn sm lime">💚 whatsapp stickers</a>
+        <a href="#misc/caption" class="sketchy-btn sm">💬 caption</a>
+        <a href="#misc/petpet" class="sketchy-btn sm">🐾 petpet</a>
+        <a href="#misc/ascii" class="sketchy-btn sm">🔤 ascii</a>
+        <a href="#misc/blorbo" class="sketchy-btn sm pink">🎨 blorbo</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toastBox">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Ready!</span>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
